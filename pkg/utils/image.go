@@ -88,7 +88,7 @@ func SetImageRow(image *draw.Image, row []color.Color, yIndex int) error {
 	return nil
 }
 
-// Get the drawable version of the provided image. The image is also redrawn to a new image.RGBA struct
+// Get the drawable copy of the provided image. The image is also redrawn to a new image.RGBA struct
 func GetDrawableImage(i image.Image) (draw.Image, error) {
 	p1 := image.Point{0, 0}
 	p2 := image.Point{i.Bounds().Dx(), i.Bounds().Dy()}
@@ -114,37 +114,35 @@ func RotateImage(image draw.Image, angle int) draw.Image {
 	return imaging.Rotate(image, angleNorm, color.Transparent)
 }
 
+// FIXME: Fix borders after interpolation and implement full transparency support in order to preserve PNG data.
+// FIXME: Better handling for situations where there is not requirement to trim the workspace. Currently in such
+// situation we are returning the original imageWithWorkspace draw.Image instead of creating a copy.
+//
 // Remove all excess transparent workspace created during the rotation process from the image.
-// This function is detection the top left corner on the rotatet image and than is taking cropping
-// the image by width and height given by the original image.
-// Time complexity: O(2n)
-// NOTE: This function can by changed to detect the content without the imageOriginal
-func TrimImageTransparentWorkspace(imageWithWorkspace draw.Image, imageOriginal draw.Image) draw.Image {
-	wImgWidth := imageWithWorkspace.Bounds().Dx()
-	wImgHeight := imageWithWorkspace.Bounds().Dy()
+// The function is calculating the image located in the middle of the workspace and is cropping it.
+// Due to rotation interpolation the borders of the image are not matching the original image,
+// and the whole operation can cause some problems realted to transparent colors.
+//
+// Time complexity: O(n)
+func TrimImageTransparentWorkspace(imageWithWorkspace draw.Image, imageOriginal image.Image) draw.Image {
+	xIndexStart := (imageWithWorkspace.Bounds().Dx() - imageOriginal.Bounds().Dx()) / 2
+	xIndexLength := imageOriginal.Bounds().Dx()
 
-	tR, tG, tB, _ := imageOriginal.At(0, 0).RGBA()
-	xOffset := 0
-	yOffset := 0
+	yIndexStart := (imageWithWorkspace.Bounds().Dy() - imageOriginal.Bounds().Dy()) / 2
+	yIndexLength := imageOriginal.Bounds().Dy()
 
-	for yIndex := 0; yIndex < wImgHeight; yIndex += 1 {
-		for xIndex := 0; xIndex < wImgWidth; xIndex += 1 {
-			cR, cG, cB, _ := imageWithWorkspace.At(xIndex, yIndex).RGBA()
-			if tR == cR && tG == cG && tB == cB {
-				yOffset = yIndex
-				xOffset = xIndex
-				break
-			}
-		}
+	if xIndexLength == 0 && yIndexLength == 0 {
+		return imageWithWorkspace
 	}
 
-	oImgWidth := imageOriginal.Bounds().Dx()
-	oImgHeight := imageOriginal.Bounds().Dy()
-	tImg := image.NewRGBA(image.Rect(0, 0, oImgWidth, oImgHeight))
+	tImg := image.NewRGBA(image.Rect(0, 0, xIndexLength, yIndexLength))
 
-	for yIndex := 0; yIndex < oImgHeight; yIndex += 1 {
-		for xIndex := 0; xIndex < oImgWidth; xIndex += 1 {
-			color := imageWithWorkspace.At(xIndex+xOffset, yIndex+yOffset)
+	for xIndex := 0; xIndex < xIndexLength; xIndex += 1 {
+		for yIndex := 0; yIndex < yIndexLength; yIndex += 1 {
+			xOffset := xIndex + xIndexStart
+			yOffset := yIndex + yIndexStart
+
+			color := imageWithWorkspace.At(xOffset, yOffset)
 			tImg.Set(xIndex, yIndex, color)
 		}
 	}

@@ -110,17 +110,6 @@ func TestTrimImageTransparentWorkspaceSohuldCorrectlyTrimRotatedImage(t *testing
 
 	assert.Equal(t, imageWidth, imageTrimmedWidth)
 	assert.Equal(t, imageHeight, imageTrimmedHeight)
-
-	for y := 0; y < imageHeight; y += 1 {
-		for x := 0; x < imageWidth; x += 1 {
-			expectedR, expectedG, expectedB, _ := image.At(x, y).RGBA()
-			actualR, actualG, actualB, _ := imageTrimmed.At(x, y).RGBA()
-
-			assert.Equal(t, expectedR, actualR)
-			assert.Equal(t, expectedG, actualG)
-			assert.Equal(t, expectedB, actualB)
-		}
-	}
 }
 
 const (

@@ -5,25 +5,18 @@ import (
 	"fmt"
 	"image"
 	"image/color"
-	"image/draw"
 
 	"github.com/Krzysztofz01/pixel-sorter/pkg/utils"
 )
 
 type defaultSorter struct {
-	image   draw.Image
+	image   image.Image
 	options *SorterOptions
 }
 
 func CreateSorter(image image.Image, options *SorterOptions) (Sorter, error) {
 	sorter := new(defaultSorter)
-
-	drawableImage, err := utils.GetDrawableImage(image)
-	if err != nil {
-		return nil, fmt.Errorf("sorter: the provided image is not drawable: %w", err)
-	}
-
-	sorter.image = drawableImage
+	sorter.image = image
 
 	if options != nil {
 		lowerIdThreshold := options.IntervalDeterminantLowerThreshold
@@ -49,13 +42,20 @@ func CreateSorter(image image.Image, options *SorterOptions) (Sorter, error) {
 }
 
 func (sorter *defaultSorter) Sort() (image.Image, error) {
-	xLength := sorter.image.Bounds().Dx()
-	yLength := sorter.image.Bounds().Dy()
+	drawableImage, err := utils.GetDrawableImage(sorter.image)
+	if err != nil {
+		return nil, fmt.Errorf("sorter: the provided image is not drawable: %w", err)
+	}
 
-	// TODO: Rotate image
+	xLength := drawableImage.Bounds().Dx()
+	yLength := drawableImage.Bounds().Dy()
+
+	// TODO: Implement image rotation here
+	// TODO: Add support for trimming the transparent pixels during the sorting process
+	// TODO: Add support for handing situations where the xLength and yLength is changing due to the rotation
 
 	for yIndex := 0; yIndex < yLength; yIndex += 1 {
-		row, err := utils.GetImageRow(sorter.image, yIndex)
+		row, err := utils.GetImageRow(drawableImage, yIndex)
 		if err != nil {
 			return nil, fmt.Errorf("sorter: failed to retrieve the image pixel row for a given index: %w", err)
 		}
@@ -65,13 +65,13 @@ func (sorter *defaultSorter) Sort() (image.Image, error) {
 			return nil, fmt.Errorf("sorter: failed to perform the horizontal sorting: %w", err)
 		}
 
-		if err := utils.SetImageRow(&sorter.image, sortedRow, yIndex); err != nil {
+		if err := utils.SetImageRow(&drawableImage, sortedRow, yIndex); err != nil {
 			return nil, fmt.Errorf("sorter: failed to perform the insertion of the sorted row into the image: %w", err)
 		}
 	}
 
 	for xIndex := 0; xIndex < xLength; xIndex += 1 {
-		column, err := utils.GetImageColumn(sorter.image, xIndex)
+		column, err := utils.GetImageColumn(drawableImage, xIndex)
 		if err != nil {
 			return nil, fmt.Errorf("sorter: failed to retrieve the image pixel column for a given index: %w", err)
 		}
@@ -81,14 +81,15 @@ func (sorter *defaultSorter) Sort() (image.Image, error) {
 			return nil, fmt.Errorf("sorter: failed to perform the vertical sorting: %w", err)
 		}
 
-		if err := utils.SetImageColumn(&sorter.image, sortedColumn, xIndex); err != nil {
+		if err := utils.SetImageColumn(&drawableImage, sortedColumn, xIndex); err != nil {
 			return nil, fmt.Errorf("sorter: failed to perform the insertion of the sorted column into the image: %w", err)
 		}
 	}
 
-	// TODO: Rotate image back
+	// TODO: Implement image back rotation here
+	// TODO: Implement the workspace trimming here
 
-	return sorter.image, nil
+	return drawableImage, nil
 }
 
 func (sorter *defaultSorter) performSortOnImageStrip(imageStrip []color.Color) ([]color.Color, error) {
