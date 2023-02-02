@@ -8,6 +8,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// TODO: Test other direction than asecending
+
 func TestValueWeightIntervalShouldCreate(t *testing.T) {
 	interval := CreateValueWeightInterval(mockTestValueWeightDeterminant())
 	assert.NotNil(t, interval)
@@ -40,7 +42,7 @@ func TestValueWeightIntervalShouldSort(t *testing.T) {
 
 	assert.True(t, interval.Any())
 
-	actualResult := interval.Sort()
+	actualResult := interval.Sort(SortAscending)
 
 	assert.Equal(t, expectedResult, actualResult)
 }
@@ -77,7 +79,7 @@ func TestNormalizedWeightIntervalShouldSort(t *testing.T) {
 
 	assert.True(t, interval.Any())
 
-	actualResult := interval.Sort()
+	actualResult := interval.Sort(SortAscending)
 
 	assert.Equal(t, expectedResult, actualResult)
 }

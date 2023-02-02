@@ -93,7 +93,8 @@ func (sorter *defaultSorter) Sort() (image.Image, error) {
 
 func (sorter *defaultSorter) performSortOnImageStrip(imageStrip []color.Color) ([]color.Color, error) {
 	stripLength := len(imageStrip)
-	sortedImageStrip := make([]color.Color, 0)
+	sortedImageStrip := make([]color.Color, 0, stripLength)
+	sortDirection := GetSortDeterminantDirection(sorter.options.SortDeterminant)
 
 	interval := CreateNormalizedWeightInterval(sorter.getWeightDeterminantFunction())
 	for x := 0; x < stripLength; x += 1 {
@@ -108,7 +109,7 @@ func (sorter *defaultSorter) performSortOnImageStrip(imageStrip []color.Color) (
 			}
 		} else {
 			if interval.Any() {
-				sortedIntervalItems := interval.Sort()
+				sortedIntervalItems := interval.Sort(sortDirection)
 				sortedImageStrip = append(sortedImageStrip, sortedIntervalItems...)
 
 				interval = CreateNormalizedWeightInterval(sorter.getWeightDeterminantFunction())
@@ -119,7 +120,7 @@ func (sorter *defaultSorter) performSortOnImageStrip(imageStrip []color.Color) (
 	}
 
 	if interval.Any() {
-		sortedIntervalItems := interval.Sort()
+		sortedIntervalItems := interval.Sort(sortDirection)
 		sortedImageStrip = append(sortedImageStrip, sortedIntervalItems...)
 	}
 
@@ -145,14 +146,19 @@ func (sorter *defaultSorter) isMeetingIntervalRequirements(color color.RGBA) boo
 	}
 }
 
+// TODO: Implement support for hue weight
 func (sorter *defaultSorter) getWeightDeterminantFunction() func(color.RGBA) (float64, error) {
 	switch sorter.options.SortDeterminant {
-	case SortByBrightness:
+	case SortByBrightnessAscending, SortByBrightnessDescending:
 		{
 			return func(c color.RGBA) (float64, error) {
 				brightness := utils.CalculatePerceivedBrightness(c)
 				return brightness, nil
 			}
+		}
+	case SortByHueAscending, SortByHueDescending:
+		{
+			panic("sorter: not implemented")
 		}
 	default:
 		panic("sorter: invalid sorter state due to a corrupted sorter weight determinant function value")

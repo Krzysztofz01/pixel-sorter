@@ -5,11 +5,21 @@ import (
 )
 
 // Flag representing the determinant parameter for the sorting process
-type SortDeterminant string
+type SortDeterminant int
 
 const (
-	SortByBrightness SortDeterminant = "brightness"
-	SortByHue        SortDeterminant = "hue"
+	SortByBrightnessAscending SortDeterminant = iota
+	SortByBrightnessDescending
+	SortByHueAscending
+	SortByHueDescending
+)
+
+// Flag representing the direction of the sorting
+type SortDirection int
+
+const (
+	SortAscending SortDirection = iota
+	SortDescending
 )
 
 // Flag representing the determinant for spliting the image into intervals
@@ -33,7 +43,7 @@ type SorterOptions struct {
 func GetDefaultSorterOptions() *SorterOptions {
 	options := new(SorterOptions)
 	options.Angle = 0
-	options.SortDeterminant = SortByBrightness
+	options.SortDeterminant = SortByBrightnessAscending
 	options.IntervalDeterminant = SplitByBrightness
 	// TODO: Fine-tune this
 	options.IntervalDeterminantLowerThreshold = 0.0
@@ -46,4 +56,19 @@ func GetDefaultSorterOptions() *SorterOptions {
 type Sorter interface {
 	// Perform the sorting operation and return the sorted version of the image
 	Sort() (image.Image, error)
+}
+
+func GetSortDeterminantDirection(s SortDeterminant) SortDirection {
+	switch s {
+	case SortByBrightnessAscending, SortByHueAscending:
+		{
+			return SortAscending
+		}
+	case SortByBrightnessDescending, SortByHueDescending:
+		{
+			return SortDescending
+		}
+	default:
+		panic("sorter: invalid sort determinant specified")
+	}
 }

@@ -11,7 +11,7 @@ import (
 
 func TestDefaultSorterShouldSortForSortByBrightnessSplitByBrightnessZeroAngle(t *testing.T) {
 	sorterOptions := SorterOptions{
-		SortByBrightness,
+		SortByBrightnessAscending,
 		SplitByBrightness,
 		0.0,
 		1.0,
