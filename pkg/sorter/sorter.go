@@ -10,8 +10,10 @@ type SortDeterminant int
 const (
 	SortByBrightnessAscending SortDeterminant = iota
 	SortByBrightnessDescending
+	ShuffleByBrightness
 	SortByHueAscending
 	SortByHueDescending
+	ShuffleByHue
 )
 
 // Flag representing the order in which should be the image sorted
@@ -30,6 +32,8 @@ type SortDirection int
 const (
 	SortAscending SortDirection = iota
 	SortDescending
+	// NOTE: The naming here is ugly... shuffling is not sorting
+	SortRandom
 )
 
 // Flag representing the determinant for spliting the image into intervals
@@ -79,6 +83,10 @@ func GetSortDeterminantDirection(s SortDeterminant) SortDirection {
 	case SortByBrightnessDescending, SortByHueDescending:
 		{
 			return SortDescending
+		}
+	case ShuffleByBrightness, ShuffleByHue:
+		{
+			return SortRandom
 		}
 	default:
 		panic("sorter: invalid sort determinant specified")

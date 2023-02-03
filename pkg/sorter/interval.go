@@ -3,7 +3,9 @@ package sorter
 import (
 	"fmt"
 	"image/color"
+	"math/rand"
 	"sort"
+	"time"
 )
 
 // TODO: Fine-tune ths capacity
@@ -74,25 +76,39 @@ func (interval *ValueWeightInterval) Any() bool {
 }
 
 func (interval *ValueWeightInterval) Sort(direction SortDirection) []color.Color {
-	var sortDeterminantFunc func(i, j int) bool = nil
+	switch direction {
+	case SortAscending, SortDescending:
+		{
+			var sortDeterminantFunc func(i, j int) bool = nil
 
-	if direction == SortAscending {
-		sortDeterminantFunc = func(i, j int) bool {
-			return interval.items[i].weight < interval.items[j].weight
+			if direction == SortAscending {
+				sortDeterminantFunc = func(i, j int) bool {
+					return interval.items[i].weight < interval.items[j].weight
+				}
+			}
+
+			if direction == SortDescending {
+				sortDeterminantFunc = func(i, j int) bool {
+					return interval.items[i].weight > interval.items[j].weight
+				}
+			}
+
+			if sortDeterminantFunc == nil {
+				panic("sorter: undefined sort direction specified")
+			}
+
+			sort.Slice(interval.items, sortDeterminantFunc)
 		}
-	}
-
-	if direction == SortDescending {
-		sortDeterminantFunc = func(i, j int) bool {
-			return interval.items[i].weight > interval.items[j].weight
+	case SortRandom:
+		{
+			random := rand.New(rand.NewSource(time.Now().UnixNano()))
+			random.Shuffle(len(interval.items), func(i, j int) {
+				interval.items[i], interval.items[j] = interval.items[j], interval.items[i]
+			})
 		}
-	}
-
-	if sortDeterminantFunc == nil {
+	default:
 		panic("sorter: undefined sort direction specified")
 	}
-
-	sort.Slice(interval.items, sortDeterminantFunc)
 
 	intervalLength := len(interval.items)
 	colors := make([]color.Color, intervalLength)
@@ -131,25 +147,39 @@ func (interval *NormalizedWeightInterval) Any() bool {
 }
 
 func (interval *NormalizedWeightInterval) Sort(direction SortDirection) []color.Color {
-	var sortDeterminantFunc func(i, j int) bool = nil
+	switch direction {
+	case SortAscending, SortDescending:
+		{
+			var sortDeterminantFunc func(i, j int) bool = nil
 
-	if direction == SortAscending {
-		sortDeterminantFunc = func(i, j int) bool {
-			return interval.items[i].weight < interval.items[j].weight
+			if direction == SortAscending {
+				sortDeterminantFunc = func(i, j int) bool {
+					return interval.items[i].weight < interval.items[j].weight
+				}
+			}
+
+			if direction == SortDescending {
+				sortDeterminantFunc = func(i, j int) bool {
+					return interval.items[i].weight > interval.items[j].weight
+				}
+			}
+
+			if sortDeterminantFunc == nil {
+				panic("sorter: undefined sort direction specified")
+			}
+
+			sort.Slice(interval.items, sortDeterminantFunc)
 		}
-	}
-
-	if direction == SortDescending {
-		sortDeterminantFunc = func(i, j int) bool {
-			return interval.items[i].weight > interval.items[j].weight
+	case SortRandom:
+		{
+			random := rand.New(rand.NewSource(time.Now().UnixNano()))
+			random.Shuffle(len(interval.items), func(i, j int) {
+				interval.items[i], interval.items[j] = interval.items[j], interval.items[i]
+			})
 		}
-	}
-
-	if sortDeterminantFunc == nil {
+	default:
 		panic("sorter: undefined sort direction specified")
 	}
-
-	sort.Slice(interval.items, sortDeterminantFunc)
 
 	intervalLength := len(interval.items)
 	colors := make([]color.Color, intervalLength)

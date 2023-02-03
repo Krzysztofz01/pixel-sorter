@@ -197,14 +197,14 @@ func (sorter *defaultSorter) isMeetingIntervalRequirements(color color.RGBA) boo
 // TODO: Implement support for hue weight
 func (sorter *defaultSorter) getWeightDeterminantFunction() func(color.RGBA) (float64, error) {
 	switch sorter.options.SortDeterminant {
-	case SortByBrightnessAscending, SortByBrightnessDescending:
+	case SortByBrightnessAscending, SortByBrightnessDescending, ShuffleByBrightness:
 		{
 			return func(c color.RGBA) (float64, error) {
 				brightness := utils.CalculatePerceivedBrightness(c)
 				return brightness, nil
 			}
 		}
-	case SortByHueAscending, SortByHueDescending:
+	case SortByHueAscending, SortByHueDescending, ShuffleByHue:
 		{
 			panic("sorter: not implemented")
 		}
