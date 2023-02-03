@@ -14,6 +14,16 @@ const (
 	SortByHueDescending
 )
 
+// Flag representing the order in which should be the image sorted
+type SortOrder int
+
+const (
+	SortHorizontal SortOrder = iota
+	SortVertical
+	SortHorizontalAndVertical
+	SortVerticalAndHorizontal
+)
+
 // Flag representing the direction of the sorting
 type SortDirection int
 
@@ -33,6 +43,7 @@ const (
 // Structure representing all the parameters for the sorter
 type SorterOptions struct {
 	SortDeterminant                   SortDeterminant
+	SortOrder                         SortOrder
 	IntervalDeterminant               IntervalDeterminant
 	IntervalDeterminantLowerThreshold float64
 	IntervalDeterminantUpperThreshold float64
@@ -44,6 +55,7 @@ func GetDefaultSorterOptions() *SorterOptions {
 	options := new(SorterOptions)
 	options.Angle = 0
 	options.SortDeterminant = SortByBrightnessAscending
+	options.SortOrder = SortHorizontalAndVertical
 	options.IntervalDeterminant = SplitByBrightness
 	// TODO: Fine-tune this
 	options.IntervalDeterminantLowerThreshold = 0.0
