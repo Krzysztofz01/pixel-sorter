@@ -6,6 +6,7 @@ import (
 	"image"
 	"image/color"
 	"image/draw"
+	"sync"
 
 	"github.com/Krzysztofz01/pixel-sorter/pkg/utils"
 )
@@ -111,6 +112,50 @@ func (sorter *defaultSorter) performHorizontalSort(drawableImage *draw.Image) er
 		if err := utils.SetImageRow(drawableImage, sortedRow, yIndex); err != nil {
 			return fmt.Errorf("sorter: failed to perform the insertion of the sorted row into the image: %w", err)
 		}
+	}
+
+	return nil
+}
+
+// TODO: First time using go rutines and sync. code... More research is required!!!
+func (sorter *defaultSorter) performParallelHorizontalSort(drawableImage *draw.Image) error {
+	yLength := (*drawableImage).Bounds().Dy()
+
+	//mu := sync.Mutex{}
+	wg := sync.WaitGroup{}
+	wg.Add(yLength)
+
+	errCh := make(chan error)
+
+	for yIndex := 0; yIndex < yLength; yIndex += 1 {
+		go func(y int) {
+			defer wg.Done()
+
+			row, err := utils.GetImageRow(*drawableImage, y)
+			if err != nil {
+				errCh <- fmt.Errorf("sorter: failed to retrieve the image pixel row for a given index: %w", err)
+				return
+			}
+
+			sortedRow, err := sorter.performSortOnImageStrip(row)
+			if err != nil {
+				errCh <- fmt.Errorf("sorter: failed to perform the horizontal sorting: %w", err)
+				return
+			}
+
+			//mu.Lock()
+			if err := utils.SetImageRow(drawableImage, sortedRow, y); err != nil {
+				errCh <- fmt.Errorf("sorter: failed to perform the insertion of the sorted row into the image: %w", err)
+				//mu.Unlock()
+				return
+			}
+			//mu.Unlock()
+		}(yIndex)
+	}
+
+	wg.Wait()
+	if len(errCh) > 0 {
+		return <-errCh
 	}
 
 	return nil
