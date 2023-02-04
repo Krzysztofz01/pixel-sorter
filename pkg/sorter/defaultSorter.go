@@ -56,33 +56,33 @@ func (sorter *defaultSorter) Sort() (image.Image, error) {
 	switch sorter.options.SortOrder {
 	case SortVertical:
 		{
-			if err := sorter.performVerticalSort(&drawableImage); err != nil {
+			if err := sorter.performParallelVerticalSort(&drawableImage); err != nil {
 				return nil, fmt.Errorf("sorter: failed to perform the vertical sort")
 			}
 		}
 	case SortHorizontal:
 		{
-			if err := sorter.performHorizontalSort(&drawableImage); err != nil {
+			if err := sorter.performParallelHorizontalSort(&drawableImage); err != nil {
 				return nil, fmt.Errorf("sorter: failed to perform the horizontal sort")
 			}
 		}
 	case SortVerticalAndHorizontal:
 		{
-			if err := sorter.performVerticalSort(&drawableImage); err != nil {
+			if err := sorter.performParallelVerticalSort(&drawableImage); err != nil {
 				return nil, fmt.Errorf("sorter: failed to perform the vertical sort")
 			}
 
-			if err := sorter.performHorizontalSort(&drawableImage); err != nil {
+			if err := sorter.performParallelHorizontalSort(&drawableImage); err != nil {
 				return nil, fmt.Errorf("sorter: failed to perform the horizontal sort")
 			}
 		}
 	case SortHorizontalAndVertical:
 		{
-			if err := sorter.performHorizontalSort(&drawableImage); err != nil {
+			if err := sorter.performParallelHorizontalSort(&drawableImage); err != nil {
 				return nil, fmt.Errorf("sorter: failed to perform the horizontal sort")
 			}
 
-			if err := sorter.performVerticalSort(&drawableImage); err != nil {
+			if err := sorter.performParallelVerticalSort(&drawableImage); err != nil {
 				return nil, fmt.Errorf("sorter: failed to perform the vertical sort")
 			}
 		}
@@ -119,19 +119,20 @@ func (sorter *defaultSorter) performHorizontalSort(drawableImage *draw.Image) er
 
 // TODO: First time using go rutines and sync. code... More research is required!!!
 func (sorter *defaultSorter) performParallelHorizontalSort(drawableImage *draw.Image) error {
+	// TODO: Can be this value cached somehow?
 	yLength := (*drawableImage).Bounds().Dy()
 
-	//mu := sync.Mutex{}
+	mu := sync.Mutex{}
 	wg := sync.WaitGroup{}
 	wg.Add(yLength)
 
 	errCh := make(chan error)
 
-	for yIndex := 0; yIndex < yLength; yIndex += 1 {
-		go func(y int) {
+	for y := 0; y < yLength; y += 1 {
+		go func(yIndex int) {
 			defer wg.Done()
 
-			row, err := utils.GetImageRow(*drawableImage, y)
+			row, err := utils.GetImageRow(*drawableImage, yIndex)
 			if err != nil {
 				errCh <- fmt.Errorf("sorter: failed to retrieve the image pixel row for a given index: %w", err)
 				return
@@ -143,14 +144,14 @@ func (sorter *defaultSorter) performParallelHorizontalSort(drawableImage *draw.I
 				return
 			}
 
-			//mu.Lock()
-			if err := utils.SetImageRow(drawableImage, sortedRow, y); err != nil {
+			mu.Lock()
+			if err := utils.SetImageRow(drawableImage, sortedRow, yIndex); err != nil {
 				errCh <- fmt.Errorf("sorter: failed to perform the insertion of the sorted row into the image: %w", err)
-				//mu.Unlock()
+				mu.Unlock()
 				return
 			}
-			//mu.Unlock()
-		}(yIndex)
+			mu.Unlock()
+		}(y)
 	}
 
 	wg.Wait()
@@ -179,6 +180,53 @@ func (sorter *defaultSorter) performVerticalSort(drawableImage *draw.Image) erro
 		if err := utils.SetImageColumn(drawableImage, sortedColumn, xIndex); err != nil {
 			return fmt.Errorf("sorter: failed to perform the insertion of the sorted column into the image: %w", err)
 		}
+	}
+
+	return nil
+}
+
+// TODO: First time using go rutines and sync. code... More research is required!!!
+func (sorter *defaultSorter) performParallelVerticalSort(drawableImage *draw.Image) error {
+	// TODO: Can be this value cached somehow?
+	xLength := (*drawableImage).Bounds().Dx()
+
+	mu := sync.Mutex{}
+	wg := sync.WaitGroup{}
+	wg.Add(xLength)
+
+	errCh := make(chan error)
+
+	for x := 0; x < xLength; x += 1 {
+		go func(xIndex int) {
+			defer wg.Done()
+
+			column, err := utils.GetImageColumn(*drawableImage, xIndex)
+			if err != nil {
+				errCh <- fmt.Errorf("sorter: failed to retrieve the image pixel column for a given index: %w", err)
+				return
+			}
+
+			sortedColumn, err := sorter.performSortOnImageStrip(column)
+			if err != nil {
+				errCh <- fmt.Errorf("sorter: failed to perform the vertical sorting: %w", err)
+				return
+			}
+
+			mu.Lock()
+
+			if err := utils.SetImageColumn(drawableImage, sortedColumn, xIndex); err != nil {
+				errCh <- fmt.Errorf("sorter: failed to perform the insertion of the sorted column into the image: %w", err)
+				mu.Unlock()
+				return
+			}
+
+			mu.Unlock()
+		}(x)
+	}
+
+	wg.Wait()
+	if len(errCh) > 0 {
+		return <-errCh
 	}
 
 	return nil
