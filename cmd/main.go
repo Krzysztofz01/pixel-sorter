@@ -9,8 +9,10 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/Krzysztofz01/pixel-sorter/pkg/sorter"
+	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -23,6 +25,11 @@ var (
 )
 
 func main() {
+	// TODO: Create a better custom formatter
+	logrus.SetFormatter(&logrus.TextFormatter{})
+	logrus.SetOutput(os.Stdout)
+	logrus.SetLevel(logrus.TraceLevel)
+
 	sorterOptions := sorter.GetDefaultSorterOptions()
 
 	flag.StringVar(&argImagePath, "image-path", "", "Path to the image file to be sorted.")
@@ -73,12 +80,15 @@ func main() {
 		os.Exit(1)
 	}
 
+	timestamp := time.Now()
 	sortedImage, err := sorter.Sort()
 	if err != nil {
 		fmt.Println("Failed to perform the image sorting process.")
 		fmt.Println(err)
 		os.Exit(1)
 	}
+
+	logrus.Debugf("Processing of the image took: %s", time.Since(timestamp))
 
 	outputImageFile, err := os.Create(getOutputFileName(argImagePath))
 	if err != nil {

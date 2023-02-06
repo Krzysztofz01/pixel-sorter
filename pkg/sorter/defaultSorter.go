@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	"github.com/Krzysztofz01/pixel-sorter/pkg/utils"
+	"github.com/sirupsen/logrus"
 )
 
 type defaultSorter struct {
@@ -132,6 +133,8 @@ func (sorter *defaultSorter) performParallelHorizontalSort(drawableImage *draw.I
 		go func(yIndex int) {
 			defer wg.Done()
 
+			logrus.Debugf("Started to process row with index: %d", yIndex)
+
 			row, err := utils.GetImageRow(*drawableImage, yIndex)
 			if err != nil {
 				errCh <- fmt.Errorf("sorter: failed to retrieve the image pixel row for a given index: %w", err)
@@ -145,12 +148,16 @@ func (sorter *defaultSorter) performParallelHorizontalSort(drawableImage *draw.I
 			}
 
 			mu.Lock()
+
 			if err := utils.SetImageRow(drawableImage, sortedRow, yIndex); err != nil {
 				errCh <- fmt.Errorf("sorter: failed to perform the insertion of the sorted row into the image: %w", err)
 				mu.Unlock()
 				return
 			}
+
 			mu.Unlock()
+
+			logrus.Debugf("Finished to process row with index: %d", yIndex)
 		}(y)
 	}
 
@@ -200,6 +207,8 @@ func (sorter *defaultSorter) performParallelVerticalSort(drawableImage *draw.Ima
 		go func(xIndex int) {
 			defer wg.Done()
 
+			logrus.Debugf("Started to process column with index: %d", xIndex)
+
 			column, err := utils.GetImageColumn(*drawableImage, xIndex)
 			if err != nil {
 				errCh <- fmt.Errorf("sorter: failed to retrieve the image pixel column for a given index: %w", err)
@@ -221,6 +230,8 @@ func (sorter *defaultSorter) performParallelVerticalSort(drawableImage *draw.Ima
 			}
 
 			mu.Unlock()
+
+			logrus.Debugf("Finished to process column with index: %d", xIndex)
 		}(x)
 	}
 
