@@ -50,9 +50,7 @@ func (sorter *defaultSorter) Sort() (image.Image, error) {
 		return nil, fmt.Errorf("sorter: the provided image is not drawable: %w", err)
 	}
 
-	// TODO: Implement image rotation here
-	// TODO: Add support for trimming the transparent pixels during the sorting process
-	// TODO: Add support for handing situations where the xLength and yLength is changing due to the rotation
+	drawableImage = utils.RotateImage(drawableImage, sorter.options.Angle)
 
 	switch sorter.options.SortOrder {
 	case SortVertical:
@@ -89,17 +87,14 @@ func (sorter *defaultSorter) Sort() (image.Image, error) {
 		}
 	}
 
-	// TODO: Implement image back rotation here
-	// TODO: Implement the workspace trimming here
+	drawableImage = utils.RotateImage(drawableImage, -sorter.options.Angle)
+	drawableImage = utils.TrimImageTransparentWorkspace(drawableImage, sorter.image)
 
 	return drawableImage, nil
 }
 
 func (sorter *defaultSorter) performHorizontalSort(drawableImage *draw.Image) error {
-	// TODO: Can be this value cached somehow?
-	yLength := (*drawableImage).Bounds().Dy()
-
-	for yIndex := 0; yIndex < yLength; yIndex += 1 {
+	for yIndex := 0; yIndex < (*drawableImage).Bounds().Dy(); yIndex += 1 {
 		row, err := utils.GetImageRow(*drawableImage, yIndex)
 		if err != nil {
 			return fmt.Errorf("sorter: failed to retrieve the image pixel row for a given index: %w", err)
@@ -118,15 +113,13 @@ func (sorter *defaultSorter) performHorizontalSort(drawableImage *draw.Image) er
 	return nil
 }
 
-// TODO: First time using go rutines and sync. code... More research is required!!!
+// TODO: Check for potential race conditions
 func (sorter *defaultSorter) performParallelHorizontalSort(drawableImage *draw.Image) error {
-	// TODO: Can be this value cached somehow?
 	yLength := (*drawableImage).Bounds().Dy()
-
-	mu := sync.Mutex{}
 	wg := sync.WaitGroup{}
 	wg.Add(yLength)
 
+	mu := sync.Mutex{}
 	errCh := make(chan error)
 
 	for y := 0; y < yLength; y += 1 {
@@ -170,10 +163,7 @@ func (sorter *defaultSorter) performParallelHorizontalSort(drawableImage *draw.I
 }
 
 func (sorter *defaultSorter) performVerticalSort(drawableImage *draw.Image) error {
-	// TODO: Can be this value cached somehow?
-	xLength := (*drawableImage).Bounds().Dx()
-
-	for xIndex := 0; xIndex < xLength; xIndex += 1 {
+	for xIndex := 0; xIndex < (*drawableImage).Bounds().Dx(); xIndex += 1 {
 		column, err := utils.GetImageColumn(*drawableImage, xIndex)
 		if err != nil {
 			return fmt.Errorf("sorter: failed to retrieve the image pixel column for a given index: %w", err)
@@ -192,15 +182,13 @@ func (sorter *defaultSorter) performVerticalSort(drawableImage *draw.Image) erro
 	return nil
 }
 
-// TODO: First time using go rutines and sync. code... More research is required!!!
+// TODO: Check for potential race conditions
 func (sorter *defaultSorter) performParallelVerticalSort(drawableImage *draw.Image) error {
-	// TODO: Can be this value cached somehow?
 	xLength := (*drawableImage).Bounds().Dx()
-
-	mu := sync.Mutex{}
 	wg := sync.WaitGroup{}
 	wg.Add(xLength)
 
+	mu := sync.Mutex{}
 	errCh := make(chan error)
 
 	for x := 0; x < xLength; x += 1 {
@@ -255,7 +243,7 @@ func (sorter *defaultSorter) performSortOnImageStrip(imageStrip []color.Color) (
 			return nil, fmt.Errorf("sorter: failed to convert the given color to a RGBA struct representation: %w", err)
 		}
 
-		if sorter.isMeetingIntervalRequirements(currentColor) {
+		if !utils.HasAnyTransparency(currentColor) && sorter.isMeetingIntervalRequirements(currentColor) {
 			if err := interval.Append(currentColor); err != nil {
 				return nil, fmt.Errorf("sorter: failed to append color to the interval: %w", err)
 			}

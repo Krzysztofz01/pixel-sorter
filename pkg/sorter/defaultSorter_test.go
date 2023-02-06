@@ -9,6 +9,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// TODO: Implement tests for all option combinations
+
 func TestDefaultSorterShouldSortForSortByBrightnessSplitByBrightnessZeroAngle(t *testing.T) {
 	sorterOptions := SorterOptions{
 		SortByBrightnessAscending,
@@ -51,6 +53,26 @@ func TestDefaultSorterShouldSortForSortByBrightnessSplitByBrightnessZeroAngle(t 
 			assert.Equal(t, eB, aB)
 		}
 	}
+}
+
+func TestDefaultSorterShouldSortForSortByBrightnessSplitByBrightnessNonZeroAngle(t *testing.T) {
+	sorterOptions := SorterOptions{
+		SortByBrightnessAscending,
+		SortHorizontalAndVertical,
+		SplitByBrightness,
+		0.0,
+		1.0,
+		45,
+	}
+
+	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), &sorterOptions)
+	assert.Nil(t, err)
+
+	actualImage, err := sorter.Sort()
+	assert.Nil(t, err)
+
+	// TODO: There is no ease way to check if the angle sort was successful.
+	assert.NotNil(t, actualImage)
 }
 
 const (
