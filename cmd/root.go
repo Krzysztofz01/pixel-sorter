@@ -21,6 +21,8 @@ var (
 	FlagAngle                  int
 )
 
+// TODO: Add verbose logging flag
+
 var rootCmd = &cobra.Command{
 	Use:   "pixel-sorter",
 	Short: "Pixel sorting image editing utility implemented in Go.",
@@ -33,7 +35,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&FlagFilePath, "file-path", "p", "", "The path of the image file to be processed.")
 	rootCmd.MarkPersistentFlagRequired("file-path")
 
-	rootCmd.PersistentFlags().StringVarP(&FlagFilePath, "output-format", "f", "jpg", "The output format of the graphic file. Options: [jpg, png].")
+	rootCmd.PersistentFlags().StringVarP(&FlagOutputFileType, "output-format", "f", "jpg", "The output format of the graphic file. Options: [jpg, png].")
 
 	rootCmd.PersistentFlags().StringVarP(&FlagSortDirection, "direction", "d", "ascending", "Pixel sorting direction in intervals. Options: [ascending, descending, random].")
 

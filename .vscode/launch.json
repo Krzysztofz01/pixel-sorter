@@ -6,19 +6,29 @@
             "type": "go",
             "request": "launch",
             "mode": "debug",
-            "program": "${workspaceFolder}/cmd",
+            "program": "${workspaceFolder}/cli",
             "console": "integratedTerminal",
-            "args": []
+            "args": [
+                "--help"
+            ]
         },
         {
-            "name": "Debug [Internal] - test.png",
+            "name": "Debug [Internal] - Sample brightness (test.png)",
             "type": "go",
             "request": "launch",
             "mode": "debug",
-            "program": "${workspaceFolder}/cmd",
+            "program": "${workspaceFolder}/cli",
             "console": "integratedTerminal",
             "args": [
-                "-image-path=test.png"
+                "brightness",
+                "--file-path", "test.png",
+                "--output-format", "jpg",
+                "--direction", "ascending",
+                "--interval-determinant", "brightness",
+                "--interval-lower-threshold", "0.15",
+                "--interval-upper-threshold", "0.85",
+                "--order", "horizontal-vertical",
+                "--angle", "0"
             ]
         },
         {
@@ -26,9 +36,11 @@
             "type": "go",
             "request": "launch",
             "mode": "debug",
-            "program": "${workspaceFolder}/cmd",
+            "program": "${workspaceFolder}/cli",
             "console": "externalTerminal",
-            "args": []
+            "args": [
+                "--help"
+            ]
         }       
     ]
 }
