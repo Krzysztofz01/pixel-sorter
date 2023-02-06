@@ -95,3 +95,33 @@ func TestShouldNotConvertColorToRgbaIfColorIsNotRgba(t *testing.T) {
 		assert.Error(t, err)
 	}
 }
+
+func TestShouldConvertRgbaToHslComponents(t *testing.T) {
+	cases := map[color.RGBA]struct {
+		h int
+		s float64
+		l float64
+	}{
+		{0, 0, 0, 0}:         {0, 0.0, 0.0},
+		{0, 0, 0, 255}:       {0.0, 0.0, 0.0},
+		{255, 255, 255, 0}:   {0.0, 0.0, 1.0},
+		{255, 255, 255, 255}: {0.0, 0.0, 1.0},
+		{50, 100, 200, 0}:    {220, 0.60, 0.49},
+		{50, 100, 200, 255}:  {220, 0.60, 0.49},
+	}
+
+	const deltaHue float64 = 1.0
+	const deltaSaturation float64 = 0.1
+	const deltaLightness float64 = 0.1
+
+	for rgba, expected := range cases {
+		hActual, sActual, lActual := RgbaToHsl(rgba)
+
+		if expected.s > 0.0 {
+			assert.InDelta(t, expected.h, hActual+1, deltaHue)
+		}
+
+		assert.InDelta(t, expected.s, sActual, deltaSaturation)
+		assert.InDelta(t, expected.l, lActual, deltaLightness)
+	}
+}

@@ -3,6 +3,7 @@ package utils
 import (
 	"errors"
 	"image/color"
+	"math"
 )
 
 // Convert the color.RGBA struct to individual RGB components represented as integers in range from 0 to 255
@@ -41,4 +42,46 @@ func ColorToRgba(c color.Color) (color.RGBA, error) {
 	}
 
 	return rgba, nil
+}
+
+// Convert a color represented as color.RGBA to HSL components where Hue is expressed in degress (0-360) and the saturation and lightnes in percentage (0.0-1.0)
+func RgbaToHsl(c color.RGBA) (int, float64, float64) {
+	rNorm, gNorm, bNorm := RgbaToNormalizedComponents(c)
+
+	min := math.Min(rNorm, math.Min(gNorm, bNorm))
+	max := math.Max(rNorm, math.Max(gNorm, bNorm))
+	delta := max - min
+
+	lightness := (max + min) / 2.0
+	saturation := 0.0
+	hue := 0
+
+	if delta != 0.0 {
+		if lightness <= 0.5 {
+			saturation = delta / (max + min)
+		} else {
+			saturation = delta / (2.0 - max - min)
+		}
+
+		hueNorm := 0.0
+		if max == rNorm {
+			hueNorm = ((gNorm - bNorm) / 6.0) / delta
+		} else if max == gNorm {
+			hueNorm = (1.0 / 3.0) + ((bNorm-rNorm)/6.0)/delta
+		} else {
+			hueNorm = (2.0 / 3.0) + ((rNorm-gNorm)/6.0)/delta
+		}
+
+		if hueNorm < 0.0 {
+			hueNorm += 1.0
+		}
+
+		if hueNorm > 1.0 {
+			hueNorm -= 1.0
+		}
+
+		hue = int(math.Round(hueNorm * 360))
+	}
+
+	return hue, saturation, lightness
 }
