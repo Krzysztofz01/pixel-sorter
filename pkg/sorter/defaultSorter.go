@@ -236,7 +236,7 @@ func (sorter *defaultSorter) performSortOnImageStrip(imageStrip []color.Color) (
 	sortedImageStrip := make([]color.Color, 0, stripLength)
 	sortDirection := GetSortDeterminantDirection(sorter.options.SortDeterminant)
 
-	interval := CreateNormalizedWeightInterval(sorter.getWeightDeterminantFunction())
+	interval := sorter.CreateInterval()
 	for x := 0; x < stripLength; x += 1 {
 		currentColor, err := utils.ColorToRgba(imageStrip[x])
 		if err != nil {
@@ -252,7 +252,7 @@ func (sorter *defaultSorter) performSortOnImageStrip(imageStrip []color.Color) (
 				sortedIntervalItems := interval.Sort(sortDirection)
 				sortedImageStrip = append(sortedImageStrip, sortedIntervalItems...)
 
-				interval = CreateNormalizedWeightInterval(sorter.getWeightDeterminantFunction())
+				interval = sorter.CreateInterval()
 			}
 
 			sortedImageStrip = append(sortedImageStrip, currentColor)
@@ -268,14 +268,25 @@ func (sorter *defaultSorter) performSortOnImageStrip(imageStrip []color.Color) (
 }
 
 func (sorter *defaultSorter) isMeetingIntervalRequirements(color color.RGBA) bool {
+	tLower := sorter.options.IntervalDeterminantLowerThreshold
+	tUpper := sorter.options.IntervalDeterminantUpperThreshold
+
 	switch sorter.options.IntervalDeterminant {
 	case SplitByBrightness:
 		{
-			tLower := sorter.options.IntervalDeterminantLowerThreshold
-			tUpper := sorter.options.IntervalDeterminantUpperThreshold
-
 			brightness := utils.CalculatePerceivedBrightness(color)
 			if brightness < tLower || brightness > tUpper {
+				return false
+			}
+
+			return true
+		}
+	case SplitByHue:
+		{
+			h, _, _ := utils.RgbaToHsl(color)
+			hNorm := float64(h) / 360.0
+
+			if hNorm < tLower || hNorm > tUpper {
 				return false
 			}
 
@@ -286,19 +297,21 @@ func (sorter *defaultSorter) isMeetingIntervalRequirements(color color.RGBA) boo
 	}
 }
 
-// TODO: Implement support for hue weight
-func (sorter *defaultSorter) getWeightDeterminantFunction() func(color.RGBA) (float64, error) {
+func (sorter *defaultSorter) CreateInterval() Interval {
 	switch sorter.options.SortDeterminant {
 	case SortByBrightnessAscending, SortByBrightnessDescending, ShuffleByBrightness:
 		{
-			return func(c color.RGBA) (float64, error) {
+			return CreateNormalizedWeightInterval(func(c color.RGBA) (float64, error) {
 				brightness := utils.CalculatePerceivedBrightness(c)
 				return brightness, nil
-			}
+			})
 		}
 	case SortByHueAscending, SortByHueDescending, ShuffleByHue:
 		{
-			panic("sorter: not implemented")
+			return CreateValueWeightInterval(func(c color.RGBA) (int, error) {
+				h, _, _ := utils.RgbaToHsl(c)
+				return h, nil
+			})
 		}
 	default:
 		panic("sorter: invalid sorter state due to a corrupted sorter weight determinant function value")

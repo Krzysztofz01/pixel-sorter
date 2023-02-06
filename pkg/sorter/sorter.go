@@ -37,11 +37,11 @@ const (
 )
 
 // Flag representing the determinant for spliting the image into intervals
-type IntervalDeterminant string
+type IntervalDeterminant int
 
 const (
-	SplitByBrightness IntervalDeterminant = "brightness"
-	//SplitByHue        IntervalDeterminant = "hue"
+	SplitByBrightness IntervalDeterminant = iota
+	SplitByHue
 )
 
 // Structure representing all the parameters for the sorter
