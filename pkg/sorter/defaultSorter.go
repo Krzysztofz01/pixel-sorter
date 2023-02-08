@@ -14,12 +14,28 @@ import (
 
 type defaultSorter struct {
 	image   image.Image
+	mask    image.Image
 	options *SorterOptions
 }
 
-func CreateSorter(image image.Image, options *SorterOptions) (Sorter, error) {
+func CreateSorter(image image.Image, mask image.Image, options *SorterOptions) (Sorter, error) {
 	sorter := new(defaultSorter)
 	sorter.image = image
+
+	if mask != nil {
+		drawableMask, err := utils.GetDrawableImage(mask)
+		if err != nil {
+			return nil, fmt.Errorf("sorter: can not get the drawable mask version: %w", err)
+		}
+
+		if ok, err := validateImageMask(sorter.image, drawableMask); !ok && err != nil {
+			return nil, fmt.Errorf("sorter: validation of the mask failed: %w", err)
+		}
+
+		sorter.mask = drawableMask
+	} else {
+		sorter.mask = nil
+	}
 
 	if options != nil {
 		lowerIdThreshold := options.IntervalDeterminantLowerThreshold
@@ -316,4 +332,37 @@ func (sorter *defaultSorter) CreateInterval() Interval {
 	default:
 		panic("sorter: invalid sorter state due to a corrupted sorter weight determinant function value")
 	}
+}
+
+func validateImageMask(img image.Image, mask image.Image) (bool, error) {
+	iWidth := img.Bounds().Dx()
+	mWidth := mask.Bounds().Dx()
+
+	if iWidth != mWidth {
+		return false, errors.New("sorter: the mask width is not matching the image width")
+	}
+
+	iHeight := img.Bounds().Dy()
+	mHeight := mask.Bounds().Dy()
+
+	if iHeight != mHeight {
+		return false, errors.New("sorter: the mask height is not matching the image width")
+	}
+
+	// TODO: Check if mask colors are black or white. Adding support for the whole grayscale will make it possible to simplify this validation process
+	for xIndex := 0; xIndex < mWidth; xIndex += 1 {
+		for yIndex := 0; yIndex < mHeight; yIndex += 1 {
+			color, err := utils.ColorToRgba(mask.At(xIndex, yIndex))
+			if err != nil {
+				return false, fmt.Errorf("sorter: failed to convert the color in the mask validation process: %w", err)
+			}
+
+			_, _, l := utils.RgbaToHsl(color)
+			if l != 1.0 && l != 0.0 {
+				return false, errors.New("sorter: the mask contains a invalid color")
+			}
+		}
+	}
+
+	return true, nil
 }

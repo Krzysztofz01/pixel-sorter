@@ -10,6 +10,7 @@ import (
 )
 
 // TODO: Implement tests for all option combinations
+// TODO: Implement tests for masks
 
 func TestDefaultSorterShouldSortForSortByBrightnessSplitByBrightnessZeroAngle(t *testing.T) {
 	sorterOptions := SorterOptions{
@@ -37,7 +38,7 @@ func TestDefaultSorterShouldSortForSortByBrightnessSplitByBrightnessZeroAngle(t 
 		}
 	}
 
-	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), &sorterOptions)
+	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), nil, &sorterOptions)
 	assert.Nil(t, err)
 
 	actualImage, err := sorter.Sort()
@@ -65,7 +66,7 @@ func TestDefaultSorterShouldSortForSortByBrightnessSplitByBrightnessNonZeroAngle
 		45,
 	}
 
-	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), &sorterOptions)
+	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), nil, &sorterOptions)
 	assert.Nil(t, err)
 
 	actualImage, err := sorter.Sort()

@@ -45,7 +45,7 @@ var brightnessCmd = &cobra.Command{
 			return err
 		}
 
-		sorter, err := sorter.CreateSorter(image, options)
+		sorter, err := sorter.CreateSorter(image, nil, options)
 		if err != nil {
 			return err
 		}
