@@ -12,6 +12,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// TODO: Implement support for the new mask adapter
+
 type defaultSorter struct {
 	image   image.Image
 	mask    image.Image
