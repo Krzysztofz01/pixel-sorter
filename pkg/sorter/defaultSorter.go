@@ -116,7 +116,15 @@ func (sorter *defaultSorter) performHorizontalSort(drawableImage *draw.Image) er
 			return fmt.Errorf("sorter: failed to retrieve the image pixel row for a given index: %w", err)
 		}
 
-		sortedRow, err := sorter.performSortOnImageStrip(row)
+		var rowMask []color.Color = nil
+		if sorter.mask != nil {
+			rowMask, err = utils.GetImageRow(sorter.mask, yIndex)
+			if err != nil {
+				return fmt.Errorf("sorter: failed to retrieve the image mask pixel row for a given index: %w", err)
+			}
+		}
+
+		sortedRow, err := sorter.performSortOnImageStrip(row, rowMask)
 		if err != nil {
 			return fmt.Errorf("sorter: failed to perform the horizontal sorting: %w", err)
 		}
@@ -150,7 +158,16 @@ func (sorter *defaultSorter) performParallelHorizontalSort(drawableImage *draw.I
 				return
 			}
 
-			sortedRow, err := sorter.performSortOnImageStrip(row)
+			var rowMask []color.Color = nil
+			if sorter.mask != nil {
+				rowMask, err = utils.GetImageRow(sorter.mask, yIndex)
+				if err != nil {
+					errCh <- fmt.Errorf("sorter: failed to retrieve the image mask pixel row for a given index: %w", err)
+					return
+				}
+			}
+
+			sortedRow, err := sorter.performSortOnImageStrip(row, rowMask)
 			if err != nil {
 				errCh <- fmt.Errorf("sorter: failed to perform the horizontal sorting: %w", err)
 				return
@@ -185,7 +202,15 @@ func (sorter *defaultSorter) performVerticalSort(drawableImage *draw.Image) erro
 			return fmt.Errorf("sorter: failed to retrieve the image pixel column for a given index: %w", err)
 		}
 
-		sortedColumn, err := sorter.performSortOnImageStrip(column)
+		var columnMask []color.Color = nil
+		if sorter.mask != nil {
+			columnMask, err = utils.GetImageColumn(sorter.mask, xIndex)
+			if err != nil {
+				return fmt.Errorf("sorter: failed to retrieve the image mask pixel column for a given index: %w", err)
+			}
+		}
+
+		sortedColumn, err := sorter.performSortOnImageStrip(column, columnMask)
 		if err != nil {
 			return fmt.Errorf("sorter: failed to perform the vertical sorting: %w", err)
 		}
@@ -219,7 +244,16 @@ func (sorter *defaultSorter) performParallelVerticalSort(drawableImage *draw.Ima
 				return
 			}
 
-			sortedColumn, err := sorter.performSortOnImageStrip(column)
+			var columnMask []color.Color = nil
+			if sorter.mask != nil {
+				columnMask, err = utils.GetImageColumn(sorter.mask, xIndex)
+				if err != nil {
+					errCh <- fmt.Errorf("sorter: failed to retrieve the image mask pixel column for a given index: %w", err)
+					return
+				}
+			}
+
+			sortedColumn, err := sorter.performSortOnImageStrip(column, columnMask)
 			if err != nil {
 				errCh <- fmt.Errorf("sorter: failed to perform the vertical sorting: %w", err)
 				return
@@ -247,7 +281,9 @@ func (sorter *defaultSorter) performParallelVerticalSort(drawableImage *draw.Ima
 	return nil
 }
 
-func (sorter *defaultSorter) performSortOnImageStrip(imageStrip []color.Color) ([]color.Color, error) {
+// TODO: The isMaked code looks messy. We can extract the logic somehow in the future
+// TODO: Instead of creating a mask strip we should implement a direct access to the mask
+func (sorter *defaultSorter) performSortOnImageStrip(imageStrip []color.Color, maskStrip []color.Color) ([]color.Color, error) {
 	stripLength := len(imageStrip)
 	sortedImageStrip := make([]color.Color, 0, stripLength)
 	sortDirection := GetSortDeterminantDirection(sorter.options.SortDeterminant)
@@ -259,7 +295,25 @@ func (sorter *defaultSorter) performSortOnImageStrip(imageStrip []color.Color) (
 			return nil, fmt.Errorf("sorter: failed to convert the given color to a RGBA struct representation: %w", err)
 		}
 
-		if !utils.HasAnyTransparency(currentColor) && sorter.isMeetingIntervalRequirements(currentColor) {
+		isMasked := false
+		if maskStrip != nil {
+			maskColor, err := utils.ColorToRgba(maskStrip[x])
+			if err != nil {
+				return nil, fmt.Errorf("sorter: failed to convert the given mask color to a RGBA struct representation: %w", err)
+			}
+
+			mR, mG, mB := utils.RgbaToIntComponents(maskColor)
+
+			if mR == 255 && mG == 255 && mB == 255 {
+				isMasked = true
+			} else if mR == 0 && mG == 0 && mB == 0 {
+				isMasked = false
+			} else {
+				return nil, errors.New("sorter: provied mask contains a invalid color")
+			}
+		}
+
+		if !utils.HasAnyTransparency(currentColor) && sorter.isMeetingIntervalRequirements(currentColor) && !isMasked {
 			if err := interval.Append(currentColor); err != nil {
 				return nil, fmt.Errorf("sorter: failed to append color to the interval: %w", err)
 			}
