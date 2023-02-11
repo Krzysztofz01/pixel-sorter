@@ -11,6 +11,7 @@ import (
 // A structure representing a wrapper over a image that works as a mask
 type Mask struct {
 	maskImage image.Image
+	isEmpty   bool
 }
 
 // TODO: Place the image/mask size validation here?
@@ -44,11 +45,25 @@ func CreateMask(i image.Image) (*Mask, error) {
 
 	mask := new(Mask)
 	mask.maskImage = drawableMask
+	mask.isEmpty = false
 	return mask, nil
+}
+
+// Create a new mask instance representing a empty mask
+func CreateEmptyMask() *Mask {
+	mask := new(Mask)
+	mask.maskImage = nil
+	mask.isEmpty = true
+	return mask
 }
 
 // Perform a mask lookup to check if the mask is masking at the given location
 func (mask *Mask) IsMasked(xIndex, yIndex int) (bool, error) {
+	// TODO: If the mask is empty, the size is not validate. We should do something about it in the future, if we want to perform size validation in mask factory func
+	if mask.isEmpty {
+		return false, nil
+	}
+
 	xLength := mask.maskImage.Bounds().Dx()
 	yLength := mask.maskImage.Bounds().Dy()
 	if xIndex >= xLength || yIndex >= yLength {

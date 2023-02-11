@@ -26,7 +26,12 @@ func TestMaskShouldNotCreateForInvalidMaskImage(t *testing.T) {
 	assert.Nil(t, mask)
 }
 
-func TestMaskShouldTellIfIsMasked(t *testing.T) {
+func TestMaskShouldCreateEmpty(t *testing.T) {
+	mask := CreateEmptyMask()
+	assert.NotNil(t, mask)
+}
+
+func TestMaskShouldTellIfIsMaskedForImageMasks(t *testing.T) {
 	image := mockTestBlackAndWhiteImage()
 	mask, err := CreateMask(image)
 	assert.Nil(t, err)
@@ -40,6 +45,16 @@ func TestMaskShouldTellIfIsMasked(t *testing.T) {
 	isMasked, err = mask.IsMasked(1, 0)
 	assert.Nil(t, err)
 	assert.True(t, isMasked)
+}
+
+func TestMaskShouldTellIfIsMaskedForEmptyMask(t *testing.T) {
+	mask := CreateEmptyMask()
+	assert.NotNil(t, mask)
+
+	// NOTE: Currently there is no index validation for empty mask, whatever value will return "False"
+	isMasked, err := mask.IsMasked(0, 0)
+	assert.Nil(t, err)
+	assert.False(t, isMasked)
 }
 
 // Create a test image which consists of valid mask colors (black and white)
