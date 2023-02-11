@@ -20,6 +20,7 @@ func TestDefaultSorterShouldSortForSortByBrightnessSplitByBrightnessZeroAngle(t 
 		0.0,
 		1.0,
 		0,
+		false,
 	}
 
 	// NOTE: Preparing the expected image
@@ -64,6 +65,7 @@ func TestDefaultSorterShouldSortForSortByBrightnessSplitByBrightnessNonZeroAngle
 		0.0,
 		1.0,
 		45,
+		false,
 	}
 
 	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), nil, &sorterOptions)

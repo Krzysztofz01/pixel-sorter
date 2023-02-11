@@ -282,7 +282,10 @@ func (sorter *defaultSorter) performSortOnImageStrip(imageStrip []color.Color, m
 			return nil, fmt.Errorf("sorter: failed to perform a lookup to the mask image: %w", err)
 		}
 
-		if !utils.HasAnyTransparency(currentColor) && sorter.isMeetingIntervalRequirements(currentColor) && !isMasked {
+		// NOTE: isMasked and options dependecy solved using a quick K-Map
+		passThrough := !isMasked || !sorter.options.UseMask
+
+		if !utils.HasAnyTransparency(currentColor) && sorter.isMeetingIntervalRequirements(currentColor, isMasked) && passThrough {
 			if err := interval.Append(currentColor); err != nil {
 				return nil, fmt.Errorf("sorter: failed to append color to the interval: %w", err)
 			}
@@ -306,7 +309,7 @@ func (sorter *defaultSorter) performSortOnImageStrip(imageStrip []color.Color, m
 	return sortedImageStrip, nil
 }
 
-func (sorter *defaultSorter) isMeetingIntervalRequirements(color color.RGBA) bool {
+func (sorter *defaultSorter) isMeetingIntervalRequirements(color color.RGBA, isMasked bool) bool {
 	tLower := sorter.options.IntervalDeterminantLowerThreshold
 	tUpper := sorter.options.IntervalDeterminantUpperThreshold
 
@@ -330,6 +333,10 @@ func (sorter *defaultSorter) isMeetingIntervalRequirements(color color.RGBA) boo
 			}
 
 			return true
+		}
+	case SplitByMask:
+		{
+			panic("sorter: not implemented")
 		}
 	default:
 		panic("sorter: invalid sorter state due to a corrupted interval determinant value")

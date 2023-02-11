@@ -98,8 +98,14 @@ func parseCommonOptions() (*sorter.SorterOptions, error) {
 
 	options.Angle = FlagAngle
 
-	if FlagMask && len(FlagMaskFilePath) == 0 {
-		return nil, fmt.Errorf("invalid mask path specified")
+	if FlagMask {
+		if len(FlagMaskFilePath) == 0 {
+			return nil, fmt.Errorf("invalid mask path specified")
+		} else {
+			options.UseMask = true
+		}
+	} else {
+		options.UseMask = false
 	}
 
 	return options, nil

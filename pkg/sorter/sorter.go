@@ -42,6 +42,7 @@ type IntervalDeterminant int
 const (
 	SplitByBrightness IntervalDeterminant = iota
 	SplitByHue
+	SplitByMask
 )
 
 // Structure representing all the parameters for the sorter
@@ -52,6 +53,7 @@ type SorterOptions struct {
 	IntervalDeterminantLowerThreshold float64
 	IntervalDeterminantUpperThreshold float64
 	Angle                             int
+	UseMask                           bool
 }
 
 // Get a SorterOptions structure instance with default values
