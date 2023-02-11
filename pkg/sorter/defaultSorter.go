@@ -336,7 +336,7 @@ func (sorter *defaultSorter) isMeetingIntervalRequirements(color color.RGBA, isM
 		}
 	case SplitByMask:
 		{
-			panic("sorter: not implemented")
+			return !isMasked
 		}
 	default:
 		panic("sorter: invalid sorter state due to a corrupted interval determinant value")

@@ -48,11 +48,9 @@ var hueCmd = &cobra.Command{
 
 		var mask image.Image = nil
 		if len(FlagMaskFilePath) > 0 {
-			if FlagMask {
-				mask, err = utils.GetImageFromFile(FlagMaskFilePath)
-				if err != nil {
-					return err
-				}
+			mask, err = utils.GetImageFromFile(FlagMaskFilePath)
+			if err != nil {
+				return err
 			}
 		}
 

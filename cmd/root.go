@@ -45,7 +45,7 @@ func init() {
 
 	rootCmd.PersistentFlags().StringVarP(&FlagSortOrder, "order", "o", "horizontal-vertical", "Order of the graphic sorting stages. Options: [horizontal, vertical, horizontal-vertical, vertical-horizontal].")
 
-	rootCmd.PersistentFlags().StringVarP(&FlagIntervalDeterminant, "interval-determinant", "i", "brightness", "Parameter used to determine intervals. Options: [brightness, hue].")
+	rootCmd.PersistentFlags().StringVarP(&FlagIntervalDeterminant, "interval-determinant", "i", "brightness", "Parameter used to determine intervals. Options: [brightness, hue, mask].")
 	rootCmd.PersistentFlags().Float64VarP(&FlagIntervalLowerThreshold, "interval-lower-threshold", "l", 0.1, "The lower threshold of the interval determination process. Options: [0.0 - 1.0].")
 	rootCmd.PersistentFlags().Float64VarP(&FlagIntervalUpperThreshold, "interval-upper-threshold", "u", 0.9, "The upper threshold of the interval determination process. Options: [0.0 - 1.0].")
 
@@ -76,6 +76,13 @@ func parseCommonOptions() (*sorter.SorterOptions, error) {
 		options.IntervalDeterminant = sorter.SplitByBrightness
 	case "hue":
 		options.IntervalDeterminant = sorter.SplitByHue
+	case "mask":
+		{
+			if len(FlagMaskFilePath) == 0 {
+				return nil, fmt.Errorf("invalid mask path specified")
+			}
+			options.IntervalDeterminant = sorter.SplitByMask
+		}
 	default:
 		return nil, fmt.Errorf("invalid interval determinant specified: %q", FlagIntervalDeterminant)
 	}

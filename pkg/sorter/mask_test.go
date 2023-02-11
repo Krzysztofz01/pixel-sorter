@@ -36,7 +36,7 @@ func TestMaskShouldTellIfIsMaskedForImageMasks(t *testing.T) {
 	mask, err := CreateMask(image)
 	assert.Nil(t, err)
 
-	// NOTE: The test image consist of black and white vertical stripes, starting with the black color
+	// NOTE: The test image consist of black and white vertical stripes, starting with the white color
 
 	isMasked, err := mask.IsMasked(0, 0)
 	assert.Nil(t, err)
