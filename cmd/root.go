@@ -11,7 +11,8 @@ import (
 )
 
 var (
-	FlagFilePath               string
+	FlagImageFilePath          string
+	FlagMaskFilePath           string
 	FlagOutputFileType         string
 	FlagSortDirection          string
 	FlagSortOrder              string
@@ -19,6 +20,7 @@ var (
 	FlagIntervalLowerThreshold float64
 	FlagIntervalUpperThreshold float64
 	FlagAngle                  int
+	FlagMask                   bool
 )
 
 // TODO: Add verbose logging flag
@@ -32,8 +34,10 @@ var rootCmd = &cobra.Command{
 func init() {
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 
-	rootCmd.PersistentFlags().StringVarP(&FlagFilePath, "file-path", "p", "", "The path of the image file to be processed.")
-	rootCmd.MarkPersistentFlagRequired("file-path")
+	rootCmd.PersistentFlags().StringVar(&FlagImageFilePath, "image-file-path", "", "The path of the image file to be processed.")
+	rootCmd.MarkPersistentFlagRequired("image-file-path")
+
+	rootCmd.PersistentFlags().StringVar(&FlagMaskFilePath, "mask-file-path", "", "The path of the image mask file to be process the image file.")
 
 	rootCmd.PersistentFlags().StringVarP(&FlagOutputFileType, "output-format", "f", "jpg", "The output format of the graphic file. Options: [jpg, png].")
 
@@ -46,6 +50,8 @@ func init() {
 	rootCmd.PersistentFlags().Float64VarP(&FlagIntervalUpperThreshold, "interval-upper-threshold", "u", 0.9, "The upper threshold of the interval determination process. Options: [0.0 - 1.0].")
 
 	rootCmd.PersistentFlags().IntVarP(&FlagAngle, "angle", "a", 0, "The angle at which to sort the pixels.")
+
+	rootCmd.PersistentFlags().BoolVarP(&FlagMask, "mask", "m", false, "Exclude the sorting effect from masked out ares of the image.")
 }
 
 // Helper function used to validate and apply flag values into the sorter options struct
@@ -91,6 +97,10 @@ func parseCommonOptions() (*sorter.SorterOptions, error) {
 	}
 
 	options.Angle = FlagAngle
+
+	if FlagMask && len(FlagMaskFilePath) == 0 {
+		return nil, fmt.Errorf("invalid mask path specified")
+	}
 
 	return options, nil
 }

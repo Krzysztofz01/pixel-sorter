@@ -21,7 +21,7 @@
             "console": "integratedTerminal",
             "args": [
                 "brightness",
-                "--file-path", "test.png",
+                "--image-file-path", "test.png",
                 "--output-format", "jpg",
                 "--direction", "ascending",
                 "--interval-determinant", "brightness",
@@ -29,6 +29,37 @@
                 "--interval-upper-threshold", "0.85",
                 "--order", "horizontal-vertical",
                 "--angle", "0"
+            ]
+        },
+        {
+            "name": "Debug [Internal] - Sample brightness with mask (test.png / test-mask.png)",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cli",
+            "console": "integratedTerminal",
+            "args": [
+                "brightness",
+                "--image-file-path",
+                "test.png",
+                "--mask-file-path",
+                "test-mask.png",
+                "--output-format",
+                "jpg",
+                "--direction",
+                "ascending",
+                "--interval-determinant",
+                "brightness",
+                "--interval-lower-threshold",
+                "0.15",
+                "--interval-upper-threshold",
+                "0.85",
+                "--order",
+                "horizontal-vertical",
+                "--angle",
+                "0",
+                "--mask",
+                "true"
             ]
         },
         {

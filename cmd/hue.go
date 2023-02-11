@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"image"
 	"strings"
 
 	"github.com/Krzysztofz01/pixel-sorter/pkg/sorter"
@@ -31,8 +32,8 @@ var hueCmd = &cobra.Command{
 			return fmt.Errorf("invalid direction specified: %q", FlagSortDirection)
 		}
 
-		if len(FlagFilePath) == 0 {
-			return fmt.Errorf("invalid image path specified: %q", FlagFilePath)
+		if len(FlagImageFilePath) == 0 {
+			return fmt.Errorf("invalid image path specified: %q", FlagImageFilePath)
 		}
 
 		format := strings.ToLower(FlagOutputFileType)
@@ -40,12 +41,22 @@ var hueCmd = &cobra.Command{
 			return fmt.Errorf("invalid output file format specified: %q", FlagOutputFileType)
 		}
 
-		image, err := utils.GetImageFromFile(FlagFilePath)
+		img, err := utils.GetImageFromFile(FlagImageFilePath)
 		if err != nil {
 			return err
 		}
 
-		sorter, err := sorter.CreateSorter(image, nil, options)
+		var mask image.Image = nil
+		if len(FlagMaskFilePath) > 0 {
+			if FlagMask {
+				mask, err = utils.GetImageFromFile(FlagMaskFilePath)
+				if err != nil {
+					return err
+				}
+			}
+		}
+
+		sorter, err := sorter.CreateSorter(img, mask, options)
 		if err != nil {
 			return err
 		}
@@ -55,7 +66,7 @@ var hueCmd = &cobra.Command{
 			return err
 		}
 
-		if err := utils.StoreImageToFile(getOutputFileName(FlagFilePath), format, sortedImage); err != nil {
+		if err := utils.StoreImageToFile(getOutputFileName(FlagImageFilePath), format, sortedImage); err != nil {
 			return err
 		}
 
