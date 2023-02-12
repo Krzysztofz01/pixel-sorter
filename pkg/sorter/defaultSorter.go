@@ -335,6 +335,14 @@ func (sorter *defaultSorter) isMeetingIntervalRequirements(color color.RGBA, isM
 
 			return hNorm >= lThreshold && hNorm <= uThreshold
 		}
+	case SplitBySaturation:
+		{
+			lThreshold := sorter.options.IntervalDeterminantLowerThreshold
+			uThreshold := sorter.options.IntervalDeterminantUpperThreshold
+
+			_, s, _ := utils.RgbaToHsl(color)
+			return s >= lThreshold && s <= uThreshold
+		}
 	case SplitByMask:
 		{
 			return !isMasked

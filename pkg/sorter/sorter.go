@@ -42,6 +42,7 @@ type IntervalDeterminant int
 const (
 	SplitByBrightness IntervalDeterminant = iota
 	SplitByHue
+	SplitBySaturation
 	SplitByMask
 )
 

@@ -79,6 +79,8 @@ func parseCommonOptions() (*sorter.SorterOptions, error) {
 		options.IntervalDeterminant = sorter.SplitByBrightness
 	case "hue":
 		options.IntervalDeterminant = sorter.SplitByHue
+	case "saturation":
+		options.IntervalDeterminant = sorter.SplitBySaturation
 	case "mask":
 		{
 			if len(FlagMaskFilePath) == 0 {
