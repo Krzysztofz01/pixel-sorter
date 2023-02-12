@@ -24,3 +24,6 @@ go.work
 *.jpg
 *.jpeg
 *.png
+
+# Profiling/benchmark files
+*.prof

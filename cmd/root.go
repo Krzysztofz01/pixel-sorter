@@ -138,6 +138,12 @@ func getOutputFileName(inputFilePath string) string {
 	return fmt.Sprintf("%s-sorted", fileNameParts[0])
 }
 
+// Function used to development/benchmark purposes. It allows to overwrite the input arguments
+func SetArgs(args []string) {
+	rootCmd.SetArgs(args)
+}
+
+// Function used to execute the program (root command)
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
