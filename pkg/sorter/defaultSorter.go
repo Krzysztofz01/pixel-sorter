@@ -285,7 +285,7 @@ func (sorter *defaultSorter) performSortOnImageStrip(imageStrip []color.Color, m
 		// NOTE: isMasked and options dependecy solved using a quick K-Map
 		passThrough := !isMasked || !sorter.options.UseMask
 
-		if !utils.HasAnyTransparency(currentColor) && sorter.isMeetingIntervalRequirements(currentColor, isMasked) && passThrough {
+		if !utils.HasAnyTransparency(currentColor) && sorter.isMeetingIntervalRequirements(currentColor, isMasked, interval) && passThrough {
 			if err := interval.Append(currentColor); err != nil {
 				return nil, fmt.Errorf("sorter: failed to append color to the interval: %w", err)
 			}
@@ -309,30 +309,31 @@ func (sorter *defaultSorter) performSortOnImageStrip(imageStrip []color.Color, m
 	return sortedImageStrip, nil
 }
 
-func (sorter *defaultSorter) isMeetingIntervalRequirements(color color.RGBA, isMasked bool) bool {
-	tLower := sorter.options.IntervalDeterminantLowerThreshold
-	tUpper := sorter.options.IntervalDeterminantUpperThreshold
+func (sorter *defaultSorter) isMeetingIntervalRequirements(color color.RGBA, isMasked bool, interval Interval) bool {
+	// NOTE: interval length and options dependecy solved using a quick K-Map
+	maxLength := sorter.options.IntervalLength
+	if !(maxLength == 0) && (maxLength <= interval.Count()) {
+		return false
+	}
 
 	switch sorter.options.IntervalDeterminant {
 	case SplitByBrightness:
 		{
-			brightness := utils.CalculatePerceivedBrightness(color)
-			if brightness < tLower || brightness > tUpper {
-				return false
-			}
+			lThreshold := sorter.options.IntervalDeterminantLowerThreshold
+			uThreshold := sorter.options.IntervalDeterminantUpperThreshold
 
-			return true
+			brightness := utils.CalculatePerceivedBrightness(color)
+			return brightness >= lThreshold && brightness <= uThreshold
 		}
 	case SplitByHue:
 		{
+			lThreshold := sorter.options.IntervalDeterminantLowerThreshold
+			uThreshold := sorter.options.IntervalDeterminantUpperThreshold
+
 			h, _, _ := utils.RgbaToHsl(color)
 			hNorm := float64(h) / 360.0
 
-			if hNorm < tLower || hNorm > tUpper {
-				return false
-			}
-
-			return true
+			return hNorm >= lThreshold && hNorm <= uThreshold
 		}
 	case SplitByMask:
 		{

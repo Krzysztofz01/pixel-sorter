@@ -20,6 +20,7 @@ func TestDefaultSorterShouldSortForSortByBrightnessSplitByBrightnessZeroAngle(t 
 		0.0,
 		1.0,
 		0,
+		0,
 		false,
 	}
 
@@ -64,6 +65,7 @@ func TestDefaultSorterShouldSortForSortByBrightnessSplitByBrightnessNonZeroAngle
 		SplitByBrightness,
 		0.0,
 		1.0,
+		0,
 		45,
 		false,
 	}

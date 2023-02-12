@@ -52,6 +52,7 @@ type SorterOptions struct {
 	IntervalDeterminant               IntervalDeterminant
 	IntervalDeterminantLowerThreshold float64
 	IntervalDeterminantUpperThreshold float64
+	IntervalLength                    int
 	Angle                             int
 	UseMask                           bool
 }
@@ -63,9 +64,10 @@ func GetDefaultSorterOptions() *SorterOptions {
 	options.SortDeterminant = SortByBrightnessAscending
 	options.SortOrder = SortHorizontalAndVertical
 	options.IntervalDeterminant = SplitByBrightness
-	// TODO: Fine-tune this
 	options.IntervalDeterminantLowerThreshold = 0.0
 	options.IntervalDeterminantUpperThreshold = 1.0
+	options.UseMask = false
+	options.IntervalLength = 0
 
 	return options
 }
