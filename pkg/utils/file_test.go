@@ -24,7 +24,7 @@ func TestImageFileShouldBeStoredAsJpg(t *testing.T) {
 	err := StoreImageToFile(test_file_name, "jpg", expectedImage)
 	assert.Nil(t, err)
 
-	filePath := fmt.Sprintf("%s-sorted.jpg", test_file_name)
+	filePath := fmt.Sprintf("%s.jpg", test_file_name)
 	file, err := os.Open(filePath)
 	assert.Nil(t, err)
 
@@ -59,7 +59,7 @@ func TestImageFileShouldBeStoredAsPng(t *testing.T) {
 	err := StoreImageToFile(test_file_name, "png", expectedImage)
 	assert.Nil(t, err)
 
-	filePath := fmt.Sprintf("%s-sorted.png", test_file_name)
+	filePath := fmt.Sprintf("%s.png", test_file_name)
 	file, err := os.Open(filePath)
 	assert.Nil(t, err)
 
@@ -94,7 +94,7 @@ func TestImageShouldBeRetrievied(t *testing.T) {
 	err := StoreImageToFile(test_file_name, "png", expectedImage)
 	assert.Nil(t, err)
 
-	actualImageFilePath := fmt.Sprintf("%s-sorted.png", test_file_name)
+	actualImageFilePath := fmt.Sprintf("%s.png", test_file_name)
 	actualImage, err := GetImageFromFile(actualImageFilePath)
 	assert.Nil(t, err)
 
@@ -117,7 +117,7 @@ func TestImageShouldBeRetrievied(t *testing.T) {
 
 // Helper function that is removing the image files created during the tests
 func clearEnvironmentFromTestFiles() {
-	jpgFileName := fmt.Sprintf("%s-sorted.jpg", test_file_name)
+	jpgFileName := fmt.Sprintf("%s.jpg", test_file_name)
 	if info, err := os.Stat(jpgFileName); err == nil && !info.IsDir() {
 		if err := os.Remove(jpgFileName); err != nil {
 			fmt.Println(err)
@@ -125,7 +125,7 @@ func clearEnvironmentFromTestFiles() {
 		}
 	}
 
-	pngFileName := fmt.Sprintf("%s-sorted.png", test_file_name)
+	pngFileName := fmt.Sprintf("%s.png", test_file_name)
 	if info, err := os.Stat(pngFileName); err == nil && !info.IsDir() {
 		if err := os.Remove(pngFileName); err != nil {
 			panic("utils-test: can not remove jpg test file")

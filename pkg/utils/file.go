@@ -31,7 +31,7 @@ func GetImageFromFile(filePath string) (image.Image, error) {
 // Create a new file with the given name and format and store the given image in it
 func StoreImageToFile(fileName string, fileFormat string, img image.Image) error {
 	if strings.ToLower(fileFormat) == "jpg" {
-		file, err := os.Create(fmt.Sprintf("%s-sorted.jpg", fileName))
+		file, err := os.Create(fmt.Sprintf("%s.jpg", fileName))
 		if err != nil {
 			return fmt.Errorf("utils: failed to create a new file: %w", err)
 		}
@@ -46,7 +46,7 @@ func StoreImageToFile(fileName string, fileFormat string, img image.Image) error
 		return nil
 
 	} else if strings.ToLower(fileFormat) == "png" {
-		file, err := os.Create(fmt.Sprintf("%s-sorted.png", fileName))
+		file, err := os.Create(fmt.Sprintf("%s.png", fileName))
 		if err != nil {
 			return fmt.Errorf("utils: failed to create a new file: %w", err)
 		}
