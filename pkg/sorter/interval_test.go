@@ -15,6 +15,30 @@ func TestValueWeightIntervalShouldCreate(t *testing.T) {
 	assert.NotNil(t, interval)
 }
 
+func TestValueWeightIntervalShouldTellIfContainsAnyColors(t *testing.T) {
+	interval := CreateValueWeightInterval(mockTestValueWeightDeterminant())
+	assert.NotNil(t, interval)
+
+	assert.False(t, interval.Any())
+
+	err := interval.Append(color.RGBA{0, 0, 0, 255})
+	assert.Nil(t, err)
+
+	assert.True(t, interval.Any())
+}
+
+func TestValueWeightIntervalShouldTellTheCountOfContainedColors(t *testing.T) {
+	interval := CreateValueWeightInterval(mockTestValueWeightDeterminant())
+	assert.NotNil(t, interval)
+
+	assert.Equal(t, 0, interval.Count())
+
+	err := interval.Append(color.RGBA{0, 0, 0, 255})
+	assert.Nil(t, err)
+
+	assert.Equal(t, 1, interval.Count())
+}
+
 func TestValueWeightIntervalShouldSort(t *testing.T) {
 	interval := CreateValueWeightInterval(mockTestValueWeightDeterminant())
 	assert.NotNil(t, interval)
@@ -50,6 +74,30 @@ func TestValueWeightIntervalShouldSort(t *testing.T) {
 func TestNormalizedWeightIntervalShouldCreate(t *testing.T) {
 	interval := CreateNormalizedWeightInterval(mockTestNormalizedWeightDeterminant())
 	assert.NotNil(t, interval)
+}
+
+func TestNormalizedWeightIntervalShouldTellIfContainsAnyColors(t *testing.T) {
+	interval := CreateValueWeightInterval(mockTestValueWeightDeterminant())
+	assert.NotNil(t, interval)
+
+	assert.False(t, interval.Any())
+
+	err := interval.Append(color.RGBA{0, 0, 0, 255})
+	assert.Nil(t, err)
+
+	assert.True(t, interval.Any())
+}
+
+func TestNormalizedWeightIntervalShouldTellTheCountOfContainedColors(t *testing.T) {
+	interval := CreateValueWeightInterval(mockTestValueWeightDeterminant())
+	assert.NotNil(t, interval)
+
+	assert.Equal(t, 0, interval.Count())
+
+	err := interval.Append(color.RGBA{0, 0, 0, 255})
+	assert.Nil(t, err)
+
+	assert.Equal(t, 1, interval.Count())
 }
 
 func TestNormalizedWeightIntervalShouldSort(t *testing.T) {

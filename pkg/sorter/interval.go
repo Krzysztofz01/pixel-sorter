@@ -18,6 +18,9 @@ type Interval interface {
 	// Add a RGBA color to the given interval
 	Append(color color.RGBA) error
 
+	// Get the count of colors stored in the interval
+	Count() int
+
 	// Get a boolean value representing the presence of elements in the given interval
 	Any() bool
 
@@ -71,8 +74,12 @@ func (interval *ValueWeightInterval) Append(color color.RGBA) error {
 	return nil
 }
 
+func (interval *ValueWeightInterval) Count() int {
+	return len(interval.items)
+}
+
 func (interval *ValueWeightInterval) Any() bool {
-	return len(interval.items) > 0
+	return interval.Count() > 0
 }
 
 func (interval *ValueWeightInterval) Sort(direction SortDirection) []color.Color {
@@ -142,8 +149,12 @@ func (interval *NormalizedWeightInterval) Append(color color.RGBA) error {
 	return nil
 }
 
+func (interval *NormalizedWeightInterval) Count() int {
+	return len(interval.items)
+}
+
 func (interval *NormalizedWeightInterval) Any() bool {
-	return len(interval.items) > 0
+	return interval.Count() > 0
 }
 
 func (interval *NormalizedWeightInterval) Sort(direction SortDirection) []color.Color {
