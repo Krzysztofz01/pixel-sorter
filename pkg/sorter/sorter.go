@@ -7,6 +7,7 @@ import (
 // Flag representing the determinant parameter for the sorting process
 type SortDeterminant int
 
+// TODO: Make the direction as a separate parameter
 const (
 	SortByBrightnessAscending SortDeterminant = iota
 	SortByBrightnessDescending
@@ -44,6 +45,7 @@ const (
 	SplitByHue
 	SplitBySaturation
 	SplitByMask
+	SplitByAbsoluteColor
 )
 
 // Structure representing all the parameters for the sorter
