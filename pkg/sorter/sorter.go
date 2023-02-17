@@ -58,6 +58,7 @@ type SorterOptions struct {
 	IntervalLength                    int
 	Angle                             int
 	UseMask                           bool
+	Cycles                            int
 }
 
 // Get a SorterOptions structure instance with default values
@@ -71,6 +72,7 @@ func GetDefaultSorterOptions() *SorterOptions {
 	options.IntervalDeterminantUpperThreshold = 1.0
 	options.UseMask = false
 	options.IntervalLength = 0
+	options.Cycles = 1
 
 	return options
 }

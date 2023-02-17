@@ -50,7 +50,11 @@ func CreateSorter(image image.Image, mask image.Image, options *SorterOptions) (
 		}
 
 		if lowerIdThreshold > upperIdThreshold {
-			return nil, errors.New("sorter: the lower interval determiant threshold value can not be grate from the upper threshold")
+			return nil, errors.New("sorter: the lower interval determiant threshold value can not be greater from the upper threshold")
+		}
+
+		if options.Cycles < 1 {
+			return nil, errors.New("sorter: the cycles count can not be zero or less")
 		}
 
 		sorter.options = options
@@ -69,37 +73,39 @@ func (sorter *defaultSorter) Sort() (image.Image, error) {
 
 	drawableImage = utils.RotateImage(drawableImage, sorter.options.Angle)
 
-	switch sorter.options.SortOrder {
-	case SortVertical:
-		{
-			if err := sorter.performParallelVerticalSort(&drawableImage); err != nil {
-				return nil, fmt.Errorf("sorter: failed to perform the vertical sort")
+	for c := 0; c < sorter.options.Cycles; c += 1 {
+		switch sorter.options.SortOrder {
+		case SortVertical:
+			{
+				if err := sorter.performParallelVerticalSort(&drawableImage); err != nil {
+					return nil, fmt.Errorf("sorter: failed to perform the vertical sort")
+				}
 			}
-		}
-	case SortHorizontal:
-		{
-			if err := sorter.performParallelHorizontalSort(&drawableImage); err != nil {
-				return nil, fmt.Errorf("sorter: failed to perform the horizontal sort")
+		case SortHorizontal:
+			{
+				if err := sorter.performParallelHorizontalSort(&drawableImage); err != nil {
+					return nil, fmt.Errorf("sorter: failed to perform the horizontal sort")
+				}
 			}
-		}
-	case SortVerticalAndHorizontal:
-		{
-			if err := sorter.performParallelVerticalSort(&drawableImage); err != nil {
-				return nil, fmt.Errorf("sorter: failed to perform the vertical sort")
-			}
+		case SortVerticalAndHorizontal:
+			{
+				if err := sorter.performParallelVerticalSort(&drawableImage); err != nil {
+					return nil, fmt.Errorf("sorter: failed to perform the vertical sort")
+				}
 
-			if err := sorter.performParallelHorizontalSort(&drawableImage); err != nil {
-				return nil, fmt.Errorf("sorter: failed to perform the horizontal sort")
+				if err := sorter.performParallelHorizontalSort(&drawableImage); err != nil {
+					return nil, fmt.Errorf("sorter: failed to perform the horizontal sort")
+				}
 			}
-		}
-	case SortHorizontalAndVertical:
-		{
-			if err := sorter.performParallelHorizontalSort(&drawableImage); err != nil {
-				return nil, fmt.Errorf("sorter: failed to perform the horizontal sort")
-			}
+		case SortHorizontalAndVertical:
+			{
+				if err := sorter.performParallelHorizontalSort(&drawableImage); err != nil {
+					return nil, fmt.Errorf("sorter: failed to perform the horizontal sort")
+				}
 
-			if err := sorter.performParallelVerticalSort(&drawableImage); err != nil {
-				return nil, fmt.Errorf("sorter: failed to perform the vertical sort")
+				if err := sorter.performParallelVerticalSort(&drawableImage); err != nil {
+					return nil, fmt.Errorf("sorter: failed to perform the vertical sort")
+				}
 			}
 		}
 	}

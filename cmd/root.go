@@ -22,6 +22,7 @@ var (
 	FlagAngle                  int
 	FlagMask                   bool
 	FlagIntervalLength         int
+	FlagSortCycles             int
 )
 
 // TODO: Add verbose logging flag
@@ -55,6 +56,8 @@ func init() {
 	rootCmd.PersistentFlags().BoolVarP(&FlagMask, "mask", "m", false, "Exclude the sorting effect from masked out ares of the image.")
 
 	rootCmd.PersistentFlags().IntVarP(&FlagIntervalLength, "interval-max-length", "k", 0, "The max length of the interval. Zero means no length limits.")
+
+	rootCmd.PersistentFlags().IntVarP(&FlagSortCycles, "cycles", "c", 1, "The count of sorting cycles that should be performed on the image.")
 }
 
 // Helper function used to validate and apply flag values into the sorter options struct
@@ -128,6 +131,12 @@ func parseCommonOptions() (*sorter.SorterOptions, error) {
 		return nil, fmt.Errorf("invalid interval length specified")
 	} else {
 		options.IntervalLength = FlagIntervalLength
+	}
+
+	if FlagSortCycles < 1 {
+		return nil, fmt.Errorf("invalid cycles count specified")
+	} else {
+		options.Cycles = FlagSortCycles
 	}
 
 	return options, nil
