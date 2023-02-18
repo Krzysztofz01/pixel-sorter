@@ -26,6 +26,59 @@ func TestShouldConvertRGBAToRgbComponents(t *testing.T) {
 	}
 }
 
+func TestShouldConvertNRGBAToRgbComponents(t *testing.T) {
+	cases := map[color.NRGBA]struct{ r, g, b int }{
+		{0, 0, 0, 0}:         {0, 0, 0},
+		{0, 0, 0, 255}:       {0, 0, 0},
+		{255, 255, 255, 0}:   {255, 255, 255},
+		{255, 255, 255, 255}: {255, 255, 255},
+		{50, 100, 200, 0}:    {50, 100, 200},
+		{50, 100, 200, 255}:  {50, 100, 200},
+	}
+
+	for nrgba, expected := range cases {
+		rActual, gActual, bActual := NrgbaToIntComponents(nrgba)
+
+		assert.Equal(t, expected.r, rActual)
+		assert.Equal(t, expected.g, gActual)
+		assert.Equal(t, expected.b, bActual)
+	}
+}
+
+func TestShouldConvertRGBAToGrayscaleComponent(t *testing.T) {
+	cases := map[color.RGBA]int{
+		{0, 0, 0, 0}:         0,
+		{0, 0, 0, 255}:       0,
+		{255, 255, 255, 0}:   255,
+		{255, 255, 255, 255}: 255,
+		{50, 100, 200, 0}:    96,
+		{50, 100, 200, 255}:  96,
+	}
+
+	for rgba, expected := range cases {
+		actual := RgbaToGrayscaleComponent(rgba)
+
+		assert.Equal(t, expected, actual)
+	}
+}
+
+func TestShouldConvertNRGBAToGrayscaleComponent(t *testing.T) {
+	cases := map[color.NRGBA]int{
+		{0, 0, 0, 0}:         0,
+		{0, 0, 0, 255}:       0,
+		{255, 255, 255, 0}:   255,
+		{255, 255, 255, 255}: 255,
+		{50, 100, 200, 0}:    96,
+		{50, 100, 200, 255}:  96,
+	}
+
+	for nrgba, expected := range cases {
+		actual := NrgbaToGrayscaleComponent(nrgba)
+
+		assert.Equal(t, expected, actual)
+	}
+}
+
 func TestShouldConvertRGBAToNormalizedRgbComponents(t *testing.T) {
 	cases := map[color.RGBA]struct{ r, g, b float64 }{
 		{0, 0, 0, 0}:         {0.0, 0.0, 0.0},
