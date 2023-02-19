@@ -112,6 +112,22 @@ func TestTrimImageTransparentWorkspaceSohuldCorrectlyTrimRotatedImage(t *testing
 	assert.Equal(t, imageHeight, imageTrimmedHeight)
 }
 
+func TestImageInvertShouldInvertImage(t *testing.T) {
+	image := mockTestWhiteImage()
+	imageWidth := image.Bounds().Dx()
+	imageHeight := image.Bounds().Dy()
+
+	expectedColor := color.RGBA{0, 0, 0, 0xff}
+
+	for y := 0; y < imageHeight; y += 1 {
+		for x := 0; x < imageWidth; x += 1 {
+			actualColor := image.At(x, y)
+
+			assert.Equal(t, expectedColor, actualColor)
+		}
+	}
+}
+
 const (
 	mock_image_width  = 25
 	mock_image_height = 25
@@ -143,6 +159,20 @@ func mockTestGradientImage() draw.Image {
 	for yIndex := 0; yIndex < mock_image_height; yIndex += 1 {
 		for xIndex := 0; xIndex < mock_image_width; xIndex += 1 {
 			image.Set(xIndex, yIndex, gradient[xIndex])
+		}
+	}
+
+	return image
+}
+
+func mockTestWhiteImage() draw.Image {
+	p1 := image.Point{0, 0}
+	p2 := image.Point{mock_image_width, mock_image_height}
+	image := image.NewRGBA(image.Rectangle{p1, p2})
+
+	for yIndex := 0; yIndex < mock_image_height; yIndex += 1 {
+		for xIndex := 0; xIndex < mock_image_width; xIndex += 1 {
+			image.Set(xIndex, yIndex, color.Black)
 		}
 	}
 

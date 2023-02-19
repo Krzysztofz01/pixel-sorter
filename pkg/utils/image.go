@@ -2,6 +2,7 @@ package utils
 
 import (
 	"errors"
+	"fmt"
 	"image"
 	"image/color"
 	"image/draw"
@@ -105,6 +106,34 @@ func GetDrawableImage(i image.Image) (draw.Image, error) {
 	// }
 
 	return rgbaImage, nil
+}
+
+func InvertImage(i image.Image) (draw.Image, error) {
+	drawableImage, err := GetDrawableImage(i)
+	if err != nil {
+		return nil, fmt.Errorf("image-utils: can not get the drawable image version: %w", err)
+	}
+
+	width := drawableImage.Bounds().Dx()
+	height := drawableImage.Bounds().Dy()
+
+	for xIndex := 0; xIndex < width; xIndex += 1 {
+		for yIndex := 0; yIndex < height; yIndex += 1 {
+			currentColor, err := ColorToRgba(drawableImage.At(xIndex, yIndex))
+			if err != nil {
+				return nil, fmt.Errorf("image-utils: can not access the color as RGBA: %w", err)
+			}
+
+			drawableImage.Set(xIndex, yIndex, color.RGBA{
+				R: 255 - currentColor.R,
+				G: 255 - currentColor.G,
+				B: 255 - currentColor.B,
+				A: currentColor.A,
+			})
+		}
+	}
+
+	return drawableImage, nil
 }
 
 // Rotate the image by a given angle
