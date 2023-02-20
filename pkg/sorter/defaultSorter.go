@@ -8,6 +8,7 @@ import (
 	"image/draw"
 	"sync"
 
+	"github.com/Krzysztofz01/pixel-sorter/pkg/img"
 	"github.com/Krzysztofz01/pixel-sorter/pkg/utils"
 	"github.com/sirupsen/logrus"
 )
@@ -21,22 +22,6 @@ type defaultSorter struct {
 func CreateSorter(image image.Image, mask image.Image, options *SorterOptions) (Sorter, error) {
 	sorter := new(defaultSorter)
 	sorter.image = image
-
-	if mask != nil {
-		// TODO: The size validation can be moved to the mask factory func in the future
-		if mask.Bounds().Dx() != image.Bounds().Dx() || mask.Bounds().Dy() != image.Bounds().Dy() {
-			return nil, errors.New("sorter: the image and mask image sizes are not matching")
-		}
-
-		m, err := CreateMask(mask)
-		if err != nil {
-			return nil, fmt.Errorf("sorter: failed to create a new mask instance: %w", err)
-		}
-
-		sorter.mask = m
-	} else {
-		sorter.mask = CreateEmptyMask()
-	}
 
 	if options != nil {
 		lowerIdThreshold := options.IntervalDeterminantLowerThreshold
@@ -60,6 +45,36 @@ func CreateSorter(image image.Image, mask image.Image, options *SorterOptions) (
 		sorter.options = options
 	} else {
 		sorter.options = GetDefaultSorterOptions()
+	}
+
+	if sorter.options.IntervalDeterminant == SplitByEdgeDetection {
+		imageEdges, err := img.PerformEdgeDetection(sorter.image, false)
+		if err != nil {
+			return nil, fmt.Errorf("sorter: failed to perform the edge detection on the provided image: %w", err)
+		}
+
+		invertedEdges, err := utils.InvertImage(imageEdges)
+		if err != nil {
+			return nil, fmt.Errorf("sorter: failed to perform color inversion on the edge detection image: %w", err)
+		}
+
+		mask = invertedEdges
+	}
+
+	if mask != nil {
+		// TODO: The size validation can be moved to the mask factory func in the future
+		if mask.Bounds().Dx() != image.Bounds().Dx() || mask.Bounds().Dy() != image.Bounds().Dy() {
+			return nil, errors.New("sorter: the image and mask image sizes are not matching")
+		}
+
+		m, err := CreateMask(mask)
+		if err != nil {
+			return nil, fmt.Errorf("sorter: failed to create a new mask instance: %w", err)
+		}
+
+		sorter.mask = m
+	} else {
+		sorter.mask = CreateEmptyMask()
 	}
 
 	return sorter, nil
@@ -349,7 +364,7 @@ func (sorter *defaultSorter) isMeetingIntervalRequirements(color color.RGBA, isM
 			_, s, _ := utils.RgbaToHsl(color)
 			return s >= lThreshold && s <= uThreshold
 		}
-	case SplitByMask:
+	case SplitByMask, SplitByEdgeDetection:
 		{
 			return !isMasked
 		}

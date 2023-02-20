@@ -108,6 +108,7 @@ func GetDrawableImage(i image.Image) (draw.Image, error) {
 	return rgbaImage, nil
 }
 
+// Invert the colors (negative-effect) of the image
 func InvertImage(i image.Image) (draw.Image, error) {
 	drawableImage, err := GetDrawableImage(i)
 	if err != nil {
@@ -124,12 +125,14 @@ func InvertImage(i image.Image) (draw.Image, error) {
 				return nil, fmt.Errorf("image-utils: can not access the color as RGBA: %w", err)
 			}
 
-			drawableImage.Set(xIndex, yIndex, color.RGBA{
+			invertedColor := color.RGBA{
 				R: 255 - currentColor.R,
 				G: 255 - currentColor.G,
 				B: 255 - currentColor.B,
 				A: currentColor.A,
-			})
+			}
+
+			drawableImage.Set(xIndex, yIndex, invertedColor)
 		}
 	}
 

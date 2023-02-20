@@ -46,6 +46,7 @@ const (
 	SplitBySaturation
 	SplitByMask
 	SplitByAbsoluteColor
+	SplitByEdgeDetection
 )
 
 // Structure representing all the parameters for the sorter
