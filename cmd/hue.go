@@ -73,5 +73,6 @@ var hueCmd = &cobra.Command{
 }
 
 func init() {
+	hueCmd.SilenceUsage = true
 	rootCmd.AddCommand(hueCmd)
 }

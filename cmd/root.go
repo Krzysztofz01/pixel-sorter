@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/Krzysztofz01/pixel-sorter/pkg/sorter"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -23,6 +24,7 @@ var (
 	FlagMask                   bool
 	FlagIntervalLength         int
 	FlagSortCycles             int
+	FlagVerboseLogging         bool
 )
 
 // TODO: Add verbose logging flag
@@ -34,7 +36,13 @@ var rootCmd = &cobra.Command{
 }
 
 func init() {
+	logrus.SetFormatter(&customFormatter{})
+	logrus.SetOutput(os.Stdout)
+	logrus.SetLevel(logrus.InfoLevel)
+
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
+
+	rootCmd.PersistentFlags().BoolVarP(&FlagVerboseLogging, "verbose", "v", false, "Enable verbose logging mode.")
 
 	rootCmd.PersistentFlags().StringVar(&FlagImageFilePath, "image-file-path", "", "The path of the image file to be processed.")
 	rootCmd.MarkPersistentFlagRequired("image-file-path")
@@ -62,6 +70,10 @@ func init() {
 
 // Helper function used to validate and apply flag values into the sorter options struct
 func parseCommonOptions() (*sorter.SorterOptions, error) {
+	if FlagVerboseLogging {
+		logrus.SetLevel(logrus.DebugLevel)
+	}
+
 	options := sorter.GetDefaultSorterOptions()
 
 	switch strings.ToLower(FlagSortOrder) {
@@ -157,15 +169,35 @@ func getOutputFileName(inputFilePath string) string {
 	return fmt.Sprintf("%s-sorted", fileNameParts[0])
 }
 
-// Function used to development/benchmark purposes. It allows to overwrite the input arguments
-func SetArgs(args []string) {
-	rootCmd.SetArgs(args)
-}
-
 // Function used to execute the program (root command)
 func Execute() {
+	logrus.Info("Starting the pixel sorter.")
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
+		logrus.Fatalf("Failure: %s", err)
 		os.Exit(1)
 	}
+	logrus.Info("Pixel sorting finished.")
+}
+
+// Custom logrus formatter implementation
+type customFormatter struct {
+}
+
+// Format func implementation for the custom logrus formatter
+func (f *customFormatter) Format(entry *logrus.Entry) ([]byte, error) {
+	level := "INF"
+	switch entry.Level {
+	case logrus.DebugLevel:
+		level = "VER"
+	case logrus.ErrorLevel:
+		level = "ERR"
+	case logrus.WarnLevel:
+		level = "WRN"
+	case logrus.InfoLevel:
+		level = "INF"
+	case logrus.FatalLevel:
+		level = "ERR"
+	}
+
+	return []byte(fmt.Sprintf("[Pixel-Sorter] | [%s] | %s\n", level, entry.Message)), nil
 }

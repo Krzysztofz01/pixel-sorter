@@ -7,6 +7,7 @@ import (
 	"image/color"
 	"image/draw"
 	"sync"
+	"time"
 
 	"github.com/Krzysztofz01/pixel-sorter/pkg/img"
 	"github.com/Krzysztofz01/pixel-sorter/pkg/utils"
@@ -48,6 +49,7 @@ func CreateSorter(image image.Image, mask image.Image, options *SorterOptions) (
 	}
 
 	if sorter.options.IntervalDeterminant == SplitByEdgeDetection {
+		edgeDetectionExecTime := time.Now()
 		imageEdges, err := img.PerformEdgeDetection(sorter.image, false)
 		if err != nil {
 			return nil, fmt.Errorf("sorter: failed to perform the edge detection on the provided image: %w", err)
@@ -59,9 +61,12 @@ func CreateSorter(image image.Image, mask image.Image, options *SorterOptions) (
 		}
 
 		mask = invertedEdges
+		logrus.Debugf("Edge detection took: %s.", time.Since(edgeDetectionExecTime))
 	}
 
 	if mask != nil {
+		maskExecTime := time.Now()
+
 		// TODO: The size validation can be moved to the mask factory func in the future
 		if mask.Bounds().Dx() != image.Bounds().Dx() || mask.Bounds().Dy() != image.Bounds().Dy() {
 			return nil, errors.New("sorter: the image and mask image sizes are not matching")
@@ -72,6 +77,7 @@ func CreateSorter(image image.Image, mask image.Image, options *SorterOptions) (
 			return nil, fmt.Errorf("sorter: failed to create a new mask instance: %w", err)
 		}
 
+		logrus.Debugf("Mask parsing took: %s.", time.Since(maskExecTime))
 		sorter.mask = m
 	} else {
 		sorter.mask = CreateEmptyMask()
@@ -81,6 +87,7 @@ func CreateSorter(image image.Image, mask image.Image, options *SorterOptions) (
 }
 
 func (sorter *defaultSorter) Sort() (image.Image, error) {
+	sortingExecTime := time.Now()
 	drawableImage, err := utils.GetDrawableImage(sorter.image)
 	if err != nil {
 		return nil, fmt.Errorf("sorter: the provided image is not drawable: %w", err)
@@ -128,6 +135,7 @@ func (sorter *defaultSorter) Sort() (image.Image, error) {
 	drawableImage = utils.RotateImage(drawableImage, -sorter.options.Angle)
 	drawableImage = utils.TrimImageTransparentWorkspace(drawableImage, sorter.image)
 
+	logrus.Debugf("Pixel sorting took: %s.", time.Since(sortingExecTime))
 	return drawableImage, nil
 }
 
@@ -167,8 +175,6 @@ func (sorter *defaultSorter) performParallelHorizontalSort(drawableImage *draw.I
 		go func(yIndex int) {
 			defer wg.Done()
 
-			logrus.Debugf("Started to process row with index: %d", yIndex)
-
 			row, err := utils.GetImageRow(*drawableImage, yIndex)
 			if err != nil {
 				errCh <- fmt.Errorf("sorter: failed to retrieve the image pixel row for a given index: %w", err)
@@ -193,8 +199,6 @@ func (sorter *defaultSorter) performParallelHorizontalSort(drawableImage *draw.I
 			}
 
 			mu.Unlock()
-
-			logrus.Debugf("Finished to process row with index: %d", yIndex)
 		}(y)
 	}
 
@@ -242,8 +246,6 @@ func (sorter *defaultSorter) performParallelVerticalSort(drawableImage *draw.Ima
 		go func(xIndex int) {
 			defer wg.Done()
 
-			logrus.Debugf("Started to process column with index: %d", xIndex)
-
 			column, err := utils.GetImageColumn(*drawableImage, xIndex)
 			if err != nil {
 				errCh <- fmt.Errorf("sorter: failed to retrieve the image pixel column for a given index: %w", err)
@@ -268,8 +270,6 @@ func (sorter *defaultSorter) performParallelVerticalSort(drawableImage *draw.Ima
 			}
 
 			mu.Unlock()
-
-			logrus.Debugf("Finished to process column with index: %d", xIndex)
 		}(x)
 	}
 

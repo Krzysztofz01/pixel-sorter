@@ -73,5 +73,6 @@ var brightnessCmd = &cobra.Command{
 }
 
 func init() {
+	brightnessCmd.SilenceUsage = true
 	rootCmd.AddCommand(brightnessCmd)
 }
