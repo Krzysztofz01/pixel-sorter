@@ -19,3 +19,11 @@
 
 # Go workspace file
 go.work
+
+# Test images
+*.jpg
+*.jpeg
+*.png
+
+# Profiling/benchmark files
+*.prof
