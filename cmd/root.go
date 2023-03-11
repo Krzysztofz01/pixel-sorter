@@ -170,8 +170,9 @@ func getOutputFileName(inputFilePath string) string {
 }
 
 // Function used to execute the program (root command)
-func Execute() {
+func Execute(args []string) {
 	logrus.Info("Starting the pixel sorter.")
+	rootCmd.SetArgs(args)
 	if err := rootCmd.Execute(); err != nil {
 		logrus.Fatalf("Failure: %s", err)
 		os.Exit(1)
