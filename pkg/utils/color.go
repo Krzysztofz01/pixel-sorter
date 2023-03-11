@@ -6,6 +6,14 @@ import (
 	"math"
 )
 
+// Representation of a blending mode algorithm
+type BlendingMode int
+
+const (
+	LightenOnly BlendingMode = iota
+	DarkenOnly
+)
+
 // Convert the color.RGBA struct to individual RGB components represented as integers in range from 0 to 255
 func RgbaToIntComponents(c color.RGBA) (int, int, int) {
 	r32, g32, b32, _ := c.RGBA()
@@ -109,4 +117,29 @@ func RgbaToHsl(c color.RGBA) (int, float64, float64) {
 	}
 
 	return hue, saturation, lightness
+}
+
+// Perform blending of two colors according to a given blending mode
+// TODO: Currently the alpha channel of the output color has a 0xff fixed value
+func BlendRGBA(a, b color.RGBA, mode BlendingMode) color.RGBA {
+	switch mode {
+	case LightenOnly:
+		{
+			r := uint8(math.Max(float64(a.R), float64(b.R)))
+			g := uint8(math.Max(float64(a.G), float64(b.G)))
+			b := uint8(math.Max(float64(a.B), float64(b.B)))
+
+			return color.RGBA{r, g, b, 0xff}
+		}
+	case DarkenOnly:
+		{
+			r := uint8(math.Min(float64(a.R), float64(b.R)))
+			g := uint8(math.Min(float64(a.G), float64(b.G)))
+			b := uint8(math.Min(float64(a.B), float64(b.B)))
+
+			return color.RGBA{r, g, b, 0xff}
+		}
+	default:
+		panic("color-utils: undefined blending mode provided")
+	}
 }

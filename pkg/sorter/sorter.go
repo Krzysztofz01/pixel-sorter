@@ -49,6 +49,14 @@ const (
 	SplitByEdgeDetection
 )
 
+type ResultImageBlending int
+
+const (
+	BlendingNone ResultImageBlending = iota
+	BlendingLighten
+	BlendingDarken
+)
+
 // Structure representing all the parameters for the sorter
 type SorterOptions struct {
 	SortDeterminant                   SortDeterminant
@@ -60,6 +68,7 @@ type SorterOptions struct {
 	Angle                             int
 	UseMask                           bool
 	Cycles                            int
+	Blending                          ResultImageBlending
 }
 
 // Get a SorterOptions structure instance with default values
@@ -74,6 +83,7 @@ func GetDefaultSorterOptions() *SorterOptions {
 	options.UseMask = false
 	options.IntervalLength = 0
 	options.Cycles = 1
+	options.Blending = BlendingNone
 
 	return options
 }

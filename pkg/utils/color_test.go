@@ -178,3 +178,25 @@ func TestShouldConvertRgbaToHslComponents(t *testing.T) {
 		assert.InDelta(t, expected.l, lActual, deltaLightness)
 	}
 }
+
+func TestShouldBlendColorUsingLightenOnlyMode(t *testing.T) {
+	// TODO: Implement more test cases
+	aColor := color.RGBA{25, 50, 200, 0xff}
+	bColor := color.RGBA{200, 40, 20, 0xff}
+
+	expected := color.RGBA{200, 50, 200, 0xff}
+	actual := BlendRGBA(aColor, bColor, LightenOnly)
+
+	assert.Equal(t, expected, actual)
+}
+
+func TestShouldBlendColorUsingDarkenOnlyMode(t *testing.T) {
+	// TODO: Implement more test cases
+	aColor := color.RGBA{25, 50, 200, 0xff}
+	bColor := color.RGBA{200, 40, 20, 0xff}
+
+	expected := color.RGBA{25, 40, 20, 0xff}
+	actual := BlendRGBA(aColor, bColor, DarkenOnly)
+
+	assert.Equal(t, expected, actual)
+}
