@@ -191,3 +191,23 @@ func TrimImageTransparentWorkspace(imageWithWorkspace draw.Image, imageOriginal 
 
 	return tImg
 }
+
+// Function used to scale the image down according to given percentage parameter (Value from 0.0 to 1.0)
+func ScaleImage(i image.Image, percentage float64) (draw.Image, error) {
+	if percentage < 0.0 || percentage > 1.0 {
+		return nil, errors.New("image-utils: invalid downscale percentage specified")
+	}
+
+	scaledWidth := float64(i.Bounds().Dx()) * percentage
+	scaledHeight := float64(i.Bounds().Dy()) * percentage
+
+	// NOTE: The usage of the "Lanczos" algorithm will produce images with better quality, for perfomance use "Box"
+	scaledImage := imaging.Resize(i, int(scaledWidth), int(scaledHeight), imaging.Lanczos)
+
+	scaledDrawableImage, err := GetDrawableImage(scaledImage)
+	if err != nil {
+		return nil, fmt.Errorf("image-utils: can not get the scaled drawable image version: %w", err)
+	}
+
+	return scaledDrawableImage, nil
+}
