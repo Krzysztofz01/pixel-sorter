@@ -23,6 +23,7 @@ func TestDefaultSorterShouldSortForSortByBrightnessSplitByBrightnessZeroAngle(t 
 		0,
 		false,
 		1,
+		1,
 	}
 
 	// NOTE: Preparing the expected image
@@ -69,6 +70,7 @@ func TestDefaultSorterShouldSortForSortByBrightnessSplitByBrightnessNonZeroAngle
 		0,
 		45,
 		false,
+		1,
 		1,
 	}
 

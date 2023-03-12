@@ -60,6 +60,7 @@ type SorterOptions struct {
 	Angle                             int
 	UseMask                           bool
 	Cycles                            int
+	Scale                             float64
 }
 
 // Get a SorterOptions structure instance with default values
@@ -74,6 +75,7 @@ func GetDefaultSorterOptions() *SorterOptions {
 	options.UseMask = false
 	options.IntervalLength = 0
 	options.Cycles = 1
+	options.Scale = 1
 
 	return options
 }
