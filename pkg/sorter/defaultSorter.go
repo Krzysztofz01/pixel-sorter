@@ -43,9 +43,22 @@ func CreateSorter(image image.Image, mask image.Image, options *SorterOptions) (
 			return nil, errors.New("sorter: the cycles count can not be zero or less")
 		}
 
+		if options.Scale < 0.0 || options.Scale > 1.0 {
+			return nil, errors.New("sorter: the scale percentage must be in range between zero and one")
+		}
+
 		sorter.options = options
 	} else {
 		sorter.options = GetDefaultSorterOptions()
+	}
+
+	if sorter.options.Scale != 1.0 {
+		imageScaled, err := utils.ScaleImage(sorter.image, sorter.options.Scale)
+		if err != nil {
+			return nil, fmt.Errorf("sorter: failed to scale the target image: %w", err)
+		}
+
+		sorter.image = imageScaled
 	}
 
 	if sorter.options.IntervalDeterminant == SplitByEdgeDetection {
@@ -70,6 +83,15 @@ func CreateSorter(image image.Image, mask image.Image, options *SorterOptions) (
 		// TODO: The size validation can be moved to the mask factory func in the future
 		if mask.Bounds().Dx() != image.Bounds().Dx() || mask.Bounds().Dy() != image.Bounds().Dy() {
 			return nil, errors.New("sorter: the image and mask image sizes are not matching")
+		}
+
+		if sorter.options.Scale != 1.0 {
+			scaledMask, err := utils.ScaleImage(mask, sorter.options.Scale)
+			if err != nil {
+				return nil, fmt.Errorf("sorter: failed to scale the target image mask: %w", err)
+			}
+
+			mask = scaledMask
 		}
 
 		m, err := CreateMask(mask)
