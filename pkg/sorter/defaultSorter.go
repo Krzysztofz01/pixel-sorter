@@ -162,24 +162,28 @@ func (sorter *defaultSorter) performHorizontalSort(drawableImage *draw.Image) er
 	return nil
 }
 
-// TODO: Check for potential race conditions
 func (sorter *defaultSorter) performParallelHorizontalSort(drawableImage *draw.Image) error {
 	yLength := (*drawableImage).Bounds().Dy()
 	wg := sync.WaitGroup{}
 	wg.Add(yLength)
 
-	mu := sync.Mutex{}
+	mu := sync.RWMutex{}
 	errCh := make(chan error)
 
 	for y := 0; y < yLength; y += 1 {
 		go func(yIndex int) {
 			defer wg.Done()
 
+			mu.RLock()
+
 			row, err := utils.GetImageRow(*drawableImage, yIndex)
 			if err != nil {
 				errCh <- fmt.Errorf("sorter: failed to retrieve the image pixel row for a given index: %w", err)
+				mu.RUnlock()
 				return
 			}
+
+			mu.RUnlock()
 
 			sortedRow, err := sorter.performSortOnImageStrip(row, func(iteratedCoordinate int) (int, int) {
 				return iteratedCoordinate, yIndex
@@ -233,24 +237,28 @@ func (sorter *defaultSorter) performVerticalSort(drawableImage *draw.Image) erro
 	return nil
 }
 
-// TODO: Check for potential race conditions
 func (sorter *defaultSorter) performParallelVerticalSort(drawableImage *draw.Image) error {
 	xLength := (*drawableImage).Bounds().Dx()
 	wg := sync.WaitGroup{}
 	wg.Add(xLength)
 
-	mu := sync.Mutex{}
+	mu := sync.RWMutex{}
 	errCh := make(chan error)
 
 	for x := 0; x < xLength; x += 1 {
 		go func(xIndex int) {
 			defer wg.Done()
 
+			mu.RLock()
+
 			column, err := utils.GetImageColumn(*drawableImage, xIndex)
 			if err != nil {
 				errCh <- fmt.Errorf("sorter: failed to retrieve the image pixel column for a given index: %w", err)
+				mu.RUnlock()
 				return
 			}
+
+			mu.RUnlock()
 
 			sortedColumn, err := sorter.performSortOnImageStrip(column, func(iteratedCoordinate int) (int, int) {
 				return xIndex, iteratedCoordinate
