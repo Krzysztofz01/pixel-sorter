@@ -17,8 +17,11 @@ func GetImageFromFile(filePath string) (image.Image, error) {
 		return nil, fmt.Errorf("utils: can not open the specified file: %w", err)
 	}
 
-	// TODO: File closing best practices research
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			panic(err)
+		}
+	}()
 
 	img, _, err := image.Decode(file)
 	if err != nil {
@@ -36,8 +39,11 @@ func StoreImageToFile(fileName string, fileFormat string, img image.Image) error
 			return fmt.Errorf("utils: failed to create a new file: %w", err)
 		}
 
-		// TODO: File closing best practices research
-		defer file.Close()
+		defer func() {
+			if err := file.Close(); err != nil {
+				panic(err)
+			}
+		}()
 
 		if err := jpeg.Encode(file, img, &jpeg.Options{Quality: 100}); err != nil {
 			return fmt.Errorf("utils: failed to encode the image to jpeg: %w", err)
@@ -51,8 +57,11 @@ func StoreImageToFile(fileName string, fileFormat string, img image.Image) error
 			return fmt.Errorf("utils: failed to create a new file: %w", err)
 		}
 
-		// TODO: File closing best practices research
-		defer file.Close()
+		defer func() {
+			if err := file.Close(); err != nil {
+				panic(err)
+			}
+		}()
 
 		if err := png.Encode(file, img); err != nil {
 			return fmt.Errorf("utils: failed to encode the image to png: %w", err)
