@@ -27,8 +27,6 @@ var (
 	FlagVerboseLogging         bool
 )
 
-// TODO: Add verbose logging flag
-
 var rootCmd = &cobra.Command{
 	Use:   "pixel-sorter",
 	Short: "Pixel sorting image editing utility implemented in Go.",
