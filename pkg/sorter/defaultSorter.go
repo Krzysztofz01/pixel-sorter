@@ -67,12 +67,7 @@ func CreateSorter(image image.Image, mask image.Image, options *SorterOptions) (
 	if mask != nil {
 		maskExecTime := time.Now()
 
-		// TODO: The size validation can be moved to the mask factory func in the future
-		if mask.Bounds().Dx() != image.Bounds().Dx() || mask.Bounds().Dy() != image.Bounds().Dy() {
-			return nil, errors.New("sorter: the image and mask image sizes are not matching")
-		}
-
-		m, err := CreateMask(mask)
+		m, err := CreateImageMask(mask, image.Bounds())
 		if err != nil {
 			return nil, fmt.Errorf("sorter: failed to create a new mask instance: %w", err)
 		}
