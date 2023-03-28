@@ -68,6 +68,7 @@ type SorterOptions struct {
 	Angle                             int
 	UseMask                           bool
 	Cycles                            int
+	Scale                             float64
 	Blending                          ResultImageBlending
 }
 
@@ -83,6 +84,7 @@ func GetDefaultSorterOptions() *SorterOptions {
 	options.UseMask = false
 	options.IntervalLength = 0
 	options.Cycles = 1
+	options.Scale = 1
 	options.Blending = BlendingNone
 
 	return options

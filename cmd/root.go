@@ -24,6 +24,7 @@ var (
 	FlagMask                   bool
 	FlagIntervalLength         int
 	FlagSortCycles             int
+	FlagImageScale             float64
 	FlagBlendingMode           string
 	FlagVerboseLogging         bool
 )
@@ -65,6 +66,8 @@ func init() {
 	rootCmd.PersistentFlags().IntVarP(&FlagIntervalLength, "interval-max-length", "k", 0, "The max length of the interval. Zero means no length limits.")
 
 	rootCmd.PersistentFlags().IntVarP(&FlagSortCycles, "cycles", "c", 1, "The count of sorting cycles that should be performed on the image.")
+
+	rootCmd.PersistentFlags().Float64VarP(&FlagImageScale, "scale", "s", 1, "Image downscaling percentage factor. Options: [0.0 - 1.0].")
 
 	rootCmd.PersistentFlags().StringVarP(&FlagBlendingMode, "blending-mode", "b", "none", "The blending mode algorithm to blend the sorted image into the original. Options: [none, lighten, darken].")
 }
@@ -154,6 +157,12 @@ func parseCommonOptions() (*sorter.SorterOptions, error) {
 		return nil, fmt.Errorf("invalid cycles count specified")
 	} else {
 		options.Cycles = FlagSortCycles
+	}
+
+	if FlagImageScale < 0.0 || FlagImageScale > 1.0 {
+		return nil, fmt.Errorf("invalid image scale percentage specified")
+	} else {
+		options.Scale = FlagImageScale
 	}
 
 	switch FlagBlendingMode {

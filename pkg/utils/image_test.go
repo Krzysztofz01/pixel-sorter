@@ -128,6 +128,25 @@ func TestImageInvertShouldInvertImage(t *testing.T) {
 	}
 }
 
+func TestImageShouldResize(t *testing.T) {
+	image := mockTestWhiteImage()
+	imageWidth := image.Bounds().Dx()
+	imageHeight := image.Bounds().Dy()
+
+	expectedWidth := imageWidth / 2
+	expectedHeight := imageHeight / 2
+
+	scaledImage, err := ScaleImage(image, 0.5)
+	assert.NotNil(t, scaledImage)
+	assert.Nil(t, err)
+
+	actualWidth := scaledImage.Bounds().Dx()
+	actualHeight := scaledImage.Bounds().Dy()
+
+	assert.Equal(t, expectedWidth, actualWidth)
+	assert.Equal(t, expectedHeight, actualHeight)
+}
+
 const (
 	mock_image_width  = 25
 	mock_image_height = 25
