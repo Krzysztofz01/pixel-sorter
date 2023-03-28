@@ -130,6 +130,25 @@ func (sorter *defaultSorter) Sort() (image.Image, error) {
 	drawableImage = utils.RotateImage(drawableImage, -sorter.options.Angle)
 	drawableImage = utils.TrimImageTransparentWorkspace(drawableImage, sorter.image)
 
+	switch sorter.options.Blending {
+	case BlendingLighten:
+		{
+			if drawableImage, err = utils.BlendImages(sorter.image, drawableImage, utils.LightenOnly); err != nil {
+				return nil, fmt.Errorf("sorter: failed to perform the image blending: %w", err)
+			}
+		}
+	case BlendingDarken:
+		{
+			if drawableImage, err = utils.BlendImages(sorter.image, drawableImage, utils.DarkenOnly); err != nil {
+				return nil, fmt.Errorf("sorter: failed to perform the image blending: %w", err)
+			}
+		}
+	case BlendingNone:
+		break
+	default:
+		panic("sorter: invalid blending mode specified")
+	}
+
 	logrus.Debugf("Pixel sorting took: %s.", time.Since(sortingExecTime))
 	return drawableImage, nil
 }

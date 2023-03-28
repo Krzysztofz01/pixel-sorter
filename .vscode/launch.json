@@ -41,6 +41,8 @@
                 "0",
                 "--cycles",
                 "1",
+                "--blending-mode",
+                "none",
                 "--verbose",
                 "true"
             ]
@@ -74,6 +76,8 @@
                 "0",
                 "--cycles",
                 "1",
+                "--blending-mode",
+                "none",
                 "--verbose",
                 "true"
             ]
@@ -107,6 +111,8 @@
                 "0",
                 "--cycles",
                 "1",
+                "--blending-mode",
+                "none",
                 "--verbose",
                 "true"
             ]
@@ -140,6 +146,8 @@
                 "0",
                 "--cycles",
                 "1",
+                "--blending-mode",
+                "none",
                 "--verbose",
                 "true"
             ]
@@ -175,6 +183,8 @@
                 "0",
                 "--cycles",
                 "1",
+                "--blending-mode",
+                "none",
                 "--verbose",
                 "true"
             ]
@@ -208,6 +218,8 @@
                 "45",
                 "--cycles",
                 "1",
+                "--blending-mode",
+                "none",
                 "--verbose",
                 "true"
             ]
@@ -241,6 +253,8 @@
                 "0",
                 "--cycles",
                 "2",
+                "--blending-mode",
+                "none",
                 "--verbose",
                 "true"
             ]
@@ -274,6 +288,78 @@
                 "0",
                 "--cycles",
                 "1",
+                "--blending-mode",
+                "none",
+                "--verbose",
+                "true"
+            ]
+        },
+        {
+            "name": "Debug [Internal] - Sort brightness - Interval brightness - Lighten blending mode (image-test.png)",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cli",
+            "console": "integratedTerminal",
+            "args": [
+                "brightness",
+                "--image-file-path",
+                "image-test.png",
+                "--output-format",
+                "jpg",
+                "--direction",
+                "ascending",
+                "--interval-determinant",
+                "brightness",
+                "--interval-lower-threshold",
+                "0.15",
+                "--interval-upper-threshold",
+                "0.85",
+                "--interval-max-length",
+                "0",
+                "--order",
+                "horizontal-vertical",
+                "--angle",
+                "0",
+                "cycles",
+                "1",
+                "--blending-mode",
+                "lighten",
+                "--verbose",
+                "true"
+            ]
+        },
+        {
+            "name": "Debug [Internal] - Sort brightness - Interval brightness - Darken blending mode (image-test.png)",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cli",
+            "console": "integratedTerminal",
+            "args": [
+                "brightness",
+                "--image-file-path",
+                "image-test.png",
+                "--output-format",
+                "jpg",
+                "--direction",
+                "ascending",
+                "--interval-determinant",
+                "brightness",
+                "--interval-lower-threshold",
+                "0.15",
+                "--interval-upper-threshold",
+                "0.85",
+                "--interval-max-length",
+                "0",
+                "--order",
+                "horizontal-vertical",
+                "--angle",
+                "0",
+                "cycles",
+                "1",
+                "--blending-mode",
+                "darken",
                 "--verbose",
                 "true"
             ]

@@ -24,6 +24,7 @@ var (
 	FlagMask                   bool
 	FlagIntervalLength         int
 	FlagSortCycles             int
+	FlagBlendingMode           string
 	FlagVerboseLogging         bool
 )
 
@@ -64,6 +65,8 @@ func init() {
 	rootCmd.PersistentFlags().IntVarP(&FlagIntervalLength, "interval-max-length", "k", 0, "The max length of the interval. Zero means no length limits.")
 
 	rootCmd.PersistentFlags().IntVarP(&FlagSortCycles, "cycles", "c", 1, "The count of sorting cycles that should be performed on the image.")
+
+	rootCmd.PersistentFlags().StringVarP(&FlagBlendingMode, "blending-mode", "b", "none", "The blending mode algorithm to blend the sorted image into the original. Options: [none, lighten, darken].")
 }
 
 // Helper function used to validate and apply flag values into the sorter options struct
@@ -151,6 +154,25 @@ func parseCommonOptions() (*sorter.SorterOptions, error) {
 		return nil, fmt.Errorf("invalid cycles count specified")
 	} else {
 		options.Cycles = FlagSortCycles
+	}
+
+	switch FlagBlendingMode {
+	case "none":
+		{
+			options.Blending = sorter.BlendingNone
+		}
+	case "lighten":
+		{
+			options.Blending = sorter.BlendingLighten
+		}
+	case "darken":
+		{
+			options.Blending = sorter.BlendingDarken
+		}
+	default:
+		{
+			return nil, fmt.Errorf("invalid blending mode specified: %s", FlagBlendingMode)
+		}
 	}
 
 	return options, nil

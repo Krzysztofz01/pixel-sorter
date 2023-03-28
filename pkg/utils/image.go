@@ -191,3 +191,51 @@ func TrimImageTransparentWorkspace(imageWithWorkspace draw.Image, imageOriginal 
 
 	return tImg
 }
+
+// Blend two images using a given blending mode into a new image
+// TODO: Unit test implementation
+func BlendImages(a, b image.Image, mode BlendingMode) (draw.Image, error) {
+	aWidth := a.Bounds().Dx()
+	aHeight := a.Bounds().Dy()
+
+	bWidth := b.Bounds().Dx()
+	bHeight := b.Bounds().Dy()
+
+	if aWidth != bWidth {
+		return nil, errors.New("image-utils: the provided images have a different width")
+	}
+
+	if aHeight != bHeight {
+		return nil, errors.New("image-utils: the provided images have a different height")
+	}
+
+	aRgba, err := GetDrawableImage(a)
+	if err != nil {
+		return nil, fmt.Errorf("image-utils: can not get the drawable image version of a: %w", err)
+	}
+
+	bRgba, err := GetDrawableImage(b)
+	if err != nil {
+		return nil, fmt.Errorf("image-utils: can not get the drawable image version of b: %w", err)
+	}
+
+	resultImage := image.NewRGBA(image.Rect(0, 0, aWidth, aHeight))
+
+	for xIndex := 0; xIndex < aWidth; xIndex += 1 {
+		for yIndex := 0; yIndex < aHeight; yIndex += 1 {
+			aColor, err := ColorToRgba(aRgba.At(xIndex, yIndex))
+			if err != nil {
+				return nil, fmt.Errorf("image-utils: can not access the image a color as RGBA: %w", err)
+			}
+
+			bColor, err := ColorToRgba(bRgba.At(xIndex, yIndex))
+			if err != nil {
+				return nil, fmt.Errorf("image-utils: can not access the image b color as RGBA: %w", err)
+			}
+
+			resultImage.Set(xIndex, yIndex, BlendRGBA(aColor, bColor, mode))
+		}
+	}
+
+	return resultImage, nil
+}
