@@ -50,6 +50,10 @@ go build ./cli
     - *horizontal-vertical*
     - *vertical-horizontal*
 - *scale* (-s) - Image size downscale percentage factor (can be used to generate a low resolution preview).
+- *blending-mode* (-b) - The blending mode algorithm to blend the original image with the sorted image.
+    - *none*
+    - *lighten*
+    - *darken*
 - *output-format* (-f) - The output format of the graphic file.
     - *jpg*
     - *png*
@@ -68,6 +72,7 @@ Available Commands:
 
 Flags:
   -a, --angle int                        The angle at which to sort the pixels.
+  -b, --blending-mode string             The blending mode algorithm to blend the sorted image into the original. Options: [none, lighten, darken]. (default "none")       
   -c, --cycles int                       The count of sorting cycles that should be performed on the image. (default 1)
   -d, --direction string                 Pixel sorting direction in intervals. Options: [ascending, descending, random]. (default "ascending")
   -h, --help                             help for pixel-sorter

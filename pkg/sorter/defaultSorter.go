@@ -80,11 +80,6 @@ func CreateSorter(image image.Image, mask image.Image, options *SorterOptions) (
 	if mask != nil {
 		maskExecTime := time.Now()
 
-		// TODO: The size validation can be moved to the mask factory func in the future
-		if mask.Bounds().Dx() != image.Bounds().Dx() || mask.Bounds().Dy() != image.Bounds().Dy() {
-			return nil, errors.New("sorter: the image and mask image sizes are not matching")
-		}
-
 		if sorter.options.Scale != 1.0 {
 			scaledMask, err := utils.ScaleImage(mask, sorter.options.Scale)
 			if err != nil {
@@ -94,7 +89,7 @@ func CreateSorter(image image.Image, mask image.Image, options *SorterOptions) (
 			mask = scaledMask
 		}
 
-		m, err := CreateMask(mask)
+		m, err := CreateImageMask(mask, image.Bounds())
 		if err != nil {
 			return nil, fmt.Errorf("sorter: failed to create a new mask instance: %w", err)
 		}
@@ -157,6 +152,25 @@ func (sorter *defaultSorter) Sort() (image.Image, error) {
 	drawableImage = utils.RotateImage(drawableImage, -sorter.options.Angle)
 	drawableImage = utils.TrimImageTransparentWorkspace(drawableImage, sorter.image)
 
+	switch sorter.options.Blending {
+	case BlendingLighten:
+		{
+			if drawableImage, err = utils.BlendImages(sorter.image, drawableImage, utils.LightenOnly); err != nil {
+				return nil, fmt.Errorf("sorter: failed to perform the image blending: %w", err)
+			}
+		}
+	case BlendingDarken:
+		{
+			if drawableImage, err = utils.BlendImages(sorter.image, drawableImage, utils.DarkenOnly); err != nil {
+				return nil, fmt.Errorf("sorter: failed to perform the image blending: %w", err)
+			}
+		}
+	case BlendingNone:
+		break
+	default:
+		panic("sorter: invalid blending mode specified")
+	}
+
 	logrus.Debugf("Pixel sorting took: %s.", time.Since(sortingExecTime))
 	return drawableImage, nil
 }
@@ -184,24 +198,28 @@ func (sorter *defaultSorter) performHorizontalSort(drawableImage *draw.Image) er
 	return nil
 }
 
-// TODO: Check for potential race conditions
 func (sorter *defaultSorter) performParallelHorizontalSort(drawableImage *draw.Image) error {
 	yLength := (*drawableImage).Bounds().Dy()
 	wg := sync.WaitGroup{}
 	wg.Add(yLength)
 
-	mu := sync.Mutex{}
+	mu := sync.RWMutex{}
 	errCh := make(chan error)
 
 	for y := 0; y < yLength; y += 1 {
 		go func(yIndex int) {
 			defer wg.Done()
 
+			mu.RLock()
+
 			row, err := utils.GetImageRow(*drawableImage, yIndex)
 			if err != nil {
 				errCh <- fmt.Errorf("sorter: failed to retrieve the image pixel row for a given index: %w", err)
+				mu.RUnlock()
 				return
 			}
+
+			mu.RUnlock()
 
 			sortedRow, err := sorter.performSortOnImageStrip(row, func(iteratedCoordinate int) (int, int) {
 				return iteratedCoordinate, yIndex
@@ -255,24 +273,28 @@ func (sorter *defaultSorter) performVerticalSort(drawableImage *draw.Image) erro
 	return nil
 }
 
-// TODO: Check for potential race conditions
 func (sorter *defaultSorter) performParallelVerticalSort(drawableImage *draw.Image) error {
 	xLength := (*drawableImage).Bounds().Dx()
 	wg := sync.WaitGroup{}
 	wg.Add(xLength)
 
-	mu := sync.Mutex{}
+	mu := sync.RWMutex{}
 	errCh := make(chan error)
 
 	for x := 0; x < xLength; x += 1 {
 		go func(xIndex int) {
 			defer wg.Done()
 
+			mu.RLock()
+
 			column, err := utils.GetImageColumn(*drawableImage, xIndex)
 			if err != nil {
 				errCh <- fmt.Errorf("sorter: failed to retrieve the image pixel column for a given index: %w", err)
+				mu.RUnlock()
 				return
 			}
+
+			mu.RUnlock()
 
 			sortedColumn, err := sorter.performSortOnImageStrip(column, func(iteratedCoordinate int) (int, int) {
 				return xIndex, iteratedCoordinate

@@ -14,13 +14,20 @@ type Mask struct {
 	isEmpty   bool
 }
 
-// TODO: Place the image/mask size validation here?
+// Crate a new mask instance from a given image without target image restrictions
+func CreateMask(mImg image.Image) (*Mask, error) {
+	return CreateImageMask(mImg, mImg.Bounds())
+}
 
-// Create a new mask instance from a given image
-func CreateMask(i image.Image) (*Mask, error) {
+// Create a new mask instance from a given image and bounds of the image to be masked
+func CreateImageMask(mImg image.Image, targetImageBounds image.Rectangle) (*Mask, error) {
+	if mImg.Bounds().Dx() != targetImageBounds.Dx() || mImg.Bounds().Dy() != targetImageBounds.Dy() {
+		return nil, errors.New("sorter: mask image and target image sizes are not matching")
+	}
+
 	// TODO: It is not efficient to redraw the whole mask, and we dont need it in a drawable format, but we
 	// are doing it to ensure the mask is a image.RGBA
-	drawableMask, err := utils.GetDrawableImage(i)
+	drawableMask, err := utils.GetDrawableImage(mImg)
 	if err != nil {
 		return nil, fmt.Errorf("sorter: failed the convert the mask to drawable version: %w", err)
 	}
