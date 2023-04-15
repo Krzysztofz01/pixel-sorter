@@ -21,16 +21,7 @@ var hueCmd = &cobra.Command{
 			return err
 		}
 
-		switch strings.ToLower(FlagSortDirection) {
-		case "ascending":
-			options.SortDeterminant = sorter.SortByHueAscending
-		case "descending":
-			options.SortDeterminant = sorter.SortByHueDescending
-		case "random":
-			options.SortDeterminant = sorter.ShuffleByHue
-		default:
-			return fmt.Errorf("invalid direction specified: %q", FlagSortDirection)
-		}
+		options.SortDeterminant = sorter.SortByHue
 
 		if len(FlagImageFilePath) == 0 {
 			return fmt.Errorf("invalid image path specified: %q", FlagImageFilePath)

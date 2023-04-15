@@ -7,14 +7,9 @@ import (
 // Flag representing the determinant parameter for the sorting process
 type SortDeterminant int
 
-// TODO: Make the direction as a separate parameter
 const (
-	SortByBrightnessAscending SortDeterminant = iota
-	SortByBrightnessDescending
-	ShuffleByBrightness
-	SortByHueAscending
-	SortByHueDescending
-	ShuffleByHue
+	SortByBrightness SortDeterminant = iota
+	SortByHue
 )
 
 // Flag representing the order in which should be the image sorted
@@ -60,6 +55,7 @@ const (
 // Structure representing all the parameters for the sorter
 type SorterOptions struct {
 	SortDeterminant                   SortDeterminant
+	SortDirection                     SortDirection
 	SortOrder                         SortOrder
 	IntervalDeterminant               IntervalDeterminant
 	IntervalDeterminantLowerThreshold float64
@@ -76,7 +72,8 @@ type SorterOptions struct {
 func GetDefaultSorterOptions() *SorterOptions {
 	options := new(SorterOptions)
 	options.Angle = 0
-	options.SortDeterminant = SortByBrightnessAscending
+	options.SortDeterminant = SortByBrightness
+	options.SortDirection = SortAscending
 	options.SortOrder = SortHorizontalAndVertical
 	options.IntervalDeterminant = SplitByBrightness
 	options.IntervalDeterminantLowerThreshold = 0.0
@@ -94,23 +91,4 @@ func GetDefaultSorterOptions() *SorterOptions {
 type Sorter interface {
 	// Perform the sorting operation and return the sorted version of the image
 	Sort() (image.Image, error)
-}
-
-func GetSortDeterminantDirection(s SortDeterminant) SortDirection {
-	switch s {
-	case SortByBrightnessAscending, SortByHueAscending:
-		{
-			return SortAscending
-		}
-	case SortByBrightnessDescending, SortByHueDescending:
-		{
-			return SortDescending
-		}
-	case ShuffleByBrightness, ShuffleByHue:
-		{
-			return SortRandom
-		}
-	default:
-		panic("sorter: invalid sort determinant specified")
-	}
 }

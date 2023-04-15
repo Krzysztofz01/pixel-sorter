@@ -333,7 +333,6 @@ func (sorter *defaultSorter) performParallelVerticalSort(drawableImage *draw.Ima
 func (sorter *defaultSorter) performSortOnImageStrip(imageStrip []color.Color, maskCoordinateFunc func(iteratedCoordinate int) (int, int)) ([]color.Color, error) {
 	stripLength := len(imageStrip)
 	sortedImageStrip := make([]color.Color, 0, stripLength)
-	sortDirection := GetSortDeterminantDirection(sorter.options.SortDeterminant)
 
 	interval := sorter.CreateInterval()
 	for x := 0; x < stripLength; x += 1 {
@@ -356,7 +355,7 @@ func (sorter *defaultSorter) performSortOnImageStrip(imageStrip []color.Color, m
 			}
 		} else {
 			if interval.Any() {
-				sortedIntervalItems := interval.Sort(sortDirection)
+				sortedIntervalItems := interval.Sort(sorter.options.SortDirection)
 				sortedImageStrip = append(sortedImageStrip, sortedIntervalItems...)
 
 				interval = sorter.CreateInterval()
@@ -367,7 +366,7 @@ func (sorter *defaultSorter) performSortOnImageStrip(imageStrip []color.Color, m
 	}
 
 	if interval.Any() {
-		sortedIntervalItems := interval.Sort(sortDirection)
+		sortedIntervalItems := interval.Sort(sorter.options.SortDirection)
 		sortedImageStrip = append(sortedImageStrip, sortedIntervalItems...)
 	}
 
@@ -429,14 +428,14 @@ func (sorter *defaultSorter) isMeetingIntervalRequirements(color color.RGBA, isM
 
 func (sorter *defaultSorter) CreateInterval() Interval {
 	switch sorter.options.SortDeterminant {
-	case SortByBrightnessAscending, SortByBrightnessDescending, ShuffleByBrightness:
+	case SortByBrightness:
 		{
 			return CreateNormalizedWeightInterval(func(c color.RGBA) (float64, error) {
 				brightness := utils.CalculatePerceivedBrightness(c)
 				return brightness, nil
 			})
 		}
-	case SortByHueAscending, SortByHueDescending, ShuffleByHue:
+	case SortByHue:
 		{
 			return CreateValueWeightInterval(func(c color.RGBA) (int, error) {
 				h, _, _ := utils.RgbaToHsl(c)
