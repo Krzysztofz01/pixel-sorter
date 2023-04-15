@@ -21,16 +21,7 @@ var brightnessCmd = &cobra.Command{
 			return err
 		}
 
-		switch strings.ToLower(FlagSortDirection) {
-		case "ascending":
-			options.SortDeterminant = sorter.SortByBrightnessAscending
-		case "descending":
-			options.SortDeterminant = sorter.SortByBrightnessDescending
-		case "random":
-			options.SortDeterminant = sorter.ShuffleByBrightness
-		default:
-			return fmt.Errorf("invalid direction specified: %q", FlagSortDirection)
-		}
+		options.SortDeterminant = sorter.SortByBrightness
 
 		if len(FlagImageFilePath) == 0 {
 			return fmt.Errorf("invalid image path specified: %q", FlagImageFilePath)

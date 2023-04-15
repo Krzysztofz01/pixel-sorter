@@ -80,6 +80,23 @@ func parseCommonOptions() (*sorter.SorterOptions, error) {
 
 	options := sorter.GetDefaultSorterOptions()
 
+	switch strings.ToLower(FlagSortDirection) {
+	case "ascending":
+		{
+			options.SortDirection = sorter.SortAscending
+		}
+	case "descending":
+		{
+			options.SortDirection = sorter.SortDescending
+		}
+	case "random":
+		{
+			options.SortDirection = sorter.SortRandom
+		}
+	default:
+		return nil, fmt.Errorf("invalid direction specified: %q", FlagSortDirection)
+	}
+
 	switch strings.ToLower(FlagSortOrder) {
 	case "horizontal":
 		options.SortOrder = sorter.SortHorizontal
