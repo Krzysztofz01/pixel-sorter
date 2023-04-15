@@ -442,6 +442,13 @@ func (sorter *defaultSorter) CreateInterval() Interval {
 				return h, nil
 			})
 		}
+	case SortBySaturation:
+		{
+			return CreateNormalizedWeightInterval(func(c color.RGBA) (float64, error) {
+				_, s, _ := utils.RgbaToHsl(c)
+				return s, nil
+			})
+		}
 	default:
 		panic("sorter: invalid sorter state due to a corrupted sorter weight determinant function value")
 	}

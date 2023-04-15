@@ -10,6 +10,7 @@ type SortDeterminant int
 const (
 	SortByBrightness SortDeterminant = iota
 	SortByHue
+	SortBySaturation
 )
 
 // Flag representing the order in which should be the image sorted

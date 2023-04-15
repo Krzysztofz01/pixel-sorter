@@ -5,10 +5,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var hueCmd = &cobra.Command{
-	Use:   "hue",
-	Short: "Use hue value as color sorting parameter.",
-	Long:  "Use hue value as color sorting parameter.",
+var saturationCmd = &cobra.Command{
+	Use:   "saturation",
+	Short: "Use saturation value as color sorting parameter.",
+	Long:  "Use saturation value as color sorting parameter.",
 
 	RunE: func(cmd *cobra.Command, args []string) error {
 		options, err := parseCommonOptions()
@@ -16,12 +16,12 @@ var hueCmd = &cobra.Command{
 			return err
 		}
 
-		options.SortDeterminant = sorter.SortByHue
+		options.SortDeterminant = sorter.SortBySaturation
 		return performPixelSorting(options)
 	},
 }
 
 func init() {
 	hueCmd.SilenceUsage = true
-	rootCmd.AddCommand(hueCmd)
+	rootCmd.AddCommand(saturationCmd)
 }

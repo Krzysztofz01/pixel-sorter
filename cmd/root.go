@@ -2,11 +2,13 @@ package cmd
 
 import (
 	"fmt"
+	"image"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/Krzysztofz01/pixel-sorter/pkg/sorter"
+	"github.com/Krzysztofz01/pixel-sorter/pkg/utils"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -202,6 +204,47 @@ func parseCommonOptions() (*sorter.SorterOptions, error) {
 	}
 
 	return options, nil
+}
+
+// Helper wrapper function used to perform the whole pixel sorting and IO operations according to the flags and provided options
+func performPixelSorting(options *sorter.SorterOptions) error {
+	if len(FlagImageFilePath) == 0 {
+		return fmt.Errorf("invalid image path specified: %q", FlagImageFilePath)
+	}
+
+	format := strings.ToLower(FlagOutputFileType)
+	if format != "jpg" && format != "png" {
+		return fmt.Errorf("invalid output file format specified: %q", FlagOutputFileType)
+	}
+
+	img, err := utils.GetImageFromFile(FlagImageFilePath)
+	if err != nil {
+		return err
+	}
+
+	var mask image.Image = nil
+	if len(FlagMaskFilePath) > 0 {
+		mask, err = utils.GetImageFromFile(FlagMaskFilePath)
+		if err != nil {
+			return err
+		}
+	}
+
+	sorter, err := sorter.CreateSorter(img, mask, options)
+	if err != nil {
+		return err
+	}
+
+	sortedImage, err := sorter.Sort()
+	if err != nil {
+		return err
+	}
+
+	if err := utils.StoreImageToFile(getOutputFileName(FlagImageFilePath), format, sortedImage); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // Helper function used to generate a output image file name based on the original file path
