@@ -17,14 +17,22 @@ import (
 type defaultSorter struct {
 	image   image.Image
 	mask    *Mask
+	logger  *logrus.Logger
 	options *SorterOptions
 }
 
-func CreateSorter(image image.Image, mask image.Image, options *SorterOptions) (Sorter, error) {
+func CreateSorter(image image.Image, mask image.Image, logger *logrus.Logger, options *SorterOptions) (Sorter, error) {
 	sorter := new(defaultSorter)
 	sorter.image = image
 
+	if logger == nil {
+		return nil, errors.New("sorter: invalid logger reference provided")
+	}
+	sorter.logger = logger
+
 	if options != nil {
+		sorter.logger.Debugln("Running the sorter with specified sorter options.")
+
 		lowerIdThreshold := options.IntervalDeterminantLowerThreshold
 		if lowerIdThreshold > 1.0 || lowerIdThreshold < 0.0 {
 			return nil, errors.New("sorter: invalid lower interval determinant threshold values provided")
@@ -47,8 +55,10 @@ func CreateSorter(image image.Image, mask image.Image, options *SorterOptions) (
 			return nil, errors.New("sorter: the scale percentage must be in range between zero and one")
 		}
 
+		sorter.logger.Debugf("Sorter options validation passed. Sorter options: %+v", *options)
 		sorter.options = options
 	} else {
+		sorter.logger.Debugln("Running the sorter with default sorter options.")
 		sorter.options = GetDefaultSorterOptions()
 	}
 
@@ -74,7 +84,7 @@ func CreateSorter(image image.Image, mask image.Image, options *SorterOptions) (
 		}
 
 		mask = invertedEdges
-		logrus.Debugf("Edge detection took: %s.", time.Since(edgeDetectionExecTime))
+		sorter.logger.Debugf("Edge detection took: %s.", time.Since(edgeDetectionExecTime))
 	}
 
 	if mask != nil {
@@ -94,7 +104,7 @@ func CreateSorter(image image.Image, mask image.Image, options *SorterOptions) (
 			return nil, fmt.Errorf("sorter: failed to create a new mask instance: %w", err)
 		}
 
-		logrus.Debugf("Mask parsing took: %s.", time.Since(maskExecTime))
+		sorter.logger.Debugf("Mask parsing took: %s.", time.Since(maskExecTime))
 		sorter.mask = m
 	} else {
 		sorter.mask = CreateEmptyMask()
@@ -171,7 +181,7 @@ func (sorter *defaultSorter) Sort() (image.Image, error) {
 		panic("sorter: invalid blending mode specified")
 	}
 
-	logrus.Debugf("Pixel sorting took: %s.", time.Since(sortingExecTime))
+	sorter.logger.Debugf("Pixel sorting took: %s.", time.Since(sortingExecTime))
 	return drawableImage, nil
 }
 

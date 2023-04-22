@@ -230,7 +230,7 @@ func performPixelSorting(options *sorter.SorterOptions) error {
 		}
 	}
 
-	sorter, err := sorter.CreateSorter(img, mask, options)
+	sorter, err := sorter.CreateSorter(img, mask, logrus.StandardLogger(), options)
 	if err != nil {
 		return err
 	}

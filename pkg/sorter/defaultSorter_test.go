@@ -1,11 +1,13 @@
 package sorter
 
 import (
+	"bytes"
 	"image"
 	"image/color"
 	"image/draw"
 	"testing"
 
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -44,7 +46,7 @@ func TestDefaultSorterShouldSortForSortByBrightnessSplitByBrightnessZeroAngle(t 
 		}
 	}
 
-	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), nil, &sorterOptions)
+	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), nil, mockLogger(), &sorterOptions)
 	assert.Nil(t, err)
 
 	actualImage, err := sorter.Sort()
@@ -78,7 +80,7 @@ func TestDefaultSorterShouldSortForSortByBrightnessSplitByBrightnessNonZeroAngle
 		BlendingNone,
 	}
 
-	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), nil, &sorterOptions)
+	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), nil, mockLogger(), &sorterOptions)
 	assert.Nil(t, err)
 
 	actualImage, err := sorter.Sort()
@@ -113,4 +115,13 @@ func mockTestBlackAndWhiteStripesImage() draw.Image {
 	}
 
 	return image
+}
+
+func mockLogger() *logrus.Logger {
+	loggerBuffer := bytes.Buffer{}
+
+	return &logrus.Logger{
+		Out:       &loggerBuffer,
+		Formatter: &logrus.TextFormatter{},
+	}
 }
