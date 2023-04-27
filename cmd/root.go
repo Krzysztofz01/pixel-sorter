@@ -6,9 +6,11 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/Krzysztofz01/pixel-sorter/pkg/sorter"
 	"github.com/Krzysztofz01/pixel-sorter/pkg/utils"
+	nestedFormatter "github.com/antonfisher/nested-logrus-formatter"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -31,6 +33,11 @@ var (
 	FlagVerboseLogging         bool
 )
 
+var (
+	Logger      *logrus.Logger
+	LocalLogger *logrus.Entry
+)
+
 var rootCmd = &cobra.Command{
 	Use:   "pixel-sorter",
 	Short: "Pixel sorting image editing utility implemented in Go.",
@@ -38,9 +45,8 @@ var rootCmd = &cobra.Command{
 }
 
 func init() {
-	logrus.SetFormatter(&customFormatter{})
-	logrus.SetOutput(os.Stdout)
-	logrus.SetLevel(logrus.InfoLevel)
+	Logger = CreateLogger()
+	LocalLogger = CreateLocalLogger(Logger)
 
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 
@@ -77,7 +83,10 @@ func init() {
 // Helper function used to validate and apply flag values into the sorter options struct
 func parseCommonOptions() (*sorter.SorterOptions, error) {
 	if FlagVerboseLogging {
-		logrus.SetLevel(logrus.DebugLevel)
+		Logger.SetLevel(logrus.DebugLevel)
+		Logger.SetReportCaller(true)
+
+		LocalLogger = CreateLocalLogger(Logger)
 	}
 
 	options := sorter.GetDefaultSorterOptions()
@@ -230,7 +239,7 @@ func performPixelSorting(options *sorter.SorterOptions) error {
 		}
 	}
 
-	sorter, err := sorter.CreateSorter(img, mask, logrus.StandardLogger(), options)
+	sorter, err := sorter.CreateSorter(img, mask, Logger, options)
 	if err != nil {
 		return err
 	}
@@ -260,34 +269,38 @@ func getOutputFileName(inputFilePath string) string {
 
 // Function used to execute the program (root command)
 func Execute(args []string) {
-	logrus.Info("Starting the pixel sorter.")
+	LocalLogger.Info("Starting the pixel sorter.")
 	rootCmd.SetArgs(args)
 	if err := rootCmd.Execute(); err != nil {
-		logrus.Fatalf("Failure: %s", err)
+		LocalLogger.Fatalf("Pixel sorting fatal failure: %s", err)
 		os.Exit(1)
 	}
-	logrus.Info("Pixel sorting finished.")
+	LocalLogger.Info("Pixel sorting finished.")
 }
 
-// Custom logrus formatter implementation
-type customFormatter struct {
-}
-
-// Format func implementation for the custom logrus formatter
-func (f *customFormatter) Format(entry *logrus.Entry) ([]byte, error) {
-	level := "INF"
-	switch entry.Level {
-	case logrus.DebugLevel:
-		level = "VER"
-	case logrus.ErrorLevel:
-		level = "ERR"
-	case logrus.WarnLevel:
-		level = "WRN"
-	case logrus.InfoLevel:
-		level = "INF"
-	case logrus.FatalLevel:
-		level = "ERR"
+// Create a new instance of the logger
+func CreateLogger() *logrus.Logger {
+	formatter := &nestedFormatter.Formatter{
+		TimestampFormat:  time.RFC3339Nano,
+		HideKeys:         true,
+		NoColors:         false,
+		NoFieldsColors:   false,
+		NoFieldsSpace:    false,
+		ShowFullLevel:    false,
+		NoUppercaseLevel: false,
+		TrimMessages:     false,
+		CallerFirst:      false,
 	}
 
-	return []byte(fmt.Sprintf("[Pixel-Sorter] | [%s] | %s\n", level, entry.Message)), nil
+	return &logrus.Logger{
+		Out:          os.Stdout,
+		Formatter:    formatter,
+		ReportCaller: false,
+		Level:        logrus.InfoLevel,
+	}
+}
+
+// Create a new prefixed logger entry instance
+func CreateLocalLogger(logger *logrus.Logger) *logrus.Entry {
+	return logger.WithField("prefix", "pixel-sorter-cli")
 }
