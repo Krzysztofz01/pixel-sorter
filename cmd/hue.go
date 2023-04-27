@@ -13,11 +13,16 @@ var hueCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		options, err := parseCommonOptions()
 		if err != nil {
+			LocalLogger.Errorf("Failed to parse the options: %s", err)
 			return err
 		}
 
 		options.SortDeterminant = sorter.SortByHue
-		return performPixelSorting(options)
+		if err := performPixelSorting(options); err != nil {
+			LocalLogger.Errorf("Failed to perform the pixel sorting: %s", err)
+		}
+
+		return err
 	},
 }
 

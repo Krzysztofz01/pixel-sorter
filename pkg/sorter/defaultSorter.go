@@ -17,7 +17,7 @@ import (
 type defaultSorter struct {
 	image   image.Image
 	mask    *Mask
-	logger  *logrus.Logger
+	logger  *logrus.Entry
 	options *SorterOptions
 }
 
@@ -28,7 +28,8 @@ func CreateSorter(image image.Image, mask image.Image, logger *logrus.Logger, op
 	if logger == nil {
 		return nil, errors.New("sorter: invalid logger reference provided")
 	}
-	sorter.logger = logger
+
+	sorter.logger = logger.WithField("prefix", "pixel-sorter")
 
 	if options != nil {
 		sorter.logger.Debugln("Running the sorter with specified sorter options.")
