@@ -5,10 +5,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var brightnessCmd = &cobra.Command{
-	Use:   "brightness",
-	Short: "Use brightness value as color sorting parameter.",
-	Long:  "Use brightness value as color sorting parameter.",
+var saturationCmd = &cobra.Command{
+	Use:   "saturation",
+	Short: "Use saturation value as color sorting parameter.",
+	Long:  "Use saturation value as color sorting parameter.",
 
 	RunE: func(cmd *cobra.Command, args []string) error {
 		options, err := parseCommonOptions()
@@ -17,7 +17,7 @@ var brightnessCmd = &cobra.Command{
 			return err
 		}
 
-		options.SortDeterminant = sorter.SortByBrightness
+		options.SortDeterminant = sorter.SortBySaturation
 		if err := performPixelSorting(options); err != nil {
 			LocalLogger.Errorf("Failed to perform the pixel sorting: %s", err)
 		}
@@ -27,6 +27,6 @@ var brightnessCmd = &cobra.Command{
 }
 
 func init() {
-	brightnessCmd.SilenceUsage = true
-	rootCmd.AddCommand(brightnessCmd)
+	hueCmd.SilenceUsage = true
+	rootCmd.AddCommand(saturationCmd)
 }

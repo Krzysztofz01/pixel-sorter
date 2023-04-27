@@ -1,11 +1,13 @@
 package sorter
 
 import (
+	"bytes"
 	"image"
 	"image/color"
 	"image/draw"
 	"testing"
 
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -14,7 +16,8 @@ import (
 
 func TestDefaultSorterShouldSortForSortByBrightnessSplitByBrightnessZeroAngle(t *testing.T) {
 	sorterOptions := SorterOptions{
-		SortByBrightnessAscending,
+		SortByBrightness,
+		SortAscending,
 		SortHorizontalAndVertical,
 		SplitByBrightness,
 		0.0,
@@ -23,6 +26,8 @@ func TestDefaultSorterShouldSortForSortByBrightnessSplitByBrightnessZeroAngle(t 
 		0,
 		false,
 		1,
+		1,
+		BlendingNone,
 	}
 
 	// NOTE: Preparing the expected image
@@ -41,7 +46,7 @@ func TestDefaultSorterShouldSortForSortByBrightnessSplitByBrightnessZeroAngle(t 
 		}
 	}
 
-	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), nil, &sorterOptions)
+	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), nil, mockLogger(), &sorterOptions)
 	assert.Nil(t, err)
 
 	actualImage, err := sorter.Sort()
@@ -61,7 +66,8 @@ func TestDefaultSorterShouldSortForSortByBrightnessSplitByBrightnessZeroAngle(t 
 
 func TestDefaultSorterShouldSortForSortByBrightnessSplitByBrightnessNonZeroAngle(t *testing.T) {
 	sorterOptions := SorterOptions{
-		SortByBrightnessAscending,
+		SortByBrightness,
+		SortAscending,
 		SortHorizontalAndVertical,
 		SplitByBrightness,
 		0.0,
@@ -70,9 +76,11 @@ func TestDefaultSorterShouldSortForSortByBrightnessSplitByBrightnessNonZeroAngle
 		45,
 		false,
 		1,
+		1,
+		BlendingNone,
 	}
 
-	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), nil, &sorterOptions)
+	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), nil, mockLogger(), &sorterOptions)
 	assert.Nil(t, err)
 
 	actualImage, err := sorter.Sort()
@@ -107,4 +115,13 @@ func mockTestBlackAndWhiteStripesImage() draw.Image {
 	}
 
 	return image
+}
+
+func mockLogger() *logrus.Logger {
+	loggerBuffer := bytes.Buffer{}
+
+	return &logrus.Logger{
+		Out:       &loggerBuffer,
+		Formatter: &logrus.TextFormatter{},
+	}
 }

@@ -2,11 +2,15 @@ package cmd
 
 import (
 	"fmt"
+	"image"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/Krzysztofz01/pixel-sorter/pkg/sorter"
+	"github.com/Krzysztofz01/pixel-sorter/pkg/utils"
+	nestedFormatter "github.com/antonfisher/nested-logrus-formatter"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -24,10 +28,15 @@ var (
 	FlagMask                   bool
 	FlagIntervalLength         int
 	FlagSortCycles             int
+	FlagImageScale             float64
+	FlagBlendingMode           string
 	FlagVerboseLogging         bool
 )
 
-// TODO: Add verbose logging flag
+var (
+	Logger      *logrus.Logger
+	LocalLogger *logrus.Entry
+)
 
 var rootCmd = &cobra.Command{
 	Use:   "pixel-sorter",
@@ -36,9 +45,8 @@ var rootCmd = &cobra.Command{
 }
 
 func init() {
-	logrus.SetFormatter(&customFormatter{})
-	logrus.SetOutput(os.Stdout)
-	logrus.SetLevel(logrus.InfoLevel)
+	Logger = CreateLogger()
+	LocalLogger = CreateLocalLogger(Logger)
 
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 
@@ -66,15 +74,39 @@ func init() {
 	rootCmd.PersistentFlags().IntVarP(&FlagIntervalLength, "interval-max-length", "k", 0, "The max length of the interval. Zero means no length limits.")
 
 	rootCmd.PersistentFlags().IntVarP(&FlagSortCycles, "cycles", "c", 1, "The count of sorting cycles that should be performed on the image.")
+
+	rootCmd.PersistentFlags().Float64VarP(&FlagImageScale, "scale", "s", 1, "Image downscaling percentage factor. Options: [0.0 - 1.0].")
+
+	rootCmd.PersistentFlags().StringVarP(&FlagBlendingMode, "blending-mode", "b", "none", "The blending mode algorithm to blend the sorted image into the original. Options: [none, lighten, darken].")
 }
 
 // Helper function used to validate and apply flag values into the sorter options struct
 func parseCommonOptions() (*sorter.SorterOptions, error) {
 	if FlagVerboseLogging {
-		logrus.SetLevel(logrus.DebugLevel)
+		Logger.SetLevel(logrus.DebugLevel)
+		Logger.SetReportCaller(true)
+
+		LocalLogger = CreateLocalLogger(Logger)
 	}
 
 	options := sorter.GetDefaultSorterOptions()
+
+	switch strings.ToLower(FlagSortDirection) {
+	case "ascending":
+		{
+			options.SortDirection = sorter.SortAscending
+		}
+	case "descending":
+		{
+			options.SortDirection = sorter.SortDescending
+		}
+	case "random":
+		{
+			options.SortDirection = sorter.SortRandom
+		}
+	default:
+		return nil, fmt.Errorf("invalid direction specified: %q", FlagSortDirection)
+	}
 
 	switch strings.ToLower(FlagSortOrder) {
 	case "horizontal":
@@ -155,7 +187,73 @@ func parseCommonOptions() (*sorter.SorterOptions, error) {
 		options.Cycles = FlagSortCycles
 	}
 
+	if FlagImageScale < 0.0 || FlagImageScale > 1.0 {
+		return nil, fmt.Errorf("invalid image scale percentage specified")
+	} else {
+		options.Scale = FlagImageScale
+	}
+
+	switch FlagBlendingMode {
+	case "none":
+		{
+			options.Blending = sorter.BlendingNone
+		}
+	case "lighten":
+		{
+			options.Blending = sorter.BlendingLighten
+		}
+	case "darken":
+		{
+			options.Blending = sorter.BlendingDarken
+		}
+	default:
+		{
+			return nil, fmt.Errorf("invalid blending mode specified: %s", FlagBlendingMode)
+		}
+	}
+
 	return options, nil
+}
+
+// Helper wrapper function used to perform the whole pixel sorting and IO operations according to the flags and provided options
+func performPixelSorting(options *sorter.SorterOptions) error {
+	if len(FlagImageFilePath) == 0 {
+		return fmt.Errorf("invalid image path specified: %q", FlagImageFilePath)
+	}
+
+	format := strings.ToLower(FlagOutputFileType)
+	if format != "jpg" && format != "png" {
+		return fmt.Errorf("invalid output file format specified: %q", FlagOutputFileType)
+	}
+
+	img, err := utils.GetImageFromFile(FlagImageFilePath)
+	if err != nil {
+		return err
+	}
+
+	var mask image.Image = nil
+	if len(FlagMaskFilePath) > 0 {
+		mask, err = utils.GetImageFromFile(FlagMaskFilePath)
+		if err != nil {
+			return err
+		}
+	}
+
+	sorter, err := sorter.CreateSorter(img, mask, Logger, options)
+	if err != nil {
+		return err
+	}
+
+	sortedImage, err := sorter.Sort()
+	if err != nil {
+		return err
+	}
+
+	if err := utils.StoreImageToFile(getOutputFileName(FlagImageFilePath), format, sortedImage); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // Helper function used to generate a output image file name based on the original file path
@@ -170,34 +268,39 @@ func getOutputFileName(inputFilePath string) string {
 }
 
 // Function used to execute the program (root command)
-func Execute() {
-	logrus.Info("Starting the pixel sorter.")
+func Execute(args []string) {
+	LocalLogger.Info("Starting the pixel sorter.")
+	rootCmd.SetArgs(args)
 	if err := rootCmd.Execute(); err != nil {
-		logrus.Fatalf("Failure: %s", err)
+		LocalLogger.Fatalf("Pixel sorting fatal failure: %s", err)
 		os.Exit(1)
 	}
-	logrus.Info("Pixel sorting finished.")
+	LocalLogger.Info("Pixel sorting finished.")
 }
 
-// Custom logrus formatter implementation
-type customFormatter struct {
-}
-
-// Format func implementation for the custom logrus formatter
-func (f *customFormatter) Format(entry *logrus.Entry) ([]byte, error) {
-	level := "INF"
-	switch entry.Level {
-	case logrus.DebugLevel:
-		level = "VER"
-	case logrus.ErrorLevel:
-		level = "ERR"
-	case logrus.WarnLevel:
-		level = "WRN"
-	case logrus.InfoLevel:
-		level = "INF"
-	case logrus.FatalLevel:
-		level = "ERR"
+// Create a new instance of the logger
+func CreateLogger() *logrus.Logger {
+	formatter := &nestedFormatter.Formatter{
+		TimestampFormat:  time.RFC3339Nano,
+		HideKeys:         true,
+		NoColors:         false,
+		NoFieldsColors:   false,
+		NoFieldsSpace:    false,
+		ShowFullLevel:    false,
+		NoUppercaseLevel: false,
+		TrimMessages:     false,
+		CallerFirst:      false,
 	}
 
-	return []byte(fmt.Sprintf("[Pixel-Sorter] | [%s] | %s\n", level, entry.Message)), nil
+	return &logrus.Logger{
+		Out:          os.Stdout,
+		Formatter:    formatter,
+		ReportCaller: false,
+		Level:        logrus.InfoLevel,
+	}
+}
+
+// Create a new prefixed logger entry instance
+func CreateLocalLogger(logger *logrus.Logger) *logrus.Entry {
+	return logger.WithField("prefix", "pixel-sorter-cli")
 }

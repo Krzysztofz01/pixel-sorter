@@ -1,7 +1,11 @@
 package main
 
-import "github.com/Krzysztofz01/pixel-sorter/cmd"
+import (
+	"os"
+
+	"github.com/Krzysztofz01/pixel-sorter/cmd"
+)
 
 func main() {
-	cmd.Execute()
+	cmd.Execute(os.Args[1:])
 }

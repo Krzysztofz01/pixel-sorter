@@ -22,6 +22,7 @@ go build ./cli
 ### Commands
 - *brightness* - Use perceived brightness value as color sorting parameter.
 - *hue* - Use hue value as color sorting parameter.
+- *saturation* - Use saturation value as color sorting parameter.
 - *help* - Print program help page.
 
 ### Flags
@@ -49,6 +50,11 @@ go build ./cli
     - *vertical*
     - *horizontal-vertical*
     - *vertical-horizontal*
+- *scale* (-s) - Image size downscale percentage factor (can be used to generate a low resolution preview).
+- *blending-mode* (-b) - The blending mode algorithm to blend the original image with the sorted image.
+    - *none*
+    - *lighten*
+    - *darken*
 - *output-format* (-f) - The output format of the graphic file.
     - *jpg*
     - *png*
@@ -60,13 +66,15 @@ Pixel sorting image editing utility implemented in Go.
 Usage:
   pixel-sorter [command]
 
-Available Commands:     
+Available Commands:
   brightness  Use brightness value as color sorting parameter.
   help        Help about any command
   hue         Use hue value as color sorting parameter.
+  saturation  Use saturation value as color sorting parameter.
 
 Flags:
   -a, --angle int                        The angle at which to sort the pixels.
+  -b, --blending-mode string             The blending mode algorithm to blend the sorted image into the original. Options: [none, lighten, darken]. (default "none")
   -c, --cycles int                       The count of sorting cycles that should be performed on the image. (default 1)
   -d, --direction string                 Pixel sorting direction in intervals. Options: [ascending, descending, random]. (default "ascending")
   -h, --help                             help for pixel-sorter
@@ -79,6 +87,8 @@ Flags:
       --mask-file-path string            The path of the image mask file to be process the image file.
   -o, --order string                     Order of the graphic sorting stages. Options: [horizontal, vertical, horizontal-vertical, vertical-horizontal]. (default "horizontal-vertical")
   -f, --output-format string             The output format of the graphic file. Options: [jpg, png]. (default "jpg")
+  -s, --scale float                      Image downscaling percentage factor. Options: [0.0 - 1.0]. (default 1)
+  -v, --verbose                          Enable verbose logging mode.
 
 Use "pixel-sorter [command] --help" for more information about a command.
 ```
