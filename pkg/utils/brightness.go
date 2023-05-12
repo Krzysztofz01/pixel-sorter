@@ -38,6 +38,32 @@ func calculateRgbComponentLinearValue(component float64) float64 {
 	}
 }
 
+// A third attempt to optimize the linear RGB component calculation optimization via approximation. A polynomial function with 5 roots has been
+// created using polynomial regresion.The value from the calculated via the polynomial is further approximated using "Newton-Raphson method" (3 iterations)
+// This method, despite the efforts, is still not precise enough and has been left here mainly as a curiosity.
+func rgbComponentLinearApproximation(component float64) float64 {
+	if component <= 0.04045 {
+		return (component / 12.92)
+	}
+
+	polynomial := func(x float64) float64 {
+		x2 := x * x
+		return (0.054078451133248 * x2 * x2 * x) - (0.224682405485073 * x2 * x2) + (0.594031158357391 * x2 * x) + (0.546897380766604 * x2) + (0.028604496057605 * x) + 0.001100839502532
+	}
+
+	derivative := func(x float64) float64 {
+		x2 := x * x
+		return (0.27039225566624 * x2 * x2) - (0.898729621940292 * x2 * x) + (1.78209347507217 * x2) + (1.09379476153321 * x) + 0.028604496057605
+	}
+
+	value := polynomial(component)
+	for i := 0; i < 3; i += 1 {
+		value = value - (polynomial(value) / derivative(value))
+	}
+
+	return value
+}
+
 // The profiling showed that the brightness calculation is very slow beacuse of the cubic root operation on the luminance value.
 // The analysis of the brightness calculation showed, that the cube root results are always in the range: 4/29 <= cbrt(luminance) <= 1
 // We are using the "Newton-Raphson method" (3 iterations) to perform the cube root approximation. In order to get a precise initial value we are
