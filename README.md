@@ -1,4 +1,8 @@
 # Pixel-Sorter
+[![Go Report Card](https://goreportcard.com/badge/github.com/Krzysztofz01/pixel-sorter)](https://goreportcard.com/report/github.com/Krzysztofz01/pixel-sorter)
+![GitHub](https://img.shields.io/github/license/Krzysztofz01/pixel-sorter)
+![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/Krzysztofz01/pixel-sorter?include_prereleases)
+![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/Krzysztofz01/pixel-sorter)
 
 Pixel sorting is a kind of photo editing, which is a subgenre of glitch art, the operation of which consists in reorganizing groups of pixels in a photo according to certain criteria. There are many programs whose task is to create the pixel sorting effect, but when creating my implementation in Go, I focused on optimizing this process in terms of time and creating a modular platform, thanks to which, implementation of new functionalities related to pixel sorting will be simple task.
 
