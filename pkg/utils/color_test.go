@@ -180,23 +180,37 @@ func TestShouldConvertRgbaToHslComponents(t *testing.T) {
 }
 
 func TestShouldBlendColorUsingLightenOnlyMode(t *testing.T) {
-	// TODO: Implement more test cases
-	aColor := color.RGBA{25, 50, 200, 0xff}
-	bColor := color.RGBA{200, 40, 20, 0xff}
+	cases := map[struct {
+		a color.RGBA
+		b color.RGBA
+	}]color.RGBA{
+		{color.RGBA{0, 0, 0, 0xff}, color.RGBA{0, 0, 0, 0xff}}:             {0, 0, 0, 0xff},
+		{color.RGBA{255, 255, 255, 0xff}, color.RGBA{255, 255, 255, 0xff}}: {255, 255, 255, 0xff},
+		{color.RGBA{0, 0, 0, 0xff}, color.RGBA{255, 255, 255, 0xff}}:       {255, 255, 255, 0xff},
+		{color.RGBA{25, 50, 200, 0xff}, color.RGBA{200, 40, 20, 0xff}}:     {200, 50, 200, 0xff},
+	}
 
-	expected := color.RGBA{200, 50, 200, 0xff}
-	actual := BlendRGBA(aColor, bColor, LightenOnly)
+	for c, exptected := range cases {
+		actual := BlendRGBA(c.a, c.b, LightenOnly)
 
-	assert.Equal(t, expected, actual)
+		assert.Equal(t, exptected, actual)
+	}
 }
 
 func TestShouldBlendColorUsingDarkenOnlyMode(t *testing.T) {
-	// TODO: Implement more test cases
-	aColor := color.RGBA{25, 50, 200, 0xff}
-	bColor := color.RGBA{200, 40, 20, 0xff}
+	cases := map[struct {
+		a color.RGBA
+		b color.RGBA
+	}]color.RGBA{
+		{color.RGBA{0, 0, 0, 0xff}, color.RGBA{0, 0, 0, 0xff}}:             {0, 0, 0, 0xff},
+		{color.RGBA{255, 255, 255, 0xff}, color.RGBA{255, 255, 255, 0xff}}: {255, 255, 255, 0xff},
+		{color.RGBA{0, 0, 0, 0xff}, color.RGBA{255, 255, 255, 0xff}}:       {0, 0, 0, 0xff},
+		{color.RGBA{25, 50, 200, 0xff}, color.RGBA{200, 40, 20, 0xff}}:     {25, 40, 20, 0xff},
+	}
 
-	expected := color.RGBA{25, 40, 20, 0xff}
-	actual := BlendRGBA(aColor, bColor, DarkenOnly)
+	for c, exptected := range cases {
+		actual := BlendRGBA(c.a, c.b, DarkenOnly)
 
-	assert.Equal(t, expected, actual)
+		assert.Equal(t, exptected, actual)
+	}
 }
