@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"errors"
 	"image/color"
 	"math"
 )
@@ -67,14 +66,20 @@ func HasAnyTransparency(c color.RGBA) bool {
 	return a < 255
 }
 
-// Convert a color represented as color.Color interface to color.RGBA struct. This function will return an error if the underlying color is not a color.RGBA
-func ColorToRgba(c color.Color) (color.RGBA, error) {
-	rgba, ok := c.(color.RGBA)
-	if !ok {
-		return color.RGBA{}, errors.New("color-utils: conversion failed becuse the underlying color implementation is not RGBA")
+// Convert a color represented as color.Color interface to color.RGBA struct. If the underlying color is a color.RGBA the original struct
+// will be returned, otherwise a new color.RGBA instance will be created
+func ColorToRgba(c color.Color) color.RGBA {
+	if rgba, ok := c.(color.RGBA); ok {
+		return rgba
 	}
 
-	return rgba, nil
+	r32, g32, b32, a32 := c.RGBA()
+	return color.RGBA{
+		R: uint8(r32 >> 8),
+		G: uint8(g32 >> 8),
+		B: uint8(b32 >> 8),
+		A: uint8(a32 >> 8),
+	}
 }
 
 // Convert a color represented as color.RGBA to HSL components where Hue is expressed in degress (0-360) and the saturation and lightnes in percentage (0.0-1.0)
