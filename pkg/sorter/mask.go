@@ -37,11 +37,7 @@ func CreateImageMask(mImg image.Image, targetImageBounds image.Rectangle) (*Mask
 
 	for xIndex := 0; xIndex < xLength; xIndex += 1 {
 		for yIndex := 0; yIndex < yLength; yIndex += 1 {
-			color, err := utils.ColorToRgba(drawableMask.At(xIndex, yIndex))
-			if err != nil {
-				return nil, fmt.Errorf("sorter: failed to convert the color in the mask validation process: %w", err)
-			}
-
+			color := utils.ColorToRgba(drawableMask.At(xIndex, yIndex))
 			_, s, l := utils.RgbaToHsl(color)
 
 			if s != 0.0 || (l != 0.0 && l != 1.0) {
@@ -77,11 +73,7 @@ func (mask *Mask) IsMasked(xIndex, yIndex int) (bool, error) {
 		return false, errors.New("sorter: the mask lookup is out of the mask bounds")
 	}
 
-	color, err := utils.ColorToRgba(mask.maskImage.At(xIndex, yIndex))
-	if err != nil {
-		return false, fmt.Errorf("sorter: failed to convert the color in the mask lookup process: %w", err)
-	}
-
+	color := utils.ColorToRgba(mask.maskImage.At(xIndex, yIndex))
 	_, _, l := utils.RgbaToHsl(color)
 
 	if l == 0.0 {
