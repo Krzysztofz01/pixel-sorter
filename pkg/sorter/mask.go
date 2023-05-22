@@ -2,9 +2,10 @@ package sorter
 
 import (
 	"errors"
-	"fmt"
 	"image"
+	"image/color"
 
+	"github.com/Krzysztofz01/pimit"
 	"github.com/Krzysztofz01/pixel-sorter/pkg/utils"
 )
 
@@ -25,29 +26,23 @@ func CreateImageMask(mImg image.Image, targetImageBounds image.Rectangle) (*Mask
 		return nil, errors.New("sorter: mask image and target image sizes are not matching")
 	}
 
-	// TODO: It is not efficient to redraw the whole mask, and we dont need it in a drawable format, but we
-	// are doing it to ensure the mask is a image.RGBA
-	drawableMask, err := utils.GetDrawableImage(mImg)
-	if err != nil {
-		return nil, fmt.Errorf("sorter: failed the convert the mask to drawable version: %w", err)
-	}
+	err := pimit.ParallelColumnColorReadE(mImg, func(c color.Color) error {
+		currentColor := utils.ColorToRgba(c)
+		_, s, l := utils.RgbaToHsl(currentColor)
 
-	xLength := drawableMask.Bounds().Dx()
-	yLength := drawableMask.Bounds().Dy()
-
-	for xIndex := 0; xIndex < xLength; xIndex += 1 {
-		for yIndex := 0; yIndex < yLength; yIndex += 1 {
-			color := utils.ColorToRgba(drawableMask.At(xIndex, yIndex))
-			_, s, l := utils.RgbaToHsl(color)
-
-			if s != 0.0 || (l != 0.0 && l != 1.0) {
-				return nil, errors.New("sorter: the mask contains a invalid color")
-			}
+		if s != 0.0 || (l != 0.0 && l != 1.0) {
+			return errors.New("sorter: the mask contains a invalid color")
 		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
 	}
 
 	mask := new(Mask)
-	mask.maskImage = drawableMask
+	mask.maskImage = mImg
 	mask.isEmpty = false
 	return mask, nil
 }
