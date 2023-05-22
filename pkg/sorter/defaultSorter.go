@@ -347,10 +347,7 @@ func (sorter *defaultSorter) performSortOnImageStrip(imageStrip []color.Color, m
 
 	interval := sorter.CreateInterval()
 	for x := 0; x < stripLength; x += 1 {
-		currentColor, err := utils.ColorToRgba(imageStrip[x])
-		if err != nil {
-			return nil, fmt.Errorf("sorter: failed to convert the given color to a RGBA struct representation: %w", err)
-		}
+		currentColor := utils.ColorToRgba(imageStrip[x])
 
 		isMasked, err := sorter.mask.IsMasked(maskCoordinateFunc(x))
 		if err != nil {

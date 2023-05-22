@@ -120,10 +120,7 @@ func InvertImage(i image.Image) (draw.Image, error) {
 
 	for xIndex := 0; xIndex < width; xIndex += 1 {
 		for yIndex := 0; yIndex < height; yIndex += 1 {
-			currentColor, err := ColorToRgba(drawableImage.At(xIndex, yIndex))
-			if err != nil {
-				return nil, fmt.Errorf("image-utils: can not access the color as RGBA: %w", err)
-			}
+			currentColor := ColorToRgba(drawableImage.At(xIndex, yIndex))
 
 			invertedColor := color.RGBA{
 				R: 255 - currentColor.R,
@@ -243,15 +240,8 @@ func BlendImages(a, b image.Image, mode BlendingMode) (draw.Image, error) {
 
 	for xIndex := 0; xIndex < aWidth; xIndex += 1 {
 		for yIndex := 0; yIndex < aHeight; yIndex += 1 {
-			aColor, err := ColorToRgba(aRgba.At(xIndex, yIndex))
-			if err != nil {
-				return nil, fmt.Errorf("image-utils: can not access the image a color as RGBA: %w", err)
-			}
-
-			bColor, err := ColorToRgba(bRgba.At(xIndex, yIndex))
-			if err != nil {
-				return nil, fmt.Errorf("image-utils: can not access the image b color as RGBA: %w", err)
-			}
+			aColor := ColorToRgba(aRgba.At(xIndex, yIndex))
+			bColor := ColorToRgba(bRgba.At(xIndex, yIndex))
 
 			resultImage.Set(xIndex, yIndex, BlendRGBA(aColor, bColor, mode))
 		}
