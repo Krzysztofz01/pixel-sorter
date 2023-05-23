@@ -186,29 +186,6 @@ func (sorter *defaultSorter) Sort() (image.Image, error) {
 	return drawableImage, nil
 }
 
-func (sorter *defaultSorter) performHorizontalSort(drawableImage *draw.Image) error {
-	for yIndex := 0; yIndex < (*drawableImage).Bounds().Dy(); yIndex += 1 {
-		row, err := utils.GetImageRow(*drawableImage, yIndex)
-		if err != nil {
-			return fmt.Errorf("sorter: failed to retrieve the image pixel row for a given index: %w", err)
-		}
-
-		sortedRow, err := sorter.performSortOnImageStrip(row, func(iteratedCoordinate int) (int, int) {
-			return iteratedCoordinate, yIndex
-		})
-
-		if err != nil {
-			return fmt.Errorf("sorter: failed to perform the horizontal sorting: %w", err)
-		}
-
-		if err := utils.SetImageRow(drawableImage, sortedRow, yIndex); err != nil {
-			return fmt.Errorf("sorter: failed to perform the insertion of the sorted row into the image: %w", err)
-		}
-	}
-
-	return nil
-}
-
 func (sorter *defaultSorter) performParallelHorizontalSort(drawableImage *draw.Image) error {
 	yLength := (*drawableImage).Bounds().Dy()
 	wg := sync.WaitGroup{}
@@ -262,29 +239,6 @@ func (sorter *defaultSorter) performParallelHorizontalSort(drawableImage *draw.I
 
 	close(iterationErrors)
 	return err
-}
-
-func (sorter *defaultSorter) performVerticalSort(drawableImage *draw.Image) error {
-	for xIndex := 0; xIndex < (*drawableImage).Bounds().Dx(); xIndex += 1 {
-		column, err := utils.GetImageColumn(*drawableImage, xIndex)
-		if err != nil {
-			return fmt.Errorf("sorter: failed to retrieve the image pixel column for a given index: %w", err)
-		}
-
-		sortedColumn, err := sorter.performSortOnImageStrip(column, func(iteratedCoordinate int) (int, int) {
-			return xIndex, iteratedCoordinate
-		})
-
-		if err != nil {
-			return fmt.Errorf("sorter: failed to perform the vertical sorting: %w", err)
-		}
-
-		if err := utils.SetImageColumn(drawableImage, sortedColumn, xIndex); err != nil {
-			return fmt.Errorf("sorter: failed to perform the insertion of the sorted column into the image: %w", err)
-		}
-	}
-
-	return nil
 }
 
 func (sorter *defaultSorter) performParallelVerticalSort(drawableImage *draw.Image) error {
