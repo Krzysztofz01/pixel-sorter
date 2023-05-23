@@ -100,7 +100,7 @@ func CreateSorter(image image.Image, mask image.Image, logger *logrus.Logger, op
 			mask = scaledMask
 		}
 
-		m, err := CreateImageMask(mask, sorter.image.Bounds())
+		m, err := CreateImageMask(mask, sorter.image.Bounds(), sorter.options.Angle)
 		if err != nil {
 			return nil, fmt.Errorf("sorter: failed to create a new mask instance: %w", err)
 		}
@@ -121,7 +121,9 @@ func (sorter *defaultSorter) Sort() (image.Image, error) {
 		return nil, fmt.Errorf("sorter: the provided image is not drawable: %w", err)
 	}
 
-	drawableImage = utils.RotateImage(drawableImage, sorter.options.Angle)
+	if sorter.options.Angle != 0 {
+		drawableImage = utils.RotateImage(drawableImage, sorter.options.Angle)
+	}
 
 	for c := 0; c < sorter.options.Cycles; c += 1 {
 		switch sorter.options.SortOrder {
@@ -160,8 +162,10 @@ func (sorter *defaultSorter) Sort() (image.Image, error) {
 		}
 	}
 
-	drawableImage = utils.RotateImage(drawableImage, -sorter.options.Angle)
-	drawableImage = utils.TrimImageTransparentWorkspace(drawableImage, sorter.image)
+	if sorter.options.Angle != 0 {
+		drawableImage = utils.RotateImage(drawableImage, -sorter.options.Angle)
+		drawableImage = utils.TrimImageTransparentWorkspace(drawableImage, sorter.image)
+	}
 
 	switch sorter.options.Blending {
 	case BlendingLighten:
