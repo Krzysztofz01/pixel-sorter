@@ -1,5 +1,5 @@
-github.com/Krzysztofz01/pimit v0.0.0 h1:l5+iI6IYqPS0jxc3paLwg1EhfyJKxPZ/t7ZR+05ACqc=
-github.com/Krzysztofz01/pimit v0.0.0/go.mod h1:6qHH8xcEsOLYRPhFzniAw9dk/MspJgYDgXQkPAGkNzk=
+github.com/Krzysztofz01/pimit v0.1.0 h1:pJ6MMdOK/QPv5GLHC89CzgOGRhd/a1mgwRJ4B/BrWjo=
+github.com/Krzysztofz01/pimit v0.1.0/go.mod h1:6qHH8xcEsOLYRPhFzniAw9dk/MspJgYDgXQkPAGkNzk=
 github.com/antonfisher/nested-logrus-formatter v1.3.1 h1:NFJIr+pzwv5QLHTPyKz9UMEoHck02Q9L0FP13b/xSbQ=
 github.com/antonfisher/nested-logrus-formatter v1.3.1/go.mod h1:6WTfyWFkBc9+zyBaKIqRrg/KwMqBbodBjgbHjDz7zjA=
 github.com/cpuguy83/go-md2man/v2 v2.0.2/go.mod h1:tgQtvFlXSQOSOSIRvRPT7W67SCa46tRHOmNcaadrF8o=
