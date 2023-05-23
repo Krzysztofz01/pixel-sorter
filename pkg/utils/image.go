@@ -134,7 +134,7 @@ func InvertImage(i image.Image) (draw.Image, error) {
 //
 // Beacuse the dependency internal rotate implementation is using a custom pixel color handling
 // solution we need to redraw the result image to ensure that the colors space is RGBA
-func RotateImage(i draw.Image, angle int) draw.Image {
+func RotateImage(i image.Image, angle int) draw.Image {
 	angleNorm := float64(angle) + math.Ceil(-float64(angle)/360.0)*360.0
 
 	rotatedImage := imaging.Rotate(i, angleNorm, color.Transparent)

@@ -49,7 +49,7 @@ func CreateImageMask(mImg image.Image, targetImageBounds image.Rectangle, transl
 	mask.isEmpty = false
 
 	if translateAngle != 0 {
-		mask.maskImageTranslated = utils.RotateImage(drawableMask, translateAngle)
+		mask.maskImageTranslated = utils.RotateImage(mImg, translateAngle)
 		mask.isTranslated = true
 	} else {
 		mask.maskImageTranslated = nil
