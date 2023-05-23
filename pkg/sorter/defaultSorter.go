@@ -285,6 +285,8 @@ func (sorter *defaultSorter) performParallelVerticalSort(drawableImage *draw.Ima
 		}(x, iterationErrors)
 	}
 
+	wg.Wait()
+
 	var err error = nil
 	if len(iterationErrors) > 0 {
 		err = <-iterationErrors
