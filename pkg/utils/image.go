@@ -7,11 +7,13 @@ import (
 	"image/color"
 	"image/draw"
 	"math"
+	"sync"
 
 	"github.com/disintegration/imaging"
 )
 
-// Get the image column as a Color interface slice specified by the x image index
+// Get the image column as a color.Color interface implementation slice specified by the x image index. The retrieval
+// process is run parallel in several goroutines.
 func GetImageColumn(image image.Image, xIndex int) ([]color.Color, error) {
 	width := image.Bounds().Dx()
 	height := image.Bounds().Dy()
@@ -20,16 +22,43 @@ func GetImageColumn(image image.Image, xIndex int) ([]color.Color, error) {
 		return nil, errors.New("image-utils: column index is not in range of the target image width")
 	}
 
-	column := make([]color.Color, height)
-	for yIndex := 0; yIndex < height; yIndex += 1 {
-		color := image.At(xIndex, yIndex)
-		column[yIndex] = color
+	iteratorCount := height / 400
+	if iteratorCount < 1 {
+		iteratorCount = 1
 	}
 
+	lengthBase := height / iteratorCount
+	lengthRemnant := height % iteratorCount
+
+	wg := sync.WaitGroup{}
+	wg.Add(iteratorCount)
+
+	column := make([]color.Color, height)
+	for offsetFactor := 0; offsetFactor < iteratorCount; offsetFactor += 1 {
+		targetOffset := offsetFactor * lengthBase
+		targetLength := lengthBase
+		if offsetFactor+1 == iteratorCount {
+			targetLength += lengthRemnant
+		}
+
+		go func(offset, length int) {
+			defer wg.Done()
+
+			for iterationOffset := 0; iterationOffset < length; iterationOffset += 1 {
+				currentOffset := offset + iterationOffset
+
+				color := image.At(xIndex, currentOffset)
+				column[currentOffset] = color
+			}
+		}(targetOffset, targetLength)
+	}
+
+	wg.Wait()
 	return column, nil
 }
 
-// Get the image row as a Color interface slice specified by the y image index
+// Get the image row as a color.Color interface implementation slice specified by the y image index. The retrieval
+// process is run parallel in several goroutines.
 func GetImageRow(image image.Image, yIndex int) ([]color.Color, error) {
 	width := image.Bounds().Dx()
 	height := image.Bounds().Dy()
@@ -38,19 +67,47 @@ func GetImageRow(image image.Image, yIndex int) ([]color.Color, error) {
 		return nil, errors.New("image-utils: row index is not in range of the target image height")
 	}
 
-	row := make([]color.Color, width)
-	for xIndex := 0; xIndex < width; xIndex += 1 {
-		color := image.At(xIndex, yIndex)
-		row[xIndex] = color
+	iteratorCount := width / 400
+	if iteratorCount < 1 {
+		iteratorCount = 1
 	}
 
+	lengthBase := width / iteratorCount
+	lengthRemnant := width % iteratorCount
+
+	wg := sync.WaitGroup{}
+	wg.Add(iteratorCount)
+
+	row := make([]color.Color, width)
+	for offsetFactor := 0; offsetFactor < iteratorCount; offsetFactor += 1 {
+		targetOffset := offsetFactor * lengthBase
+		targetLength := lengthBase
+		if offsetFactor+1 == iteratorCount {
+			targetLength += lengthRemnant
+		}
+
+		go func(offset, length int) {
+			defer wg.Done()
+
+			for iterationOffset := 0; iterationOffset < length; iterationOffset += 1 {
+				currentOffset := offset + iterationOffset
+
+				color := image.At(currentOffset, yIndex)
+				row[currentOffset] = color
+			}
+		}(targetOffset, targetLength)
+	}
+
+	wg.Wait()
 	return row, nil
 }
 
-// Append a Color interface slice representing a column at a given x index of the given image
-func SetImageColumn(image *draw.Image, column []color.Color, xIndex int) error {
-	width := (*image).Bounds().Dx()
-	height := (*image).Bounds().Dy()
+// Set the colors of the column of the given image specified by the xIndex, according to the slice containing implementations
+// of the color.Color interface. The changes made will be applied to the given draw.Image reference. The write process is
+// run parallel in several goroutines.
+func SetImageColumn(image draw.Image, column []color.Color, xIndex int) error {
+	width := image.Bounds().Dx()
+	height := image.Bounds().Dy()
 
 	if xIndex >= width {
 		return errors.New("image-utils: column index is not in range of the target image width")
@@ -60,18 +117,45 @@ func SetImageColumn(image *draw.Image, column []color.Color, xIndex int) error {
 		return errors.New("image-utils: the image height and the provided column lengths are not matching")
 	}
 
-	for yIndex := 0; yIndex < height; yIndex += 1 {
-		color := column[yIndex]
-		(*image).Set(xIndex, yIndex, color)
+	iteratorCount := height / 400
+	if iteratorCount < 1 {
+		iteratorCount = 1
 	}
 
+	lengthBase := height / iteratorCount
+	lengthRemnant := height % iteratorCount
+
+	wg := sync.WaitGroup{}
+	wg.Add(iteratorCount)
+
+	for offsetFactor := 0; offsetFactor < iteratorCount; offsetFactor += 1 {
+		targetOffset := offsetFactor * lengthBase
+		targetLength := lengthBase
+		if offsetFactor+1 == iteratorCount {
+			targetLength += lengthRemnant
+		}
+
+		go func(offset, length int) {
+			defer wg.Done()
+
+			for iterationOffset := 0; iterationOffset < length; iterationOffset += 1 {
+				currentOffset := offset + iterationOffset
+
+				image.Set(xIndex, currentOffset, column[currentOffset])
+			}
+		}(targetOffset, targetLength)
+	}
+
+	wg.Wait()
 	return nil
 }
 
-// Append a Color interface slice representing a row at a given y index of the given image
-func SetImageRow(image *draw.Image, row []color.Color, yIndex int) error {
-	width := (*image).Bounds().Dx()
-	height := (*image).Bounds().Dy()
+// Set the colors of the row of the given image specified by the yIndex, according to the slice containing implementations
+// of the color.Color interface. The changes made will be applied to the given draw.Image reference. The write process is
+// run parallel in several goroutines.
+func SetImageRow(image draw.Image, row []color.Color, yIndex int) error {
+	width := image.Bounds().Dx()
+	height := image.Bounds().Dy()
 
 	if yIndex >= height {
 		return errors.New("image-utils: row index is not in range of the target image height")
@@ -81,11 +165,36 @@ func SetImageRow(image *draw.Image, row []color.Color, yIndex int) error {
 		return errors.New("image-utils: the image widht and the provided row lengths are not matching")
 	}
 
-	for xIndex := 0; xIndex < width; xIndex += 1 {
-		color := row[xIndex]
-		(*image).Set(xIndex, yIndex, color)
+	iteratorCount := width / 400
+	if iteratorCount < 1 {
+		iteratorCount = 1
 	}
 
+	lengthBase := width / iteratorCount
+	lengthRemnant := width % iteratorCount
+
+	wg := sync.WaitGroup{}
+	wg.Add(iteratorCount)
+
+	for offsetFactor := 0; offsetFactor < iteratorCount; offsetFactor += 1 {
+		targetOffset := offsetFactor * lengthBase
+		targetLength := lengthBase
+		if offsetFactor+1 == iteratorCount {
+			targetLength += lengthRemnant
+		}
+
+		go func(offset, length int) {
+			defer wg.Done()
+
+			for iterationOffset := 0; iterationOffset < length; iterationOffset += 1 {
+				currentOffset := offset + iterationOffset
+
+				image.Set(currentOffset, yIndex, row[currentOffset])
+			}
+		}(targetOffset, targetLength)
+	}
+
+	wg.Wait()
 	return nil
 }
 
