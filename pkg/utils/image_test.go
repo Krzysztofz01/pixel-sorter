@@ -43,6 +43,66 @@ func TestGetRowShouldReturnImageColumn(t *testing.T) {
 	assert.Equal(t, expectedLength, acutalLength)
 }
 
+func TestSetColumnShouldSetColorsForTheImageColumn(t *testing.T) {
+	image := mockTestWhiteImage()
+	width := image.Bounds().Dx()
+	height := image.Bounds().Dy()
+
+	black := color.RGBA{0x00, 0x00, 0x00, 0xff}
+	white := color.RGBA{0xff, 0xff, 0xff, 0xff}
+	xIndexTarget := 2
+
+	column := make([]color.Color, height)
+	for yIndex := 0; yIndex < height; yIndex += 1 {
+		column[yIndex] = color.Black
+	}
+
+	err := SetImageColumn(image, column, xIndexTarget)
+	assert.Nil(t, err)
+
+	for xIndex := 0; xIndex < width; xIndex += 1 {
+		for yIndex := 0; yIndex < height; yIndex += 1 {
+			c := image.At(xIndex, yIndex)
+
+			if xIndex == xIndexTarget {
+				assert.Equal(t, black, c)
+			} else {
+				assert.Equal(t, white, c)
+			}
+		}
+	}
+}
+
+func TestSetRowShouldSetColorsForTheImageRow(t *testing.T) {
+	image := mockTestWhiteImage()
+	width := image.Bounds().Dx()
+	height := image.Bounds().Dy()
+
+	black := color.RGBA{0x00, 0x00, 0x00, 0xff}
+	white := color.RGBA{0xff, 0xff, 0xff, 0xff}
+	yIndexTarget := 2
+
+	row := make([]color.Color, width)
+	for xIndex := 0; xIndex < width; xIndex += 1 {
+		row[xIndex] = color.Black
+	}
+
+	err := SetImageRow(image, row, yIndexTarget)
+	assert.Nil(t, err)
+
+	for xIndex := 0; xIndex < width; xIndex += 1 {
+		for yIndex := 0; yIndex < height; yIndex += 1 {
+			c := image.At(xIndex, yIndex)
+
+			if yIndex == yIndexTarget {
+				assert.Equal(t, black, c)
+			} else {
+				assert.Equal(t, white, c)
+			}
+		}
+	}
+}
+
 func TestRotateImageShouldCorrectlyRotateImage(t *testing.T) {
 	image := mockTestGradientImage()
 	imageWidth := image.Bounds().Dx()
@@ -119,9 +179,13 @@ func TestImageInvertShouldInvertImage(t *testing.T) {
 
 	expectedColor := color.RGBA{0, 0, 0, 0xff}
 
+	invertedImage, err := InvertImage(image)
+
+	assert.Nil(t, err)
+
 	for y := 0; y < imageHeight; y += 1 {
 		for x := 0; x < imageWidth; x += 1 {
-			actualColor := image.At(x, y)
+			actualColor := invertedImage.At(x, y)
 
 			assert.Equal(t, expectedColor, actualColor)
 		}
@@ -191,7 +255,7 @@ func mockTestWhiteImage() draw.Image {
 
 	for yIndex := 0; yIndex < mock_image_height; yIndex += 1 {
 		for xIndex := 0; xIndex < mock_image_width; xIndex += 1 {
-			image.Set(xIndex, yIndex, color.Black)
+			image.Set(xIndex, yIndex, color.White)
 		}
 	}
 
