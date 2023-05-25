@@ -388,8 +388,7 @@ func (sorter *defaultSorter) isMeetingIntervalRequirements(color color.RGBA, isM
 			lThreshold := sorter.options.IntervalDeterminantLowerThreshold
 			uThreshold := sorter.options.IntervalDeterminantUpperThreshold
 
-			r, g, b := utils.RgbaToIntComponents(color)
-			abs := float64((r * g * b)) / 16581375.0
+			abs := float64((color.R * color.G * color.B)) / 16581375.0
 
 			return abs >= lThreshold && abs < uThreshold
 		}

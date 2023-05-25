@@ -7,25 +7,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestShouldConvertRGBAToRgbComponents(t *testing.T) {
-	cases := map[color.RGBA]struct{ r, g, b int }{
-		{0, 0, 0, 0}:         {0, 0, 0},
-		{0, 0, 0, 255}:       {0, 0, 0},
-		{255, 255, 255, 0}:   {255, 255, 255},
-		{255, 255, 255, 255}: {255, 255, 255},
-		{50, 100, 200, 0}:    {50, 100, 200},
-		{50, 100, 200, 255}:  {50, 100, 200},
-	}
-
-	for rgba, expected := range cases {
-		rActual, gActual, bActual := RgbaToIntComponents(rgba)
-
-		assert.Equal(t, expected.r, rActual)
-		assert.Equal(t, expected.g, gActual)
-		assert.Equal(t, expected.b, bActual)
-	}
-}
-
 func TestShouldConvertNRGBAToRgbComponents(t *testing.T) {
 	cases := map[color.NRGBA]struct{ r, g, b int }{
 		{0, 0, 0, 0}:         {0, 0, 0},

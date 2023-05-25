@@ -13,16 +13,6 @@ const (
 	DarkenOnly
 )
 
-// Convert the color.RGBA struct to individual RGB components represented as integers in range from 0 to 255
-func RgbaToIntComponents(c color.RGBA) (int, int, int) {
-	r32, g32, b32, _ := c.RGBA()
-	r := int(r32 >> 8)
-	g := int(g32 >> 8)
-	b := int(b32 >> 8)
-
-	return r, g, b
-}
-
 // Convert the color.NRGBA struct to individual RGB components represented as integers in range from 0 to 255
 func NrgbaToIntComponents(c color.NRGBA) (int, int, int) {
 	r := int(c.R)
@@ -34,9 +24,7 @@ func NrgbaToIntComponents(c color.NRGBA) (int, int, int) {
 
 // Convert the color.RGBA struct to the Y grayscale component represented as integer in range from 0 to 255
 func RgbaToGrayscaleComponent(c color.RGBA) int {
-	r, g, b := RgbaToIntComponents(c)
-
-	y := (float64(r) * 0.299) + (float64(g) * 0.587) + (float64(b) * 0.114)
+	y := (float64(c.R) * 0.299) + (float64(c.G) * 0.587) + (float64(c.B) * 0.114)
 	return int(math.Min(255, math.Max(0, y)))
 }
 
@@ -50,10 +38,9 @@ func NrgbaToGrayscaleComponent(c color.NRGBA) int {
 
 // Convert the color.RGBA struct tu individual RGB components represented as floating point numbers in range from 0.0 to 1.0
 func RgbaToNormalizedComponents(c color.RGBA) (float64, float64, float64) {
-	r, g, b := RgbaToIntComponents(c)
-	rNorm := float64(r) / 255.0
-	gNorm := float64(g) / 255.0
-	bNorm := float64(b) / 255.0
+	rNorm := float64(c.R) / 255.0
+	gNorm := float64(c.G) / 255.0
+	bNorm := float64(c.B) / 255.0
 
 	return rNorm, gNorm, bNorm
 }
