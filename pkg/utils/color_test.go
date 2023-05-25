@@ -102,26 +102,38 @@ func TestShouldConvertColorToRgba(t *testing.T) {
 	}
 }
 
-func TestShouldConvertRgbaToHslComponents(t *testing.T) {
-	cases := map[color.RGBA]struct {
+func TestShouldConvertColorToHslaComponents(t *testing.T) {
+	cases := map[color.Color]struct {
 		h int
 		s float64
 		l float64
+		a float64
 	}{
-		{0, 0, 0, 0}:         {0, 0.0, 0.0},
-		{0, 0, 0, 255}:       {0.0, 0.0, 0.0},
-		{255, 255, 255, 0}:   {0.0, 0.0, 1.0},
-		{255, 255, 255, 255}: {0.0, 0.0, 1.0},
-		{50, 100, 200, 0}:    {220, 0.60, 0.49},
-		{50, 100, 200, 255}:  {220, 0.60, 0.49},
+		color.RGBA{0, 0, 0, 0}:          {0, 0.0, 0.0, 0.0},
+		color.RGBA{0, 0, 0, 255}:        {0.0, 0.0, 0.0, 1.0},
+		color.RGBA{255, 255, 255, 0}:    {0.0, 0.0, 1.0, 0.0},
+		color.RGBA{255, 255, 255, 255}:  {0.0, 0.0, 1.0, 1.0},
+		color.RGBA{50, 100, 200, 0}:     {220, 0.60, 0.49, 0.0},
+		color.RGBA{50, 100, 200, 255}:   {220, 0.60, 0.49, 1.0},
+		color.RGBA{55, 99, 7, 255}:      {89, 0.87, 0.21, 1.0},
+		color.NRGBA{0, 0, 0, 0}:         {0, 0.0, 0.0, 0.0},
+		color.NRGBA{0, 0, 0, 255}:       {0.0, 0.0, 0.0, 1.0},
+		color.NRGBA{255, 255, 255, 0}:   {0.0, 0.0, 0.0, 0.0},
+		color.NRGBA{255, 255, 255, 255}: {0.0, 0.0, 1.0, 1.0},
+		color.NRGBA{50, 100, 200, 0}:    {0.0, 0.0, 0.0, 0.0},
+		color.NRGBA{50, 100, 200, 255}:  {220, 0.60, 0.49, 1.0},
+		color.NRGBA{55, 99, 7, 255}:     {89, 0.87, 0.21, 1.0},
+		color.Black:                     {0, 0.0, 0.0, 1.0},
+		color.White:                     {0, 0.0, 1.0, 1.0},
 	}
 
 	const deltaHue float64 = 1.0
-	const deltaSaturation float64 = 0.1
-	const deltaLightness float64 = 0.1
+	const deltaSaturation float64 = 1e-2
+	const deltaLightness float64 = 1e-2
+	const deltaAlpha float64 = 1e-2
 
-	for rgba, expected := range cases {
-		hActual, sActual, lActual := RgbaToHsl(rgba)
+	for color, expected := range cases {
+		hActual, sActual, lActual, aActual := ColorToHsla(color)
 
 		if expected.s > 0.0 {
 			assert.InDelta(t, expected.h, hActual+1, deltaHue)
@@ -129,6 +141,7 @@ func TestShouldConvertRgbaToHslComponents(t *testing.T) {
 
 		assert.InDelta(t, expected.s, sActual, deltaSaturation)
 		assert.InDelta(t, expected.l, lActual, deltaLightness)
+		assert.InDelta(t, expected.a, aActual, deltaAlpha)
 	}
 }
 

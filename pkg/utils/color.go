@@ -53,9 +53,13 @@ func ColorToRgba(c color.Color) color.RGBA {
 	}
 }
 
-// Convert a color represented as color.RGBA to HSL components where Hue is expressed in degress (0-360) and the saturation and lightnes in percentage (0.0-1.0)
-func RgbaToHsl(c color.RGBA) (int, float64, float64) {
-	rNorm, gNorm, bNorm := RgbaToNormalizedComponents(c)
+// Convert a color represented as color.Color interface implementation to HSL+Alpha components where Hue is expressed in degress (0-360) and the
+// saturation, lightnes and alpha in percentage (0.0-1.0)
+func ColorToHsla(c color.Color) (int, float64, float64, float64) {
+	rgba := ColorToRgba(c)
+	rNorm, gNorm, bNorm := RgbaToNormalizedComponents(rgba)
+
+	alpha := float64(rgba.A) / 255.0
 
 	min := math.Min(rNorm, math.Min(gNorm, bNorm))
 	max := math.Max(rNorm, math.Max(gNorm, bNorm))
@@ -92,7 +96,7 @@ func RgbaToHsl(c color.RGBA) (int, float64, float64) {
 		hue = int(math.Round(hueNorm * 360))
 	}
 
-	return hue, saturation, lightness
+	return hue, saturation, lightness, alpha
 }
 
 // Perform blending of two colors according to a given blending mode
