@@ -30,12 +30,11 @@ func RgbaToNormalizedComponents(c color.RGBA) (float64, float64, float64) {
 	return rNorm, gNorm, bNorm
 }
 
-// Return a boolean value indicating if the given color.RGBA color has the alpha channel >255
-func HasAnyTransparency(c color.RGBA) bool {
+// Return a boolean value indicating if the given color.Color interface implementation has the alpha channel <255
+func HasAnyTransparency(c color.Color) bool {
 	_, _, _, a32 := c.RGBA()
-	a := int(a32 >> 8)
 
-	return a < 255
+	return int(a32>>8) < 255
 }
 
 // Convert a color represented as color.Color interface to color.RGBA struct. If the underlying color is a color.RGBA the original struct

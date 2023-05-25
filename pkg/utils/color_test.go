@@ -52,17 +52,25 @@ func TestShouldConvertRGBAToNormalizedRgbComponents(t *testing.T) {
 }
 
 func TestShouldTellIfRGBAHasAnyTransparency(t *testing.T) {
-	cases := map[color.RGBA]bool{
-		{0, 0, 0, 0}:         true,
-		{0, 0, 0, 254}:       true,
-		{0, 0, 0, 255}:       false,
-		{255, 255, 255, 0}:   true,
-		{255, 255, 255, 254}: true,
-		{255, 255, 255, 255}: false,
+	cases := map[color.Color]bool{
+		color.RGBA{0, 0, 0, 0}:          true,
+		color.RGBA{0, 0, 0, 254}:        true,
+		color.RGBA{0, 0, 0, 255}:        false,
+		color.RGBA{255, 255, 255, 0}:    true,
+		color.RGBA{255, 255, 255, 254}:  true,
+		color.RGBA{255, 255, 255, 255}:  false,
+		color.NRGBA{0, 0, 0, 0}:         true,
+		color.NRGBA{0, 0, 0, 254}:       true,
+		color.NRGBA{0, 0, 0, 255}:       false,
+		color.NRGBA{255, 255, 255, 0}:   true,
+		color.NRGBA{255, 255, 255, 254}: true,
+		color.NRGBA{255, 255, 255, 255}: false,
+		color.Black:                     false,
+		color.White:                     false,
 	}
 
-	for rgba, expected := range cases {
-		actual := HasAnyTransparency(rgba)
+	for color, expected := range cases {
+		actual := HasAnyTransparency(color)
 
 		assert.Equal(t, expected, actual)
 	}
