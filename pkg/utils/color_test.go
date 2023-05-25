@@ -7,54 +7,26 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestShouldConvertNRGBAToRgbComponents(t *testing.T) {
-	cases := map[color.NRGBA]struct{ r, g, b int }{
-		{0, 0, 0, 0}:         {0, 0, 0},
-		{0, 0, 0, 255}:       {0, 0, 0},
-		{255, 255, 255, 0}:   {255, 255, 255},
-		{255, 255, 255, 255}: {255, 255, 255},
-		{50, 100, 200, 0}:    {50, 100, 200},
-		{50, 100, 200, 255}:  {50, 100, 200},
+func TestShouldConvertColorToGrayscaleComponent(t *testing.T) {
+	cases := map[color.Color]int{
+		color.RGBA{0, 0, 0, 0}:          0,
+		color.RGBA{0, 0, 0, 255}:        0,
+		color.RGBA{255, 255, 255, 0}:    255,
+		color.RGBA{255, 255, 255, 255}:  255,
+		color.RGBA{50, 100, 200, 0}:     96,
+		color.RGBA{50, 100, 200, 255}:   96,
+		color.NRGBA{0, 0, 0, 0}:         0,
+		color.NRGBA{0, 0, 0, 255}:       0,
+		color.NRGBA{255, 255, 255, 0}:   0,
+		color.NRGBA{255, 255, 255, 255}: 255,
+		color.NRGBA{50, 100, 200, 0}:    0,
+		color.NRGBA{50, 100, 200, 255}:  96,
+		color.White:                     255,
+		color.Black:                     0,
 	}
 
-	for nrgba, expected := range cases {
-		rActual, gActual, bActual := NrgbaToIntComponents(nrgba)
-
-		assert.Equal(t, expected.r, rActual)
-		assert.Equal(t, expected.g, gActual)
-		assert.Equal(t, expected.b, bActual)
-	}
-}
-
-func TestShouldConvertRGBAToGrayscaleComponent(t *testing.T) {
-	cases := map[color.RGBA]int{
-		{0, 0, 0, 0}:         0,
-		{0, 0, 0, 255}:       0,
-		{255, 255, 255, 0}:   255,
-		{255, 255, 255, 255}: 255,
-		{50, 100, 200, 0}:    96,
-		{50, 100, 200, 255}:  96,
-	}
-
-	for rgba, expected := range cases {
-		actual := RgbaToGrayscaleComponent(rgba)
-
-		assert.Equal(t, expected, actual)
-	}
-}
-
-func TestShouldConvertNRGBAToGrayscaleComponent(t *testing.T) {
-	cases := map[color.NRGBA]int{
-		{0, 0, 0, 0}:         0,
-		{0, 0, 0, 255}:       0,
-		{255, 255, 255, 0}:   255,
-		{255, 255, 255, 255}: 255,
-		{50, 100, 200, 0}:    96,
-		{50, 100, 200, 255}:  96,
-	}
-
-	for nrgba, expected := range cases {
-		actual := NrgbaToGrayscaleComponent(nrgba)
+	for color, expected := range cases {
+		actual := ColorToGrayscaleComponent(color)
 
 		assert.Equal(t, expected, actual)
 	}
