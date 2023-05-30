@@ -32,43 +32,51 @@ func GetImageFromFile(filePath string) (image.Image, error) {
 }
 
 // Create a new file with the given name and format and store the given image in it
-func StoreImageToFile(fileName string, fileFormat string, img image.Image) error {
-	if strings.ToLower(fileFormat) == "jpg" {
-		file, err := os.Create(fmt.Sprintf("%s.jpg", fileName))
-		if err != nil {
-			return fmt.Errorf("utils: failed to create a new file: %w", err)
-		}
+func StoreImageToFile(filePath string, fileFormat string, img image.Image) error {
+	fileFormatLower := strings.ToLower(fileFormat)
 
-		defer func() {
-			if err := file.Close(); err != nil {
-				panic(err)
+	switch fileFormatLower {
+	case "jpg", "jpeg":
+		{
+			file, err := os.Create(filePath)
+			if err != nil {
+				return fmt.Errorf("utils: failed to create a new file: %w", err)
 			}
-		}()
 
-		if err := jpeg.Encode(file, img, &jpeg.Options{Quality: 100}); err != nil {
-			return fmt.Errorf("utils: failed to encode the image to jpeg: %w", err)
-		}
+			defer func() {
+				if err := file.Close(); err != nil {
+					panic(err)
+				}
+			}()
 
-		return nil
-
-	} else if strings.ToLower(fileFormat) == "png" {
-		file, err := os.Create(fmt.Sprintf("%s.png", fileName))
-		if err != nil {
-			return fmt.Errorf("utils: failed to create a new file: %w", err)
-		}
-
-		defer func() {
-			if err := file.Close(); err != nil {
-				panic(err)
+			if err := jpeg.Encode(file, img, &jpeg.Options{Quality: 100}); err != nil {
+				return fmt.Errorf("utils: failed to encode the image to jpeg: %w", err)
 			}
-		}()
 
-		if err := png.Encode(file, img); err != nil {
-			return fmt.Errorf("utils: failed to encode the image to png: %w", err)
+			return nil
 		}
+	case "png":
+		{
+			file, err := os.Create(filePath)
+			if err != nil {
+				return fmt.Errorf("utils: failed to create a new file: %w", err)
+			}
 
-		return nil
-	} else {
-		return errors.New("utils: specified file format is not supported")
+			defer func() {
+				if err := file.Close(); err != nil {
+					panic(err)
+				}
+			}()
+
+			if err := png.Encode(file, img); err != nil {
+				return fmt.Errorf("utils: failed to encode the image to png: %w", err)
+			}
+
+			return nil
+		}
+	default:
+		{
+			return errors.New("utils: specified file format is not supported")
+		}
 	}
 }
