@@ -58,7 +58,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&FlagOutputImageFilePath, "output-image-path", "", "The path of the output image file to be saved. The path should end with one of the supported extensions. [jpg, png]")
 	rootCmd.MarkPersistentFlagRequired("output-image-path")
 
-	rootCmd.PersistentFlags().StringVar(&FlagMaskFilePath, "mask-file-path", "", "The path of the image mask file to be process the image file.")
+	rootCmd.PersistentFlags().StringVar(&FlagMaskFilePath, "mask-image-path", "", "The path of the image mask file to be process the image file.")
 
 	rootCmd.PersistentFlags().StringVarP(&FlagSortDirection, "direction", "d", "ascending", "Pixel sorting direction in intervals. Options: [ascending, descending, random].")
 
