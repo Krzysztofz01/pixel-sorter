@@ -245,7 +245,7 @@
                 "brightness",
                 "--input-image-path",
                 "image-test.png",
-                "--mask-file-path",
+                "--mask-image-path",
                 "mask-test.png",
                 "--output-image-path",
                 "image-test-sorted.jpg",
