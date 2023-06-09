@@ -62,6 +62,7 @@ type SorterOptions struct {
 	IntervalDeterminantLowerThreshold float64
 	IntervalDeterminantUpperThreshold float64
 	IntervalLength                    int
+	IntervalLengthRandomFactor        int
 	Angle                             int
 	UseMask                           bool
 	Cycles                            int
@@ -81,6 +82,7 @@ func GetDefaultSorterOptions() *SorterOptions {
 	options.IntervalDeterminantUpperThreshold = 1.0
 	options.UseMask = false
 	options.IntervalLength = 0
+	options.IntervalLengthRandomFactor = 0
 	options.Cycles = 1
 	options.Scale = 1
 	options.Blending = BlendingNone
