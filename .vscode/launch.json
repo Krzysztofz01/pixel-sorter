@@ -426,7 +426,7 @@
                 "--interval-max-length",
                 "80",
                 "--interval-max-length-random-factor",
-                "70",
+                "50",
                 "--order",
                 "horizontal-vertical",
                 "--angle",
