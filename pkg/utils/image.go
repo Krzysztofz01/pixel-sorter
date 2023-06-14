@@ -210,7 +210,6 @@ func ScaleImage(i image.Image, percentage float64) (draw.Image, error) {
 }
 
 // Blend two images using a given blending mode into a new image
-// TODO: Unit test implementation
 func BlendImages(a, b image.Image, mode BlendingMode) (draw.Image, error) {
 	aWidth := a.Bounds().Dx()
 	aHeight := a.Bounds().Dy()
