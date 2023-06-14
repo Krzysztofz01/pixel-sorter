@@ -115,37 +115,29 @@ func TestShouldTellIfRGBAHasAnyTransparency(t *testing.T) {
 	}
 }
 
-func TestShouldConvertColorToRgbaIfColorIsRgba(t *testing.T) {
+func TestShouldConvertColorToRgba(t *testing.T) {
 	cases := map[color.Color]color.RGBA{
-		color.RGBA{0, 0, 0, 0}:         {0, 0, 0, 0},
-		color.RGBA{0, 0, 0, 254}:       {0, 0, 0, 254},
-		color.RGBA{0, 0, 0, 255}:       {0, 0, 0, 255},
-		color.RGBA{255, 255, 255, 0}:   {255, 255, 255, 0},
-		color.RGBA{255, 255, 255, 254}: {255, 255, 255, 254},
-		color.RGBA{255, 255, 255, 255}: {255, 255, 255, 255},
-	}
-
-	for color, expected := range cases {
-		actual, err := ColorToRgba(color)
-
-		assert.Nil(t, err)
-		assert.Equal(t, expected, actual)
-	}
-}
-
-func TestShouldNotConvertColorToRgbaIfColorIsNotRgba(t *testing.T) {
-	cases := map[color.Color]color.RGBA{
+		color.RGBA{0, 0, 0, 0}:          {0, 0, 0, 0},
+		color.RGBA{0, 0, 0, 254}:        {0, 0, 0, 254},
+		color.RGBA{0, 0, 0, 255}:        {0, 0, 0, 255},
+		color.RGBA{255, 255, 255, 0}:    {255, 255, 255, 0},
+		color.RGBA{255, 255, 255, 254}:  {255, 255, 255, 254},
+		color.RGBA{255, 255, 255, 255}:  {255, 255, 255, 255},
 		color.NRGBA{0, 0, 0, 0}:         {0, 0, 0, 0},
 		color.NRGBA{0, 0, 0, 254}:       {0, 0, 0, 254},
 		color.NRGBA{0, 0, 0, 255}:       {0, 0, 0, 255},
-		color.NRGBA{255, 255, 255, 0}:   {255, 255, 255, 0},
-		color.NRGBA{255, 255, 255, 254}: {255, 255, 255, 254},
+		color.NRGBA{255, 255, 255, 0}:   {0, 0, 0, 0},
+		color.NRGBA{255, 255, 255, 254}: {254, 254, 254, 254},
 		color.NRGBA{255, 255, 255, 255}: {255, 255, 255, 255},
+		color.Gray{Y: 244}:              {244, 244, 244, 255},
+		color.White:                     {255, 255, 255, 255},
+		color.Black:                     {0, 0, 0, 255},
 	}
 
-	for color := range cases {
-		_, err := ColorToRgba(color)
-		assert.Error(t, err)
+	for color, expected := range cases {
+		actual := ColorToRgba(color)
+
+		assert.Equal(t, expected, actual)
 	}
 }
 
