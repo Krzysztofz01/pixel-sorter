@@ -97,6 +97,10 @@ func (options *SorterOptions) AreValid() (bool, string) {
 		return false, "the interval max length values must not be negative"
 	}
 
+	if options.IntervalLengthRandomFactor < 0 {
+		return false, "the interval length random factor value must not be negative"
+	}
+
 	return true, ""
 }
 

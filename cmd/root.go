@@ -161,7 +161,6 @@ func parseCommonOptions() (*sorter.SorterOptions, error) {
 	options.IntervalDeterminantUpperThreshold = FlagIntervalUpperThreshold
 	options.IntervalDeterminantLowerThreshold = FlagIntervalLowerThreshold
 	options.IntervalLength = FlagIntervalLength
-
 	options.IntervalLengthRandomFactor = FlagIntervalLengthRandomFactor
 	options.Angle = FlagAngle
 	options.Cycles = FlagSortCycles
