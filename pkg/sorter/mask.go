@@ -19,12 +19,20 @@ type Mask struct {
 
 // Crate a new mask instance from a given image without target image restrictions
 func CreateMask(mImg image.Image) (*Mask, error) {
+	if mImg == nil {
+		return nil, errors.New("sorter: the provided mask image reference is nil")
+	}
+
 	return CreateImageMask(mImg, mImg.Bounds(), 0)
 }
 
 // Create a new mask instance from a given image and bounds of the image to be masked. The trnslateAngle parameter
 // indicates whether the lookup mask should be interpreted from a given angle.
 func CreateImageMask(mImg image.Image, targetImageBounds image.Rectangle, translateAngle int) (*Mask, error) {
+	if mImg == nil {
+		return nil, errors.New("sorter: the provided mask image reference is nil")
+	}
+
 	if mImg.Bounds().Dx() != targetImageBounds.Dx() || mImg.Bounds().Dy() != targetImageBounds.Dy() {
 		return nil, errors.New("sorter: mask image and target image sizes are not matching")
 	}
