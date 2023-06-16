@@ -1,3 +1,5 @@
+github.com/AlexEidt/Vidio v1.4.2 h1:+nNaPkVEPcvtgmcJI/0u/Wu0j1IeFFbXkaQIVVewJuU=
+github.com/AlexEidt/Vidio v1.4.2/go.mod h1:djhIMnWMqPrC3X6nB6ymGX6uWWlgw+VayYGKE1bNwmI=
 github.com/antonfisher/nested-logrus-formatter v1.3.1 h1:NFJIr+pzwv5QLHTPyKz9UMEoHck02Q9L0FP13b/xSbQ=
 github.com/antonfisher/nested-logrus-formatter v1.3.1/go.mod h1:6WTfyWFkBc9+zyBaKIqRrg/KwMqBbodBjgbHjDz7zjA=
 github.com/cpuguy83/go-md2man/v2 v2.0.2/go.mod h1:tgQtvFlXSQOSOSIRvRPT7W67SCa46tRHOmNcaadrF8o=
