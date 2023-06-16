@@ -49,8 +49,7 @@ func CreateImageMask(mImg image.Image, targetImageBounds image.Rectangle, transl
 
 	for xIndex := 0; xIndex < xLength; xIndex += 1 {
 		for yIndex := 0; yIndex < yLength; yIndex += 1 {
-			color := utils.ColorToRgba(drawableMask.At(xIndex, yIndex))
-			_, s, l := utils.RgbaToHsl(color)
+			_, s, l, _ := utils.ColorToHsla(drawableMask.At(xIndex, yIndex))
 
 			if s != 0.0 || (l != 0.0 && l != 1.0) {
 				return nil, errors.New("sorter: the mask contains a invalid color")
@@ -110,7 +109,7 @@ func (mask *Mask) IsMasked(xIndex, yIndex int) (bool, error) {
 		color = utils.ColorToRgba(mask.maskImage.At(xIndex, yIndex))
 	}
 
-	_, _, l := utils.RgbaToHsl(utils.ColorToRgba(color))
+	_, _, l, _ := utils.ColorToHsla(color)
 
 	if l == 0.0 {
 		return true, nil

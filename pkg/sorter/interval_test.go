@@ -247,8 +247,7 @@ func TestNormalizedWeightIntervalShouldSortRandom(t *testing.T) {
 // Create a test value weight determinant that is returning the red RGBA component as weight. Values from 0 to 255
 func mockTestValueWeightDeterminant() func(color.RGBA) (int, error) {
 	return func(c color.RGBA) (int, error) {
-		r, _, _ := utils.RgbaToIntComponents(c)
-		return r, nil
+		return int(c.R), nil
 	}
 }
 

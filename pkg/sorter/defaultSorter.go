@@ -349,7 +349,7 @@ func (sorter *defaultSorter) isMeetingIntervalRequirements(color color.RGBA, isM
 			lThreshold := sorter.options.IntervalDeterminantLowerThreshold
 			uThreshold := sorter.options.IntervalDeterminantUpperThreshold
 
-			h, _, _ := utils.RgbaToHsl(color)
+			h, _, _, _ := utils.ColorToHsla(color)
 			hNorm := float64(h) / 360.0
 
 			return hNorm >= lThreshold && hNorm <= uThreshold
@@ -359,7 +359,7 @@ func (sorter *defaultSorter) isMeetingIntervalRequirements(color color.RGBA, isM
 			lThreshold := sorter.options.IntervalDeterminantLowerThreshold
 			uThreshold := sorter.options.IntervalDeterminantUpperThreshold
 
-			_, s, _ := utils.RgbaToHsl(color)
+			_, s, _, _ := utils.ColorToHsla(color)
 			return s >= lThreshold && s <= uThreshold
 		}
 	case SplitByMask, SplitByEdgeDetection:
@@ -371,8 +371,7 @@ func (sorter *defaultSorter) isMeetingIntervalRequirements(color color.RGBA, isM
 			lThreshold := sorter.options.IntervalDeterminantLowerThreshold
 			uThreshold := sorter.options.IntervalDeterminantUpperThreshold
 
-			r, g, b := utils.RgbaToIntComponents(color)
-			abs := float64((r * g * b)) / 16581375.0
+			abs := float64((color.R * color.G * color.B)) / 16581375.0
 
 			return abs >= lThreshold && abs < uThreshold
 		}
@@ -393,14 +392,14 @@ func (sorter *defaultSorter) CreateInterval() Interval {
 	case SortByHue:
 		{
 			return CreateValueWeightInterval(func(c color.RGBA) (int, error) {
-				h, _, _ := utils.RgbaToHsl(c)
+				h, _, _, _ := utils.ColorToHsla(c)
 				return h, nil
 			})
 		}
 	case SortBySaturation:
 		{
 			return CreateNormalizedWeightInterval(func(c color.RGBA) (float64, error) {
-				_, s, _ := utils.RgbaToHsl(c)
+				_, s, _, _ := utils.ColorToHsla(c)
 				return s, nil
 			})
 		}
