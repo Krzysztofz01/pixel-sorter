@@ -35,26 +35,9 @@ func CreateSorter(image image.Image, mask image.Image, logger *logrus.Logger, op
 	if options != nil {
 		sorter.logger.Debugln("Running the sorter with specified sorter options.")
 
-		lowerIdThreshold := options.IntervalDeterminantLowerThreshold
-		if lowerIdThreshold > 1.0 || lowerIdThreshold < 0.0 {
-			return nil, errors.New("sorter: invalid lower interval determinant threshold values provided")
-		}
-
-		upperIdThreshold := options.IntervalDeterminantUpperThreshold
-		if upperIdThreshold > 1.0 || upperIdThreshold < 0.0 {
-			return nil, errors.New("sorter: invalid upper interval determinant threshold values provided")
-		}
-
-		if lowerIdThreshold > upperIdThreshold {
-			return nil, errors.New("sorter: the lower interval determiant threshold value can not be greater from the upper threshold")
-		}
-
-		if options.Cycles < 1 {
-			return nil, errors.New("sorter: the cycles count can not be zero or less")
-		}
-
-		if options.Scale < 0.0 || options.Scale > 1.0 {
-			return nil, errors.New("sorter: the scale percentage must be in range between zero and one")
+		if valid, msg := options.AreValid(); !valid {
+			sorter.logger.Debugf("Sorter options validation failed. Sorter options: %+v", *options)
+			return nil, fmt.Errorf("sorter: %s", msg)
 		}
 
 		sorter.logger.Debugf("Sorter options validation passed. Sorter options: %+v", *options)
@@ -369,7 +352,7 @@ func (sorter *defaultSorter) isMeetingIntervalRequirements(color color.RGBA, isM
 			lThreshold := sorter.options.IntervalDeterminantLowerThreshold
 			uThreshold := sorter.options.IntervalDeterminantUpperThreshold
 
-			h, _, _ := utils.RgbaToHsl(color)
+			h, _, _, _ := utils.ColorToHsla(color)
 			hNorm := float64(h) / 360.0
 
 			return hNorm >= lThreshold && hNorm <= uThreshold
@@ -379,7 +362,7 @@ func (sorter *defaultSorter) isMeetingIntervalRequirements(color color.RGBA, isM
 			lThreshold := sorter.options.IntervalDeterminantLowerThreshold
 			uThreshold := sorter.options.IntervalDeterminantUpperThreshold
 
-			_, s, _ := utils.RgbaToHsl(color)
+			_, s, _, _ := utils.ColorToHsla(color)
 			return s >= lThreshold && s <= uThreshold
 		}
 	case SplitByMask, SplitByEdgeDetection:
@@ -391,8 +374,7 @@ func (sorter *defaultSorter) isMeetingIntervalRequirements(color color.RGBA, isM
 			lThreshold := sorter.options.IntervalDeterminantLowerThreshold
 			uThreshold := sorter.options.IntervalDeterminantUpperThreshold
 
-			r, g, b := utils.RgbaToIntComponents(color)
-			abs := float64((r * g * b)) / 16581375.0
+			abs := float64((color.R * color.G * color.B)) / 16581375.0
 
 			return abs >= lThreshold && abs < uThreshold
 		}
@@ -430,14 +412,14 @@ func (sorter *defaultSorter) CreateInterval() Interval {
 	case SortByHue:
 		{
 			return CreateValueWeightInterval(func(c color.RGBA) (int, error) {
-				h, _, _ := utils.RgbaToHsl(c)
+				h, _, _, _ := utils.ColorToHsla(c)
 				return h, nil
 			})
 		}
 	case SortBySaturation:
 		{
 			return CreateNormalizedWeightInterval(func(c color.RGBA) (float64, error) {
-				_, s, _ := utils.RgbaToHsl(c)
+				_, s, _, _ := utils.ColorToHsla(c)
 				return s, nil
 			})
 		}

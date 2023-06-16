@@ -19,12 +19,20 @@ type Mask struct {
 
 // Crate a new mask instance from a given image without target image restrictions
 func CreateMask(mImg image.Image) (*Mask, error) {
+	if mImg == nil {
+		return nil, errors.New("sorter: the provided mask image reference is nil")
+	}
+
 	return CreateImageMask(mImg, mImg.Bounds(), 0)
 }
 
 // Create a new mask instance from a given image and bounds of the image to be masked. The trnslateAngle parameter
 // indicates whether the lookup mask should be interpreted from a given angle.
 func CreateImageMask(mImg image.Image, targetImageBounds image.Rectangle, translateAngle int) (*Mask, error) {
+	if mImg == nil {
+		return nil, errors.New("sorter: the provided mask image reference is nil")
+	}
+
 	if mImg.Bounds().Dx() != targetImageBounds.Dx() || mImg.Bounds().Dy() != targetImageBounds.Dy() {
 		return nil, errors.New("sorter: mask image and target image sizes are not matching")
 	}
@@ -41,8 +49,7 @@ func CreateImageMask(mImg image.Image, targetImageBounds image.Rectangle, transl
 
 	for xIndex := 0; xIndex < xLength; xIndex += 1 {
 		for yIndex := 0; yIndex < yLength; yIndex += 1 {
-			color := utils.ColorToRgba(drawableMask.At(xIndex, yIndex))
-			_, s, l := utils.RgbaToHsl(color)
+			_, s, l, _ := utils.ColorToHsla(drawableMask.At(xIndex, yIndex))
 
 			if s != 0.0 || (l != 0.0 && l != 1.0) {
 				return nil, errors.New("sorter: the mask contains a invalid color")
@@ -102,7 +109,7 @@ func (mask *Mask) IsMasked(xIndex, yIndex int) (bool, error) {
 		color = utils.ColorToRgba(mask.maskImage.At(xIndex, yIndex))
 	}
 
-	_, _, l := utils.RgbaToHsl(utils.ColorToRgba(color))
+	_, _, l, _ := utils.ColorToHsla(color)
 
 	if l == 0.0 {
 		return true, nil

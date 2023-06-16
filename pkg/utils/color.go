@@ -13,57 +13,28 @@ const (
 	DarkenOnly
 )
 
-// Convert the color.RGBA struct to individual RGB components represented as integers in range from 0 to 255
-func RgbaToIntComponents(c color.RGBA) (int, int, int) {
-	r32, g32, b32, _ := c.RGBA()
-	r := int(r32 >> 8)
-	g := int(g32 >> 8)
-	b := int(b32 >> 8)
+// Convert the color.Color interface instance to the Y grayscale component represented as a integer in range from 0 to 255
+func ColorToGrayscaleComponent(c color.Color) int {
+	rgba := ColorToRgba(c)
 
-	return r, g, b
-}
-
-// Convert the color.NRGBA struct to individual RGB components represented as integers in range from 0 to 255
-func NrgbaToIntComponents(c color.NRGBA) (int, int, int) {
-	r := int(c.R)
-	g := int(c.G)
-	b := int(c.B)
-
-	return r, g, b
-}
-
-// Convert the color.RGBA struct to the Y grayscale component represented as integer in range from 0 to 255
-func RgbaToGrayscaleComponent(c color.RGBA) int {
-	r, g, b := RgbaToIntComponents(c)
-
-	y := (float64(r) * 0.299) + (float64(g) * 0.587) + (float64(b) * 0.114)
-	return int(math.Min(255, math.Max(0, y)))
-}
-
-// Convert the color.NRGBA struct to the Y grayscale component represented as integer in range from 0 to 255
-func NrgbaToGrayscaleComponent(c color.NRGBA) int {
-	r, g, b := NrgbaToIntComponents(c)
-
-	y := (float64(r) * 0.299) + (float64(g) * 0.587) + (float64(b) * 0.114)
-	return int(math.Min(255, math.Max(0, y)))
+	y := (float64(rgba.R) * 0.299) + (float64(rgba.G) * 0.587) + (float64(rgba.B) * 0.114)
+	return int(math.Max(0, math.Min(255, y)))
 }
 
 // Convert the color.RGBA struct tu individual RGB components represented as floating point numbers in range from 0.0 to 1.0
 func RgbaToNormalizedComponents(c color.RGBA) (float64, float64, float64) {
-	r, g, b := RgbaToIntComponents(c)
-	rNorm := float64(r) / 255.0
-	gNorm := float64(g) / 255.0
-	bNorm := float64(b) / 255.0
+	rNorm := float64(c.R) / 255.0
+	gNorm := float64(c.G) / 255.0
+	bNorm := float64(c.B) / 255.0
 
 	return rNorm, gNorm, bNorm
 }
 
-// Return a boolean value indicating if the given color.RGBA color has the alpha channel >255
-func HasAnyTransparency(c color.RGBA) bool {
+// Return a boolean value indicating if the given color.Color interface implementation has the alpha channel <255
+func HasAnyTransparency(c color.Color) bool {
 	_, _, _, a32 := c.RGBA()
-	a := int(a32 >> 8)
 
-	return a < 255
+	return int(a32>>8) < 255
 }
 
 // Convert a color represented as color.Color interface to color.RGBA struct. If the underlying color is a color.RGBA the original struct
@@ -82,9 +53,13 @@ func ColorToRgba(c color.Color) color.RGBA {
 	}
 }
 
-// Convert a color represented as color.RGBA to HSL components where Hue is expressed in degress (0-360) and the saturation and lightnes in percentage (0.0-1.0)
-func RgbaToHsl(c color.RGBA) (int, float64, float64) {
-	rNorm, gNorm, bNorm := RgbaToNormalizedComponents(c)
+// Convert a color represented as color.Color interface implementation to HSL+Alpha components where Hue is expressed in degress (0-360) and the
+// saturation, lightnes and alpha in percentage (0.0-1.0)
+func ColorToHsla(c color.Color) (int, float64, float64, float64) {
+	rgba := ColorToRgba(c)
+	rNorm, gNorm, bNorm := RgbaToNormalizedComponents(rgba)
+
+	alpha := float64(rgba.A) / 255.0
 
 	min := math.Min(rNorm, math.Min(gNorm, bNorm))
 	max := math.Max(rNorm, math.Max(gNorm, bNorm))
@@ -121,7 +96,7 @@ func RgbaToHsl(c color.RGBA) (int, float64, float64) {
 		hue = int(math.Round(hueNorm * 360))
 	}
 
-	return hue, saturation, lightness
+	return hue, saturation, lightness, alpha
 }
 
 // Perform blending of two colors according to a given blending mode
