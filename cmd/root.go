@@ -16,21 +16,22 @@ import (
 )
 
 var (
-	FlagImageFilePath          string
-	FlagMaskFilePath           string
-	FlagOutputFileType         string
-	FlagSortDirection          string
-	FlagSortOrder              string
-	FlagIntervalDeterminant    string
-	FlagIntervalLowerThreshold float64
-	FlagIntervalUpperThreshold float64
-	FlagAngle                  int
-	FlagMask                   bool
-	FlagIntervalLength         int
-	FlagSortCycles             int
-	FlagImageScale             float64
-	FlagBlendingMode           string
-	FlagVerboseLogging         bool
+	FlagImageFilePath              string
+	FlagMaskFilePath               string
+	FlagOutputFileType             string
+	FlagSortDirection              string
+	FlagSortOrder                  string
+	FlagIntervalDeterminant        string
+	FlagIntervalLowerThreshold     float64
+	FlagIntervalUpperThreshold     float64
+	FlagAngle                      int
+	FlagMask                       bool
+	FlagIntervalLength             int
+	FlagIntervalLengthRandomFactor int
+	FlagSortCycles                 int
+	FlagImageScale                 float64
+	FlagBlendingMode               string
+	FlagVerboseLogging             bool
 )
 
 var (
@@ -72,6 +73,8 @@ func init() {
 	rootCmd.PersistentFlags().BoolVarP(&FlagMask, "mask", "m", false, "Exclude the sorting effect from masked out ares of the image.")
 
 	rootCmd.PersistentFlags().IntVarP(&FlagIntervalLength, "interval-max-length", "k", 0, "The max length of the interval. Zero means no length limits.")
+
+	rootCmd.PersistentFlags().IntVarP(&FlagIntervalLengthRandomFactor, "interval-max-length-random-factor", "r", 0, "The value representing the range of values that can be randomly subtracted or added to the max interval length. Options: [0 <=]")
 
 	rootCmd.PersistentFlags().IntVarP(&FlagSortCycles, "cycles", "c", 1, "The count of sorting cycles that should be performed on the image.")
 
@@ -158,6 +161,7 @@ func parseCommonOptions() (*sorter.SorterOptions, error) {
 	options.IntervalDeterminantUpperThreshold = FlagIntervalUpperThreshold
 	options.IntervalDeterminantLowerThreshold = FlagIntervalLowerThreshold
 	options.IntervalLength = FlagIntervalLength
+	options.IntervalLengthRandomFactor = FlagIntervalLengthRandomFactor
 	options.Angle = FlagAngle
 	options.Cycles = FlagSortCycles
 	options.Scale = FlagImageScale

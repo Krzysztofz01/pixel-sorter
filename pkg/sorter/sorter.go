@@ -62,6 +62,7 @@ type SorterOptions struct {
 	IntervalDeterminantLowerThreshold float64
 	IntervalDeterminantUpperThreshold float64
 	IntervalLength                    int
+	IntervalLengthRandomFactor        int
 	Angle                             int
 	UseMask                           bool
 	Cycles                            int
@@ -96,6 +97,10 @@ func (options *SorterOptions) AreValid() (bool, string) {
 		return false, "the interval max length values must not be negative"
 	}
 
+	if options.IntervalLengthRandomFactor < 0 {
+		return false, "the interval length random factor value must not be negative"
+	}
+
 	return true, ""
 }
 
@@ -111,6 +116,7 @@ func GetDefaultSorterOptions() *SorterOptions {
 	options.IntervalDeterminantUpperThreshold = 1.0
 	options.UseMask = false
 	options.IntervalLength = 0
+	options.IntervalLengthRandomFactor = 0
 	options.Cycles = 1
 	options.Scale = 1
 	options.Blending = BlendingNone

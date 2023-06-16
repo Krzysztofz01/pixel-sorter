@@ -102,3 +102,13 @@ func TestSorterOptionsShouldNotValidateIntervalLength(t *testing.T) {
 	assert.False(t, valid)
 	assert.NotEmpty(t, msg)
 }
+
+func TestSorterOptionsShouldNotValidateIntervalLengthRandomFactor(t *testing.T) {
+	options := GetDefaultSorterOptions()
+	options.IntervalLengthRandomFactor = -1
+
+	valid, msg := options.AreValid()
+
+	assert.False(t, valid)
+	assert.NotEmpty(t, msg)
+}

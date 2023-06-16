@@ -6,6 +6,7 @@ import (
 	"image"
 	"image/color"
 	"image/draw"
+	"math/rand"
 	"sync"
 	"time"
 
@@ -293,6 +294,8 @@ func (sorter *defaultSorter) performSortOnImageStrip(imageStrip []color.Color, m
 	sortedImageStrip := make([]color.Color, 0, stripLength)
 
 	interval := sorter.CreateInterval()
+	intervalMaxLength := sorter.calculateMaxIntervalLength()
+
 	for x := 0; x < stripLength; x += 1 {
 		currentColor := utils.ColorToRgba(imageStrip[x])
 
@@ -304,7 +307,7 @@ func (sorter *defaultSorter) performSortOnImageStrip(imageStrip []color.Color, m
 		// NOTE: isMasked and options dependecy solved using a quick K-Map
 		passThrough := !isMasked || !sorter.options.UseMask
 
-		if !utils.HasAnyTransparency(currentColor) && sorter.isMeetingIntervalRequirements(currentColor, isMasked, interval) && passThrough {
+		if !utils.HasAnyTransparency(currentColor) && sorter.isMeetingIntervalRequirements(currentColor, isMasked, intervalMaxLength, interval) && passThrough {
 			if err := interval.Append(currentColor); err != nil {
 				return nil, fmt.Errorf("sorter: failed to append color to the interval: %w", err)
 			}
@@ -314,6 +317,7 @@ func (sorter *defaultSorter) performSortOnImageStrip(imageStrip []color.Color, m
 				sortedImageStrip = append(sortedImageStrip, sortedIntervalItems...)
 
 				interval = sorter.CreateInterval()
+				intervalMaxLength = sorter.calculateMaxIntervalLength()
 			}
 
 			sortedImageStrip = append(sortedImageStrip, currentColor)
@@ -328,9 +332,8 @@ func (sorter *defaultSorter) performSortOnImageStrip(imageStrip []color.Color, m
 	return sortedImageStrip, nil
 }
 
-func (sorter *defaultSorter) isMeetingIntervalRequirements(color color.RGBA, isMasked bool, interval Interval) bool {
+func (sorter *defaultSorter) isMeetingIntervalRequirements(color color.RGBA, isMasked bool, maxLength int, interval Interval) bool {
 	// NOTE: interval length and options dependecy solved using a quick K-Map
-	maxLength := sorter.options.IntervalLength
 	if !(maxLength == 0) && (maxLength <= interval.Count()) {
 		return false
 	}
@@ -377,6 +380,23 @@ func (sorter *defaultSorter) isMeetingIntervalRequirements(color color.RGBA, isM
 		}
 	default:
 		panic("sorter: invalid sorter state due to a corrupted interval determinant value")
+	}
+}
+
+// This function determines the max interval length taking into account the randomness factor
+func (sorter *defaultSorter) calculateMaxIntervalLength() int {
+	if sorter.options.IntervalLength == 0 || sorter.options.IntervalLengthRandomFactor == 0 {
+		return sorter.options.IntervalLength
+	}
+
+	random := rand.New(rand.NewSource(time.Now().UnixNano()))
+	factor := random.Intn(2*sorter.options.IntervalLengthRandomFactor) - sorter.options.IntervalLengthRandomFactor
+
+	length := sorter.options.IntervalLength + factor
+	if length < 1 {
+		return 1
+	} else {
+		return length
 	}
 }
 
