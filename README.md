@@ -87,7 +87,7 @@ Flags:
   -i, --interval-determinant string             Parameter used to determine intervals. Options: [brightness, hue, mask, absolute, edge]. (default "brightness")
   -l, --interval-lower-threshold float          The lower threshold of the interval determination process. Options: [0.0 - 1.0]. (default 0.1)
   -k, --interval-max-length int                 The max length of the interval. Zero means no length limits.
-  -r, --interval-max-length-random-factor int   The value representing the range of values that can be randomly subtracted or added to the max interval length. Options: [0 <=]
+  -r, --interval-max-length-random-factor int   The value representing the range of values that can be randomly subtracted or added to the max interval length. Options: [>= 0]
   -u, --interval-upper-threshold float          The upper threshold of the interval determination process. Options: [0.0 - 1.0]. (default 0.9)
   -m, --mask                                    Exclude the sorting effect from masked out ares of the image.
       --mask-file-path string                   The path of the image mask file to be process the image file.
