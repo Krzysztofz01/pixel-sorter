@@ -62,11 +62,46 @@ type SorterOptions struct {
 	IntervalDeterminantLowerThreshold float64
 	IntervalDeterminantUpperThreshold float64
 	IntervalLength                    int
+	IntervalLengthRandomFactor        int
 	Angle                             int
 	UseMask                           bool
 	Cycles                            int
 	Scale                             float64
 	Blending                          ResultImageBlending
+}
+
+// Return a boolean value indicating if the given sorter options combination is valid
+// and a string containing validation failure message if the options came out to be invalid
+func (options *SorterOptions) AreValid() (bool, string) {
+	if options.IntervalDeterminantLowerThreshold < 0.0 || options.IntervalDeterminantLowerThreshold > 1.0 {
+		return false, "lower interval determinant threshold must be between values 0 and 1"
+	}
+
+	if options.IntervalDeterminantUpperThreshold < 0.0 || options.IntervalDeterminantUpperThreshold > 1.0 {
+		return false, "upper interval determinant threshold must be between values 0 and 1"
+	}
+
+	if options.IntervalDeterminantLowerThreshold > options.IntervalDeterminantUpperThreshold {
+		return false, "lower interval determinant threshold must no be greater than the upper one"
+	}
+
+	if options.Cycles < 1 {
+		return false, "the cycles count must be 1 or greater"
+	}
+
+	if options.Scale <= 0.0 || options.Scale > 1.0 {
+		return false, "the scale factor must be between values 0 (exclusive) and 1"
+	}
+
+	if options.IntervalLength < 0 {
+		return false, "the interval max length values must not be negative"
+	}
+
+	if options.IntervalLengthRandomFactor < 0 {
+		return false, "the interval length random factor value must not be negative"
+	}
+
+	return true, ""
 }
 
 // Get a SorterOptions structure instance with default values
@@ -81,6 +116,7 @@ func GetDefaultSorterOptions() *SorterOptions {
 	options.IntervalDeterminantUpperThreshold = 1.0
 	options.UseMask = false
 	options.IntervalLength = 0
+	options.IntervalLengthRandomFactor = 0
 	options.Cycles = 1
 	options.Scale = 1
 	options.Blending = BlendingNone

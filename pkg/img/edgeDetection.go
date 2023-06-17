@@ -97,8 +97,8 @@ func calculateGradientPoints(vertical *image.NRGBA, horizontal *image.NRGBA) ([]
 	}
 
 	pimit.ParallelMatrixReadWrite(gp, func(xIndex, yIndex int, _ gradientPoint) gradientPoint {
-		vColor := float64(utils.NrgbaToGrayscaleComponent(vertical.NRGBAAt(xIndex, yIndex)))
-		hColor := float64(utils.NrgbaToGrayscaleComponent(horizontal.NRGBAAt(xIndex, yIndex)))
+		vColor := float64(utils.ColorToGrayscaleComponent(vertical.NRGBAAt(xIndex, yIndex)))
+		hColor := float64(utils.ColorToGrayscaleComponent(horizontal.NRGBAAt(xIndex, yIndex)))
 
 		magnitude := math.Hypot(vColor, hColor)
 		if magnitude > magnitudeMax {
@@ -202,7 +202,7 @@ func performHysteresis(i *image.NRGBA) *image.NRGBA {
 	maxColorValue := 0
 	for xIndex := 0; xIndex < width; xIndex += 1 {
 		for yIndex := 0; yIndex < height; yIndex += 1 {
-			colorValue := utils.NrgbaToGrayscaleComponent(i.NRGBAAt(xIndex, yIndex))
+			colorValue := utils.ColorToGrayscaleComponent(i.NRGBAAt(xIndex, yIndex))
 			if colorValue > maxColorValue {
 				maxColorValue = colorValue
 			}
@@ -218,7 +218,7 @@ func performHysteresis(i *image.NRGBA) *image.NRGBA {
 
 	outputImage := newWhiteNRGBA(image.Rect(0, 0, width, height))
 	pimit.ParallelColumnReadWrite(outputImage, func(xIndex, yIndex int, _ color.Color) color.Color {
-		colorValue := float64(utils.NrgbaToGrayscaleComponent(i.NRGBAAt(xIndex, yIndex)))
+		colorValue := float64(utils.ColorToGrayscaleComponent(i.NRGBAAt(xIndex, yIndex)))
 
 		if colorValue >= dtUpperThreshold {
 			return colorStrong
@@ -238,17 +238,17 @@ func performHysteresis(i *image.NRGBA) *image.NRGBA {
 				continue
 			}
 
-			colorValue := uint8(utils.NrgbaToGrayscaleComponent(outputImage.NRGBAAt(xIndex, yIndex)))
+			colorValue := uint8(utils.ColorToGrayscaleComponent(outputImage.NRGBAAt(xIndex, yIndex)))
 			if colorValue == doubleThresholdWeak {
 				neighbors := [8]uint8{
-					uint8(utils.NrgbaToGrayscaleComponent(outputImage.NRGBAAt(xIndex-1, yIndex-1))),
-					uint8(utils.NrgbaToGrayscaleComponent(outputImage.NRGBAAt(xIndex-1, yIndex))),
-					uint8(utils.NrgbaToGrayscaleComponent(outputImage.NRGBAAt(xIndex-1, yIndex+1))),
-					uint8(utils.NrgbaToGrayscaleComponent(outputImage.NRGBAAt(xIndex, yIndex-1))),
-					uint8(utils.NrgbaToGrayscaleComponent(outputImage.NRGBAAt(xIndex, yIndex+1))),
-					uint8(utils.NrgbaToGrayscaleComponent(outputImage.NRGBAAt(xIndex+1, yIndex-1))),
-					uint8(utils.NrgbaToGrayscaleComponent(outputImage.NRGBAAt(xIndex+1, yIndex))),
-					uint8(utils.NrgbaToGrayscaleComponent(outputImage.NRGBAAt(xIndex+1, yIndex+1))),
+					uint8(utils.ColorToGrayscaleComponent(outputImage.NRGBAAt(xIndex-1, yIndex-1))),
+					uint8(utils.ColorToGrayscaleComponent(outputImage.NRGBAAt(xIndex-1, yIndex))),
+					uint8(utils.ColorToGrayscaleComponent(outputImage.NRGBAAt(xIndex-1, yIndex+1))),
+					uint8(utils.ColorToGrayscaleComponent(outputImage.NRGBAAt(xIndex, yIndex-1))),
+					uint8(utils.ColorToGrayscaleComponent(outputImage.NRGBAAt(xIndex, yIndex+1))),
+					uint8(utils.ColorToGrayscaleComponent(outputImage.NRGBAAt(xIndex+1, yIndex-1))),
+					uint8(utils.ColorToGrayscaleComponent(outputImage.NRGBAAt(xIndex+1, yIndex))),
+					uint8(utils.ColorToGrayscaleComponent(outputImage.NRGBAAt(xIndex+1, yIndex+1))),
 				}
 
 				isColorStrong := false

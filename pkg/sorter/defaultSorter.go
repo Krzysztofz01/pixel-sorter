@@ -6,6 +6,7 @@ import (
 	"image"
 	"image/color"
 	"image/draw"
+	"math/rand"
 	"sync"
 	"time"
 
@@ -34,26 +35,9 @@ func CreateSorter(image image.Image, mask image.Image, logger *logrus.Logger, op
 	if options != nil {
 		sorter.logger.Debugln("Running the sorter with specified sorter options.")
 
-		lowerIdThreshold := options.IntervalDeterminantLowerThreshold
-		if lowerIdThreshold > 1.0 || lowerIdThreshold < 0.0 {
-			return nil, errors.New("sorter: invalid lower interval determinant threshold values provided")
-		}
-
-		upperIdThreshold := options.IntervalDeterminantUpperThreshold
-		if upperIdThreshold > 1.0 || upperIdThreshold < 0.0 {
-			return nil, errors.New("sorter: invalid upper interval determinant threshold values provided")
-		}
-
-		if lowerIdThreshold > upperIdThreshold {
-			return nil, errors.New("sorter: the lower interval determiant threshold value can not be greater from the upper threshold")
-		}
-
-		if options.Cycles < 1 {
-			return nil, errors.New("sorter: the cycles count can not be zero or less")
-		}
-
-		if options.Scale < 0.0 || options.Scale > 1.0 {
-			return nil, errors.New("sorter: the scale percentage must be in range between zero and one")
+		if valid, msg := options.AreValid(); !valid {
+			sorter.logger.Debugf("Sorter options validation failed. Sorter options: %+v", *options)
+			return nil, fmt.Errorf("sorter: %s", msg)
 		}
 
 		sorter.logger.Debugf("Sorter options validation passed. Sorter options: %+v", *options)
@@ -310,6 +294,8 @@ func (sorter *defaultSorter) performSortOnImageStrip(imageStrip []color.Color, m
 	sortedImageStrip := make([]color.Color, 0, stripLength)
 
 	interval := sorter.CreateInterval()
+	intervalMaxLength := sorter.calculateMaxIntervalLength()
+
 	for x := 0; x < stripLength; x += 1 {
 		currentColor := utils.ColorToRgba(imageStrip[x])
 
@@ -321,7 +307,7 @@ func (sorter *defaultSorter) performSortOnImageStrip(imageStrip []color.Color, m
 		// NOTE: isMasked and options dependecy solved using a quick K-Map
 		passThrough := !isMasked || !sorter.options.UseMask
 
-		if !utils.HasAnyTransparency(currentColor) && sorter.isMeetingIntervalRequirements(currentColor, isMasked, interval) && passThrough {
+		if !utils.HasAnyTransparency(currentColor) && sorter.isMeetingIntervalRequirements(currentColor, isMasked, intervalMaxLength, interval) && passThrough {
 			if err := interval.Append(currentColor); err != nil {
 				return nil, fmt.Errorf("sorter: failed to append color to the interval: %w", err)
 			}
@@ -331,6 +317,7 @@ func (sorter *defaultSorter) performSortOnImageStrip(imageStrip []color.Color, m
 				sortedImageStrip = append(sortedImageStrip, sortedIntervalItems...)
 
 				interval = sorter.CreateInterval()
+				intervalMaxLength = sorter.calculateMaxIntervalLength()
 			}
 
 			sortedImageStrip = append(sortedImageStrip, currentColor)
@@ -345,9 +332,8 @@ func (sorter *defaultSorter) performSortOnImageStrip(imageStrip []color.Color, m
 	return sortedImageStrip, nil
 }
 
-func (sorter *defaultSorter) isMeetingIntervalRequirements(color color.RGBA, isMasked bool, interval Interval) bool {
+func (sorter *defaultSorter) isMeetingIntervalRequirements(color color.RGBA, isMasked bool, maxLength int, interval Interval) bool {
 	// NOTE: interval length and options dependecy solved using a quick K-Map
-	maxLength := sorter.options.IntervalLength
 	if !(maxLength == 0) && (maxLength <= interval.Count()) {
 		return false
 	}
@@ -366,7 +352,7 @@ func (sorter *defaultSorter) isMeetingIntervalRequirements(color color.RGBA, isM
 			lThreshold := sorter.options.IntervalDeterminantLowerThreshold
 			uThreshold := sorter.options.IntervalDeterminantUpperThreshold
 
-			h, _, _ := utils.RgbaToHsl(color)
+			h, _, _, _ := utils.ColorToHsla(color)
 			hNorm := float64(h) / 360.0
 
 			return hNorm >= lThreshold && hNorm <= uThreshold
@@ -376,7 +362,7 @@ func (sorter *defaultSorter) isMeetingIntervalRequirements(color color.RGBA, isM
 			lThreshold := sorter.options.IntervalDeterminantLowerThreshold
 			uThreshold := sorter.options.IntervalDeterminantUpperThreshold
 
-			_, s, _ := utils.RgbaToHsl(color)
+			_, s, _, _ := utils.ColorToHsla(color)
 			return s >= lThreshold && s <= uThreshold
 		}
 	case SplitByMask, SplitByEdgeDetection:
@@ -388,13 +374,29 @@ func (sorter *defaultSorter) isMeetingIntervalRequirements(color color.RGBA, isM
 			lThreshold := sorter.options.IntervalDeterminantLowerThreshold
 			uThreshold := sorter.options.IntervalDeterminantUpperThreshold
 
-			r, g, b := utils.RgbaToIntComponents(color)
-			abs := float64((r * g * b)) / 16581375.0
+			abs := float64((color.R * color.G * color.B)) / 16581375.0
 
 			return abs >= lThreshold && abs < uThreshold
 		}
 	default:
 		panic("sorter: invalid sorter state due to a corrupted interval determinant value")
+	}
+}
+
+// This function determines the max interval length taking into account the randomness factor
+func (sorter *defaultSorter) calculateMaxIntervalLength() int {
+	if sorter.options.IntervalLength == 0 || sorter.options.IntervalLengthRandomFactor == 0 {
+		return sorter.options.IntervalLength
+	}
+
+	random := rand.New(rand.NewSource(time.Now().UnixNano()))
+	factor := random.Intn(2*sorter.options.IntervalLengthRandomFactor) - sorter.options.IntervalLengthRandomFactor
+
+	length := sorter.options.IntervalLength + factor
+	if length < 1 {
+		return 1
+	} else {
+		return length
 	}
 }
 
@@ -410,14 +412,14 @@ func (sorter *defaultSorter) CreateInterval() Interval {
 	case SortByHue:
 		{
 			return CreateValueWeightInterval(func(c color.RGBA) (int, error) {
-				h, _, _ := utils.RgbaToHsl(c)
+				h, _, _, _ := utils.ColorToHsla(c)
 				return h, nil
 			})
 		}
 	case SortBySaturation:
 		{
 			return CreateNormalizedWeightInterval(func(c color.RGBA) (float64, error) {
-				_, s, _ := utils.RgbaToHsl(c)
+				_, s, _, _ := utils.ColorToHsla(c)
 				return s, nil
 			})
 		}
