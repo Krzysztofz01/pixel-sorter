@@ -101,7 +101,7 @@ func TestValueWeightIntervalShouldSortDescending(t *testing.T) {
 	assert.Equal(t, expectedResult, actualResult)
 }
 
-func TestValueWeightIntervalShouldSortRandom(t *testing.T) {
+func TestValueWeightIntervalShouldShuffle(t *testing.T) {
 	interval := CreateValueWeightInterval(mockTestValueWeightDeterminant())
 	assert.NotNil(t, interval)
 
@@ -121,7 +121,7 @@ func TestValueWeightIntervalShouldSortRandom(t *testing.T) {
 
 	assert.True(t, interval.Any())
 
-	actualResult := interval.Sort(SortRandom)
+	actualResult := interval.Sort(Shuffle)
 
 	assert.ElementsMatch(t, colors, actualResult)
 }
@@ -219,7 +219,7 @@ func TestNormalizedWeightIntervalShouldSortDescending(t *testing.T) {
 	assert.Equal(t, expectedResult, actualResult)
 }
 
-func TestNormalizedWeightIntervalShouldSortRandom(t *testing.T) {
+func TestNormalizedWeightIntervalShouldShuffle(t *testing.T) {
 	interval := CreateNormalizedWeightInterval(mockTestNormalizedWeightDeterminant())
 	assert.NotNil(t, interval)
 
@@ -239,7 +239,7 @@ func TestNormalizedWeightIntervalShouldSortRandom(t *testing.T) {
 
 	assert.True(t, interval.Any())
 
-	actualResult := interval.Sort(SortRandom)
+	actualResult := interval.Sort(Shuffle)
 
 	assert.ElementsMatch(t, colors, actualResult)
 }

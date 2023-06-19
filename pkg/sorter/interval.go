@@ -106,7 +106,7 @@ func (interval *ValueWeightInterval) Sort(direction SortDirection) []color.Color
 
 				sort.Slice(interval.items, sortDeterminantFunc)
 			}
-		case SortRandom:
+		case Shuffle:
 			{
 				random := rand.New(rand.NewSource(time.Now().UnixNano()))
 				random.Shuffle(len(interval.items), func(i, j int) {
@@ -183,7 +183,7 @@ func (interval *NormalizedWeightInterval) Sort(direction SortDirection) []color.
 
 				sort.Slice(interval.items, sortDeterminantFunc)
 			}
-		case SortRandom:
+		case Shuffle:
 			{
 				random := rand.New(rand.NewSource(time.Now().UnixNano()))
 				random.Shuffle(len(interval.items), func(i, j int) {

@@ -81,7 +81,7 @@ Flags:
   -a, --angle int                               The angle at which to sort the pixels.
   -b, --blending-mode string                    The blending mode algorithm to blend the sorted image into the original. Options: [none, lighten, darken]. (default "none")
   -c, --cycles int                              The count of sorting cycles that should be performed on the image. (default 1)
-  -d, --direction string                        Pixel sorting direction in intervals. Options: [ascending, descending, random]. (default "ascending")
+  -d, --direction string                        Pixel sorting direction in intervals. Options: [ascending, descending, shuffle]. (default "ascending")
   -h, --help                                    help for pixel-sorter
       --image-file-path string                  The path of the image file to be processed.
   -i, --interval-determinant string             Parameter used to determine intervals. Options: [brightness, hue, mask, absolute, edge]. (default "brightness")

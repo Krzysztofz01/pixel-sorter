@@ -60,7 +60,7 @@ func init() {
 
 	rootCmd.PersistentFlags().StringVarP(&FlagOutputFileType, "output-format", "f", "jpg", "The output format of the graphic file. Options: [jpg, png].")
 
-	rootCmd.PersistentFlags().StringVarP(&FlagSortDirection, "direction", "d", "ascending", "Pixel sorting direction in intervals. Options: [ascending, descending, random].")
+	rootCmd.PersistentFlags().StringVarP(&FlagSortDirection, "direction", "d", "ascending", "Pixel sorting direction in intervals. Options: [ascending, descending, shuffle].")
 
 	rootCmd.PersistentFlags().StringVarP(&FlagSortOrder, "order", "o", "horizontal-vertical", "Order of the graphic sorting stages. Options: [horizontal, vertical, horizontal-vertical, vertical-horizontal].")
 
@@ -103,9 +103,9 @@ func parseCommonOptions() (*sorter.SorterOptions, error) {
 		{
 			options.SortDirection = sorter.SortDescending
 		}
-	case "random":
+	case "shuffle":
 		{
-			options.SortDirection = sorter.SortRandom
+			options.SortDirection = sorter.Shuffle
 		}
 	default:
 		return nil, fmt.Errorf("cmd: invalid sort direction specified (%s)", FlagSortDirection)
