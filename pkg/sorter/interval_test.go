@@ -2,6 +2,7 @@ package sorter
 
 import (
 	"image/color"
+	"sort"
 	"testing"
 
 	"github.com/Krzysztofz01/pixel-sorter/pkg/utils"
@@ -126,6 +127,46 @@ func TestValueWeightIntervalShouldShuffle(t *testing.T) {
 	assert.ElementsMatch(t, colors, actualResult)
 }
 
+func TestValueWeightIntervalShouldSortRandom(t *testing.T) {
+	interval := CreateValueWeightInterval(mockTestValueWeightDeterminant())
+	assert.NotNil(t, interval)
+
+	colors := []color.RGBA{
+		{16, 16, 16, 255},
+		{0, 0, 0, 255},
+		{255, 255, 255, 255},
+		{100, 100, 100, 255},
+	}
+
+	assert.False(t, interval.Any())
+
+	for _, color := range colors {
+		err := interval.Append(color)
+		assert.Nil(t, err)
+	}
+
+	assert.True(t, interval.Any())
+
+	sortedColors := interval.Sort(SortRandom)
+
+	isSortedAscending := sort.SliceIsSorted(sortedColors, func(i, j int) bool {
+		left, _ := sortedColors[i].(color.RGBA)
+		right, _ := sortedColors[j].(color.RGBA)
+
+		return left.R < right.R
+	})
+
+	isSortedDescending := sort.SliceIsSorted(sortedColors, func(i, j int) bool {
+		left, _ := sortedColors[i].(color.RGBA)
+		right, _ := sortedColors[j].(color.RGBA)
+
+		return left.R > right.R
+	})
+
+	assert.False(t, !isSortedAscending && !isSortedDescending)
+	assert.ElementsMatch(t, colors, sortedColors)
+}
+
 func TestNormalizedWeightIntervalShouldCreate(t *testing.T) {
 	interval := CreateNormalizedWeightInterval(mockTestNormalizedWeightDeterminant())
 	assert.NotNil(t, interval)
@@ -242,6 +283,46 @@ func TestNormalizedWeightIntervalShouldShuffle(t *testing.T) {
 	actualResult := interval.Sort(Shuffle)
 
 	assert.ElementsMatch(t, colors, actualResult)
+}
+
+func TestNormalizedWeightIntervalShouldSortRandom(t *testing.T) {
+	interval := CreateNormalizedWeightInterval(mockTestNormalizedWeightDeterminant())
+	assert.NotNil(t, interval)
+
+	colors := []color.RGBA{
+		{16, 16, 16, 255},
+		{0, 0, 0, 255},
+		{255, 255, 255, 255},
+		{100, 100, 100, 255},
+	}
+
+	assert.False(t, interval.Any())
+
+	for _, color := range colors {
+		err := interval.Append(color)
+		assert.Nil(t, err)
+	}
+
+	assert.True(t, interval.Any())
+
+	sortedColors := interval.Sort(SortRandom)
+
+	isSortedAscending := sort.SliceIsSorted(sortedColors, func(i, j int) bool {
+		left, _ := sortedColors[i].(color.RGBA)
+		right, _ := sortedColors[j].(color.RGBA)
+
+		return left.R < right.R
+	})
+
+	isSortedDescending := sort.SliceIsSorted(sortedColors, func(i, j int) bool {
+		left, _ := sortedColors[i].(color.RGBA)
+		right, _ := sortedColors[j].(color.RGBA)
+
+		return left.R > right.R
+	})
+
+	assert.False(t, !isSortedAscending && !isSortedDescending)
+	assert.ElementsMatch(t, colors, sortedColors)
 }
 
 // Create a test value weight determinant that is returning the red RGBA component as weight. Values from 0 to 255

@@ -83,6 +83,16 @@ func (interval *ValueWeightInterval) Any() bool {
 
 func (interval *ValueWeightInterval) Sort(direction SortDirection) []color.Color {
 	if len(interval.items) > 1 {
+		if direction == SortRandom {
+			random := rand.New(rand.NewSource(time.Now().UnixNano()))
+
+			if random.Intn(2) == 1 {
+				direction = SortAscending
+			} else {
+				direction = SortDescending
+			}
+		}
+
 		switch direction {
 		case SortAscending, SortDescending:
 			{
@@ -160,6 +170,16 @@ func (interval *NormalizedWeightInterval) Any() bool {
 
 func (interval *NormalizedWeightInterval) Sort(direction SortDirection) []color.Color {
 	if len(interval.items) > 1 {
+		if direction == SortRandom {
+			random := rand.New(rand.NewSource(time.Now().UnixNano()))
+
+			if random.Intn(2) == 1 {
+				direction = SortAscending
+			} else {
+				direction = SortDescending
+			}
+		}
+
 		switch direction {
 		case SortAscending, SortDescending:
 			{

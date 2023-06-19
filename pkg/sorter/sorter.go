@@ -30,6 +30,7 @@ const (
 	SortAscending SortDirection = iota
 	SortDescending
 	Shuffle
+	SortRandom
 )
 
 // Flag representing the determinant for spliting the image into intervals
