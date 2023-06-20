@@ -18,11 +18,9 @@ func CalculatePerceivedBrightness(c color.RGBA) float64 {
 
 // Calculate the luminance of a color given in the RGBA color space. Helper function used to calculate the perceived brightness.
 func calculateLuminance(c color.RGBA) float64 {
-	r, g, b := RgbaToIntComponents(c)
-
-	rLinear := linearComponentLuminanceLookup[r]
-	gLinear := linearComponentLuminanceLookup[g]
-	bLinear := linearComponentLuminanceLookup[b]
+	rLinear := linearComponentLuminanceLookup[c.R]
+	gLinear := linearComponentLuminanceLookup[c.G]
+	bLinear := linearComponentLuminanceLookup[c.B]
 
 	return rLinear*0.2126 + gLinear*0.7152 + bLinear*0.0722
 }
