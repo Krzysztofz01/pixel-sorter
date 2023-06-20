@@ -9,6 +9,7 @@ import (
 	"math"
 	"sync"
 
+	"github.com/Krzysztofz01/pimit"
 	"github.com/disintegration/imaging"
 )
 
@@ -224,23 +225,16 @@ func InvertImage(i image.Image) (draw.Image, error) {
 		return nil, fmt.Errorf("image-utils: can not get the drawable image version: %w", err)
 	}
 
-	width := drawableImage.Bounds().Dx()
-	height := drawableImage.Bounds().Dy()
+	pimit.ParallelColumnColorReadWrite(drawableImage, func(c color.Color) color.Color {
+		currentColor := ColorToRgba(c)
 
-	for xIndex := 0; xIndex < width; xIndex += 1 {
-		for yIndex := 0; yIndex < height; yIndex += 1 {
-			currentColor := ColorToRgba(drawableImage.At(xIndex, yIndex))
-
-			invertedColor := color.RGBA{
-				R: 255 - currentColor.R,
-				G: 255 - currentColor.G,
-				B: 255 - currentColor.B,
-				A: currentColor.A,
-			}
-
-			drawableImage.Set(xIndex, yIndex, invertedColor)
+		return color.RGBA{
+			R: 255 - currentColor.R,
+			G: 255 - currentColor.G,
+			B: 255 - currentColor.B,
+			A: currentColor.A,
 		}
-	}
+	})
 
 	return drawableImage, nil
 }
@@ -249,7 +243,7 @@ func InvertImage(i image.Image) (draw.Image, error) {
 //
 // Beacuse the dependency internal rotate implementation is using a custom pixel color handling
 // solution we need to redraw the result image to ensure that the colors space is RGBA
-func RotateImage(i draw.Image, angle int) draw.Image {
+func RotateImage(i image.Image, angle int) draw.Image {
 	angleNorm := float64(angle) + math.Ceil(-float64(angle)/360.0)*360.0
 
 	rotatedImage := imaging.Rotate(i, angleNorm, color.Transparent)
@@ -284,16 +278,12 @@ func TrimImageTransparentWorkspace(imageWithWorkspace draw.Image, imageOriginal 
 	}
 
 	tImg := image.NewRGBA(image.Rect(0, 0, xIndexLength, yIndexLength))
+	pimit.ParallelColumnReadWrite(tImg, func(xIndex, yIndex int, _ color.Color) color.Color {
+		xOffset := xIndex + xIndexStart
+		yOffset := yIndex + yIndexStart
 
-	for xIndex := 0; xIndex < xIndexLength; xIndex += 1 {
-		for yIndex := 0; yIndex < yIndexLength; yIndex += 1 {
-			xOffset := xIndex + xIndexStart
-			yOffset := yIndex + yIndexStart
-
-			color := imageWithWorkspace.At(xOffset, yOffset)
-			tImg.Set(xIndex, yIndex, color)
-		}
-	}
+		return imageWithWorkspace.At(xOffset, yOffset)
+	})
 
 	return tImg
 }
@@ -345,15 +335,12 @@ func BlendImages(a, b image.Image, mode BlendingMode) (draw.Image, error) {
 	}
 
 	resultImage := image.NewRGBA(image.Rect(0, 0, aWidth, aHeight))
+	pimit.ParallelColumnReadWrite(resultImage, func(xIndex, yIndex int, _ color.Color) color.Color {
+		aColor := ColorToRgba(aRgba.At(xIndex, yIndex))
+		bColor := ColorToRgba(bRgba.At(xIndex, yIndex))
 
-	for xIndex := 0; xIndex < aWidth; xIndex += 1 {
-		for yIndex := 0; yIndex < aHeight; yIndex += 1 {
-			aColor := ColorToRgba(aRgba.At(xIndex, yIndex))
-			bColor := ColorToRgba(bRgba.At(xIndex, yIndex))
-
-			resultImage.Set(xIndex, yIndex, BlendRGBA(aColor, bColor, mode))
-		}
-	}
+		return BlendRGBA(aColor, bColor, mode)
+	})
 
 	return resultImage, nil
 }
