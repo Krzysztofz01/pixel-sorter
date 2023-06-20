@@ -7,73 +7,26 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestShouldConvertRGBAToRgbComponents(t *testing.T) {
-	cases := map[color.RGBA]struct{ r, g, b int }{
-		{0, 0, 0, 0}:         {0, 0, 0},
-		{0, 0, 0, 255}:       {0, 0, 0},
-		{255, 255, 255, 0}:   {255, 255, 255},
-		{255, 255, 255, 255}: {255, 255, 255},
-		{50, 100, 200, 0}:    {50, 100, 200},
-		{50, 100, 200, 255}:  {50, 100, 200},
+func TestShouldConvertColorToGrayscaleComponent(t *testing.T) {
+	cases := map[color.Color]int{
+		color.RGBA{0, 0, 0, 0}:          0,
+		color.RGBA{0, 0, 0, 255}:        0,
+		color.RGBA{255, 255, 255, 0}:    255,
+		color.RGBA{255, 255, 255, 255}:  255,
+		color.RGBA{50, 100, 200, 0}:     96,
+		color.RGBA{50, 100, 200, 255}:   96,
+		color.NRGBA{0, 0, 0, 0}:         0,
+		color.NRGBA{0, 0, 0, 255}:       0,
+		color.NRGBA{255, 255, 255, 0}:   0,
+		color.NRGBA{255, 255, 255, 255}: 255,
+		color.NRGBA{50, 100, 200, 0}:    0,
+		color.NRGBA{50, 100, 200, 255}:  96,
+		color.White:                     255,
+		color.Black:                     0,
 	}
 
-	for rgba, expected := range cases {
-		rActual, gActual, bActual := RgbaToIntComponents(rgba)
-
-		assert.Equal(t, expected.r, rActual)
-		assert.Equal(t, expected.g, gActual)
-		assert.Equal(t, expected.b, bActual)
-	}
-}
-
-func TestShouldConvertNRGBAToRgbComponents(t *testing.T) {
-	cases := map[color.NRGBA]struct{ r, g, b int }{
-		{0, 0, 0, 0}:         {0, 0, 0},
-		{0, 0, 0, 255}:       {0, 0, 0},
-		{255, 255, 255, 0}:   {255, 255, 255},
-		{255, 255, 255, 255}: {255, 255, 255},
-		{50, 100, 200, 0}:    {50, 100, 200},
-		{50, 100, 200, 255}:  {50, 100, 200},
-	}
-
-	for nrgba, expected := range cases {
-		rActual, gActual, bActual := NrgbaToIntComponents(nrgba)
-
-		assert.Equal(t, expected.r, rActual)
-		assert.Equal(t, expected.g, gActual)
-		assert.Equal(t, expected.b, bActual)
-	}
-}
-
-func TestShouldConvertRGBAToGrayscaleComponent(t *testing.T) {
-	cases := map[color.RGBA]int{
-		{0, 0, 0, 0}:         0,
-		{0, 0, 0, 255}:       0,
-		{255, 255, 255, 0}:   255,
-		{255, 255, 255, 255}: 255,
-		{50, 100, 200, 0}:    96,
-		{50, 100, 200, 255}:  96,
-	}
-
-	for rgba, expected := range cases {
-		actual := RgbaToGrayscaleComponent(rgba)
-
-		assert.Equal(t, expected, actual)
-	}
-}
-
-func TestShouldConvertNRGBAToGrayscaleComponent(t *testing.T) {
-	cases := map[color.NRGBA]int{
-		{0, 0, 0, 0}:         0,
-		{0, 0, 0, 255}:       0,
-		{255, 255, 255, 0}:   255,
-		{255, 255, 255, 255}: 255,
-		{50, 100, 200, 0}:    96,
-		{50, 100, 200, 255}:  96,
-	}
-
-	for nrgba, expected := range cases {
-		actual := NrgbaToGrayscaleComponent(nrgba)
+	for color, expected := range cases {
+		actual := ColorToGrayscaleComponent(color)
 
 		assert.Equal(t, expected, actual)
 	}
@@ -99,17 +52,25 @@ func TestShouldConvertRGBAToNormalizedRgbComponents(t *testing.T) {
 }
 
 func TestShouldTellIfRGBAHasAnyTransparency(t *testing.T) {
-	cases := map[color.RGBA]bool{
-		{0, 0, 0, 0}:         true,
-		{0, 0, 0, 254}:       true,
-		{0, 0, 0, 255}:       false,
-		{255, 255, 255, 0}:   true,
-		{255, 255, 255, 254}: true,
-		{255, 255, 255, 255}: false,
+	cases := map[color.Color]bool{
+		color.RGBA{0, 0, 0, 0}:          true,
+		color.RGBA{0, 0, 0, 254}:        true,
+		color.RGBA{0, 0, 0, 255}:        false,
+		color.RGBA{255, 255, 255, 0}:    true,
+		color.RGBA{255, 255, 255, 254}:  true,
+		color.RGBA{255, 255, 255, 255}:  false,
+		color.NRGBA{0, 0, 0, 0}:         true,
+		color.NRGBA{0, 0, 0, 254}:       true,
+		color.NRGBA{0, 0, 0, 255}:       false,
+		color.NRGBA{255, 255, 255, 0}:   true,
+		color.NRGBA{255, 255, 255, 254}: true,
+		color.NRGBA{255, 255, 255, 255}: false,
+		color.Black:                     false,
+		color.White:                     false,
 	}
 
-	for rgba, expected := range cases {
-		actual := HasAnyTransparency(rgba)
+	for color, expected := range cases {
+		actual := HasAnyTransparency(color)
 
 		assert.Equal(t, expected, actual)
 	}
@@ -141,26 +102,38 @@ func TestShouldConvertColorToRgba(t *testing.T) {
 	}
 }
 
-func TestShouldConvertRgbaToHslComponents(t *testing.T) {
-	cases := map[color.RGBA]struct {
+func TestShouldConvertColorToHslaComponents(t *testing.T) {
+	cases := map[color.Color]struct {
 		h int
 		s float64
 		l float64
+		a float64
 	}{
-		{0, 0, 0, 0}:         {0, 0.0, 0.0},
-		{0, 0, 0, 255}:       {0.0, 0.0, 0.0},
-		{255, 255, 255, 0}:   {0.0, 0.0, 1.0},
-		{255, 255, 255, 255}: {0.0, 0.0, 1.0},
-		{50, 100, 200, 0}:    {220, 0.60, 0.49},
-		{50, 100, 200, 255}:  {220, 0.60, 0.49},
+		color.RGBA{0, 0, 0, 0}:          {0, 0.0, 0.0, 0.0},
+		color.RGBA{0, 0, 0, 255}:        {0.0, 0.0, 0.0, 1.0},
+		color.RGBA{255, 255, 255, 0}:    {0.0, 0.0, 1.0, 0.0},
+		color.RGBA{255, 255, 255, 255}:  {0.0, 0.0, 1.0, 1.0},
+		color.RGBA{50, 100, 200, 0}:     {220, 0.60, 0.49, 0.0},
+		color.RGBA{50, 100, 200, 255}:   {220, 0.60, 0.49, 1.0},
+		color.RGBA{55, 99, 7, 255}:      {89, 0.87, 0.21, 1.0},
+		color.NRGBA{0, 0, 0, 0}:         {0, 0.0, 0.0, 0.0},
+		color.NRGBA{0, 0, 0, 255}:       {0.0, 0.0, 0.0, 1.0},
+		color.NRGBA{255, 255, 255, 0}:   {0.0, 0.0, 0.0, 0.0},
+		color.NRGBA{255, 255, 255, 255}: {0.0, 0.0, 1.0, 1.0},
+		color.NRGBA{50, 100, 200, 0}:    {0.0, 0.0, 0.0, 0.0},
+		color.NRGBA{50, 100, 200, 255}:  {220, 0.60, 0.49, 1.0},
+		color.NRGBA{55, 99, 7, 255}:     {89, 0.87, 0.21, 1.0},
+		color.Black:                     {0, 0.0, 0.0, 1.0},
+		color.White:                     {0, 0.0, 1.0, 1.0},
 	}
 
 	const deltaHue float64 = 1.0
-	const deltaSaturation float64 = 0.1
-	const deltaLightness float64 = 0.1
+	const deltaSaturation float64 = 1e-2
+	const deltaLightness float64 = 1e-2
+	const deltaAlpha float64 = 1e-2
 
-	for rgba, expected := range cases {
-		hActual, sActual, lActual := RgbaToHsl(rgba)
+	for color, expected := range cases {
+		hActual, sActual, lActual, aActual := ColorToHsla(color)
 
 		if expected.s > 0.0 {
 			assert.InDelta(t, expected.h, hActual+1, deltaHue)
@@ -168,27 +141,42 @@ func TestShouldConvertRgbaToHslComponents(t *testing.T) {
 
 		assert.InDelta(t, expected.s, sActual, deltaSaturation)
 		assert.InDelta(t, expected.l, lActual, deltaLightness)
+		assert.InDelta(t, expected.a, aActual, deltaAlpha)
 	}
 }
 
 func TestShouldBlendColorUsingLightenOnlyMode(t *testing.T) {
-	// TODO: Implement more test cases
-	aColor := color.RGBA{25, 50, 200, 0xff}
-	bColor := color.RGBA{200, 40, 20, 0xff}
+	cases := map[struct {
+		a color.RGBA
+		b color.RGBA
+	}]color.RGBA{
+		{color.RGBA{0, 0, 0, 0xff}, color.RGBA{0, 0, 0, 0xff}}:             {0, 0, 0, 0xff},
+		{color.RGBA{255, 255, 255, 0xff}, color.RGBA{255, 255, 255, 0xff}}: {255, 255, 255, 0xff},
+		{color.RGBA{0, 0, 0, 0xff}, color.RGBA{255, 255, 255, 0xff}}:       {255, 255, 255, 0xff},
+		{color.RGBA{25, 50, 200, 0xff}, color.RGBA{200, 40, 20, 0xff}}:     {200, 50, 200, 0xff},
+	}
 
-	expected := color.RGBA{200, 50, 200, 0xff}
-	actual := BlendRGBA(aColor, bColor, LightenOnly)
+	for c, exptected := range cases {
+		actual := BlendRGBA(c.a, c.b, LightenOnly)
 
-	assert.Equal(t, expected, actual)
+		assert.Equal(t, exptected, actual)
+	}
 }
 
 func TestShouldBlendColorUsingDarkenOnlyMode(t *testing.T) {
-	// TODO: Implement more test cases
-	aColor := color.RGBA{25, 50, 200, 0xff}
-	bColor := color.RGBA{200, 40, 20, 0xff}
+	cases := map[struct {
+		a color.RGBA
+		b color.RGBA
+	}]color.RGBA{
+		{color.RGBA{0, 0, 0, 0xff}, color.RGBA{0, 0, 0, 0xff}}:             {0, 0, 0, 0xff},
+		{color.RGBA{255, 255, 255, 0xff}, color.RGBA{255, 255, 255, 0xff}}: {255, 255, 255, 0xff},
+		{color.RGBA{0, 0, 0, 0xff}, color.RGBA{255, 255, 255, 0xff}}:       {0, 0, 0, 0xff},
+		{color.RGBA{25, 50, 200, 0xff}, color.RGBA{200, 40, 20, 0xff}}:     {25, 40, 20, 0xff},
+	}
 
-	expected := color.RGBA{25, 40, 20, 0xff}
-	actual := BlendRGBA(aColor, bColor, DarkenOnly)
+	for c, exptected := range cases {
+		actual := BlendRGBA(c.a, c.b, DarkenOnly)
 
-	assert.Equal(t, expected, actual)
+		assert.Equal(t, exptected, actual)
+	}
 }

@@ -16,21 +16,22 @@ import (
 )
 
 var (
-	FlagImageFilePath          string
-	FlagMaskFilePath           string
-	FlagOutputFileType         string
-	FlagSortDirection          string
-	FlagSortOrder              string
-	FlagIntervalDeterminant    string
-	FlagIntervalLowerThreshold float64
-	FlagIntervalUpperThreshold float64
-	FlagAngle                  int
-	FlagMask                   bool
-	FlagIntervalLength         int
-	FlagSortCycles             int
-	FlagImageScale             float64
-	FlagBlendingMode           string
-	FlagVerboseLogging         bool
+	FlagImageFilePath              string
+	FlagMaskFilePath               string
+	FlagOutputFileType             string
+	FlagSortDirection              string
+	FlagSortOrder                  string
+	FlagIntervalDeterminant        string
+	FlagIntervalLowerThreshold     float64
+	FlagIntervalUpperThreshold     float64
+	FlagAngle                      int
+	FlagMask                       bool
+	FlagIntervalLength             int
+	FlagIntervalLengthRandomFactor int
+	FlagSortCycles                 int
+	FlagImageScale                 float64
+	FlagBlendingMode               string
+	FlagVerboseLogging             bool
 )
 
 var (
@@ -73,6 +74,8 @@ func init() {
 
 	rootCmd.PersistentFlags().IntVarP(&FlagIntervalLength, "interval-max-length", "k", 0, "The max length of the interval. Zero means no length limits.")
 
+	rootCmd.PersistentFlags().IntVarP(&FlagIntervalLengthRandomFactor, "interval-max-length-random-factor", "r", 0, "The value representing the range of values that can be randomly subtracted or added to the max interval length. Options: [0 <=]")
+
 	rootCmd.PersistentFlags().IntVarP(&FlagSortCycles, "cycles", "c", 1, "The count of sorting cycles that should be performed on the image.")
 
 	rootCmd.PersistentFlags().Float64VarP(&FlagImageScale, "scale", "s", 1, "Image downscaling percentage factor. Options: [0.0 - 1.0].")
@@ -105,7 +108,7 @@ func parseCommonOptions() (*sorter.SorterOptions, error) {
 			options.SortDirection = sorter.SortRandom
 		}
 	default:
-		return nil, fmt.Errorf("invalid direction specified: %q", FlagSortDirection)
+		return nil, fmt.Errorf("cmd: invalid sort direction specified (%s)", FlagSortDirection)
 	}
 
 	switch strings.ToLower(FlagSortOrder) {
@@ -118,7 +121,7 @@ func parseCommonOptions() (*sorter.SorterOptions, error) {
 	case "vertical-horizontal":
 		options.SortOrder = sorter.SortVerticalAndHorizontal
 	default:
-		return nil, fmt.Errorf("invalid order specified: %q", FlagSortOrder)
+		return nil, fmt.Errorf("cmd: invalid sort order specified (%s)", FlagSortOrder)
 	}
 
 	switch strings.ToLower(FlagIntervalDeterminant) {
@@ -131,85 +134,46 @@ func parseCommonOptions() (*sorter.SorterOptions, error) {
 	case "mask":
 		{
 			if len(FlagMaskFilePath) == 0 {
-				return nil, fmt.Errorf("invalid mask path specified")
+				LocalLogger.Warnf("The interval determinant is using the mask, but not mask file has been specified.")
 			}
+
 			options.IntervalDeterminant = sorter.SplitByMask
 		}
 	case "absolute":
-		{
-			options.IntervalDeterminant = sorter.SplitByAbsoluteColor
-		}
+		options.IntervalDeterminant = sorter.SplitByAbsoluteColor
 	case "edge":
-		{
-			options.IntervalDeterminant = sorter.SplitByEdgeDetection
-		}
+		options.IntervalDeterminant = sorter.SplitByEdgeDetection
 	default:
-		return nil, fmt.Errorf("invalid interval determinant specified: %q", FlagIntervalDeterminant)
-	}
-
-	if FlagIntervalLowerThreshold >= FlagIntervalUpperThreshold {
-		return nil, fmt.Errorf("invalid interval thresholds: %f and: %f", FlagIntervalLowerThreshold, FlagIntervalUpperThreshold)
-	}
-
-	if FlagIntervalLowerThreshold < 0.0 || FlagIntervalLowerThreshold > 1.0 {
-		return nil, fmt.Errorf("invalid lower interval threshold: %f", FlagIntervalLowerThreshold)
-	} else {
-		options.IntervalDeterminantLowerThreshold = FlagIntervalLowerThreshold
-	}
-
-	if FlagIntervalUpperThreshold < 0.0 || FlagIntervalUpperThreshold > 1.0 {
-		return nil, fmt.Errorf("invalid lower interval threshold: %f", FlagIntervalUpperThreshold)
-	} else {
-		options.IntervalDeterminantUpperThreshold = FlagIntervalUpperThreshold
-	}
-
-	options.Angle = FlagAngle
-
-	if FlagMask {
-		if len(FlagMaskFilePath) == 0 {
-			return nil, fmt.Errorf("invalid mask path specified")
-		} else {
-			options.UseMask = true
-		}
-	} else {
-		options.UseMask = false
-	}
-
-	if FlagIntervalLength < 0 {
-		return nil, fmt.Errorf("invalid interval length specified")
-	} else {
-		options.IntervalLength = FlagIntervalLength
-	}
-
-	if FlagSortCycles < 1 {
-		return nil, fmt.Errorf("invalid cycles count specified")
-	} else {
-		options.Cycles = FlagSortCycles
-	}
-
-	if FlagImageScale < 0.0 || FlagImageScale > 1.0 {
-		return nil, fmt.Errorf("invalid image scale percentage specified")
-	} else {
-		options.Scale = FlagImageScale
+		return nil, fmt.Errorf("cmd: invalid interval determinant specified (%s)", FlagIntervalDeterminant)
 	}
 
 	switch FlagBlendingMode {
 	case "none":
-		{
-			options.Blending = sorter.BlendingNone
-		}
+		options.Blending = sorter.BlendingNone
 	case "lighten":
-		{
-			options.Blending = sorter.BlendingLighten
-		}
+		options.Blending = sorter.BlendingLighten
 	case "darken":
-		{
-			options.Blending = sorter.BlendingDarken
-		}
+		options.Blending = sorter.BlendingDarken
 	default:
-		{
-			return nil, fmt.Errorf("invalid blending mode specified: %s", FlagBlendingMode)
-		}
+		return nil, fmt.Errorf("cmd: invalid blending mode specified (%s)", FlagBlendingMode)
+	}
+
+	options.IntervalDeterminantUpperThreshold = FlagIntervalUpperThreshold
+	options.IntervalDeterminantLowerThreshold = FlagIntervalLowerThreshold
+	options.IntervalLength = FlagIntervalLength
+	options.IntervalLengthRandomFactor = FlagIntervalLengthRandomFactor
+	options.Angle = FlagAngle
+	options.Cycles = FlagSortCycles
+	options.Scale = FlagImageScale
+
+	if FlagMask && len(FlagMaskFilePath) == 0 {
+		LocalLogger.Warnf("The mask flag is set, but not mask file has been specified.")
+	}
+
+	options.UseMask = FlagMask
+
+	if valid, msg := options.AreValid(); !valid {
+		return nil, fmt.Errorf("cmd: %s", msg)
 	}
 
 	return options, nil

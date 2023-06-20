@@ -2,10 +2,10 @@ package sorter
 
 import (
 	"errors"
-	"fmt"
 	"image"
 	"image/color"
 
+	"github.com/Krzysztofz01/pimit"
 	"github.com/Krzysztofz01/pixel-sorter/pkg/utils"
 )
 
@@ -19,43 +19,44 @@ type Mask struct {
 
 // Crate a new mask instance from a given image without target image restrictions
 func CreateMask(mImg image.Image) (*Mask, error) {
+	if mImg == nil {
+		return nil, errors.New("sorter: the provided mask image reference is nil")
+	}
+
 	return CreateImageMask(mImg, mImg.Bounds(), 0)
 }
 
 // Create a new mask instance from a given image and bounds of the image to be masked. The trnslateAngle parameter
 // indicates whether the lookup mask should be interpreted from a given angle.
 func CreateImageMask(mImg image.Image, targetImageBounds image.Rectangle, translateAngle int) (*Mask, error) {
+	if mImg == nil {
+		return nil, errors.New("sorter: the provided mask image reference is nil")
+	}
+
 	if mImg.Bounds().Dx() != targetImageBounds.Dx() || mImg.Bounds().Dy() != targetImageBounds.Dy() {
 		return nil, errors.New("sorter: mask image and target image sizes are not matching")
 	}
 
-	// TODO: It is not efficient to redraw the whole mask, and we dont need it in a drawable format, but we
-	// are doing it to ensure the mask is a image.RGBA
-	drawableMask, err := utils.GetDrawableImage(mImg)
-	if err != nil {
-		return nil, fmt.Errorf("sorter: failed the convert the mask to drawable version: %w", err)
-	}
+	err := pimit.ParallelColumnColorReadE(mImg, func(c color.Color) error {
+		_, s, l, _ := utils.ColorToHsla(c)
 
-	xLength := drawableMask.Bounds().Dx()
-	yLength := drawableMask.Bounds().Dy()
-
-	for xIndex := 0; xIndex < xLength; xIndex += 1 {
-		for yIndex := 0; yIndex < yLength; yIndex += 1 {
-			color := utils.ColorToRgba(drawableMask.At(xIndex, yIndex))
-			_, s, l := utils.RgbaToHsl(color)
-
-			if s != 0.0 || (l != 0.0 && l != 1.0) {
-				return nil, errors.New("sorter: the mask contains a invalid color")
-			}
+		if s != 0.0 || (l != 0.0 && l != 1.0) {
+			return errors.New("sorter: the mask contains a invalid color")
 		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
 	}
 
 	mask := new(Mask)
-	mask.maskImage = drawableMask
+	mask.maskImage = mImg
 	mask.isEmpty = false
 
 	if translateAngle != 0 {
-		mask.maskImageTranslated = utils.RotateImage(drawableMask, translateAngle)
+		mask.maskImageTranslated = utils.RotateImage(mImg, translateAngle)
 		mask.isTranslated = true
 	} else {
 		mask.maskImageTranslated = nil
@@ -102,7 +103,7 @@ func (mask *Mask) IsMasked(xIndex, yIndex int) (bool, error) {
 		color = utils.ColorToRgba(mask.maskImage.At(xIndex, yIndex))
 	}
 
-	_, _, l := utils.RgbaToHsl(utils.ColorToRgba(color))
+	_, _, l, _ := utils.ColorToHsla(color)
 
 	if l == 0.0 {
 		return true, nil
