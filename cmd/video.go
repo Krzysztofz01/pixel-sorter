@@ -22,6 +22,8 @@ var videoCmd = &cobra.Command{
 
 		// TODO: Hardcoded for now. The sort determinant should be a flag and not a command
 		options.SortDeterminant = sorter.SortByBrightness
+		// TODO: Hardcoded for now. The explicit output path will be implemented in the future
+		outputFileName := "sorter-video.mp4"
 
 		var mask image.Image = nil
 		if len(FlagMaskFilePath) > 0 {
@@ -31,12 +33,12 @@ var videoCmd = &cobra.Command{
 			}
 		}
 
-		sorter, err := sorter.CreateVideoSorter(FlagImageFilePath, mask, Logger, options)
+		sorter, err := sorter.CreateVideoSorter(FlagImageFilePath, outputFileName, mask, Logger, options)
 		if err != nil {
 			return err
 		}
 
-		if _, err := sorter.Sort(); err != nil {
+		if err := sorter.Sort(); err != nil {
 			return err
 		}
 
