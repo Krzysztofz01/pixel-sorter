@@ -129,3 +129,9 @@ type Sorter interface {
 	// Perform the sorting operation and return the sorted version of the image
 	Sort() (image.Image, error)
 }
+
+// Utility used to create a pixel sorted version of a given video
+type VideoSorter interface {
+	// Perform the sorting operation and store the sorted version in the sorter specified path
+	Sort() error
+}
