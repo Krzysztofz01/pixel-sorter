@@ -68,7 +68,7 @@ func (sorter *defaultVideoSorter) Sort() error {
 	}
 
 	videoOptions := &vidio.Options{
-		Bitrate: inputVideo.Bitrate(),
+		Quality: 0,
 		FPS:     inputVideo.FPS(),
 	}
 
@@ -76,6 +76,7 @@ func (sorter *defaultVideoSorter) Sort() error {
 		videoOptions.StreamFile = inputVideo.FileName()
 	}
 
+	// FIXME: Take the sorter options scale factor under account
 	outputVideo, err := vidio.NewVideoWriter(sorter.videoOutputPath, inputVideo.Width(), inputVideo.Height(), videoOptions)
 	if err != nil {
 		return fmt.Errorf("sorter: failed to create the output video file: %w", err)
