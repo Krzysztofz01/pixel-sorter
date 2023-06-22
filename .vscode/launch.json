@@ -20,6 +20,8 @@
             "program": "${workspaceFolder}/cli",
             "console": "integratedTerminal",
             "args": [
+                "image",
+                "--sort-determinant",
                 "brightness",
                 "--image-file-path",
                 "image-test.png",
@@ -59,6 +61,8 @@
             "program": "${workspaceFolder}/cli",
             "console": "integratedTerminal",
             "args": [
+                "image",
+                "--sort-determinant",
                 "hue",
                 "--image-file-path",
                 "image-test.png",
@@ -98,6 +102,8 @@
             "program": "${workspaceFolder}/cli",
             "console": "integratedTerminal",
             "args": [
+                "image",
+                "--sort-determinant",
                 "saturation",
                 "--image-file-path",
                 "image-test.png",
@@ -137,6 +143,8 @@
             "program": "${workspaceFolder}/cli",
             "console": "integratedTerminal",
             "args": [
+                "image",
+                "--sort-determinant",
                 "brightness",
                 "--image-file-path",
                 "image-test.png",
@@ -176,6 +184,8 @@
             "program": "${workspaceFolder}/cli",
             "console": "integratedTerminal",
             "args": [
+                "image",
+                "--sort-determinant",
                 "brightness",
                 "--image-file-path",
                 "image-test.png",
@@ -215,6 +225,8 @@
             "program": "${workspaceFolder}/cli",
             "console": "integratedTerminal",
             "args": [
+                "image",
+                "--sort-determinant",
                 "brightness",
                 "--image-file-path",
                 "image-test.png",
@@ -254,6 +266,8 @@
             "program": "${workspaceFolder}/cli",
             "console": "integratedTerminal",
             "args": [
+                "image",
+                "--sort-determinant",
                 "brightness",
                 "--image-file-path",
                 "image-test.png",
@@ -295,6 +309,8 @@
             "program": "${workspaceFolder}/cli",
             "console": "integratedTerminal",
             "args": [
+                "image",
+                "--sort-determinant",
                 "brightness",
                 "--image-file-path",
                 "image-test.png",
@@ -334,6 +350,8 @@
             "program": "${workspaceFolder}/cli",
             "console": "integratedTerminal",
             "args": [
+                "image",
+                "--sort-determinant",
                 "brightness",
                 "--image-file-path",
                 "image-test.png",
@@ -373,6 +391,8 @@
             "program": "${workspaceFolder}/cli",
             "console": "integratedTerminal",
             "args": [
+                "image",
+                "--sort-determinant",
                 "brightness",
                 "--image-file-path",
                 "image-test.png",
@@ -410,6 +430,8 @@
             "program": "${workspaceFolder}/cli",
             "console": "integratedTerminal",
             "args": [
+                "image",
+                "--sort-determinant",
                 "brightness",
                 "--image-file-path",
                 "image-test.png",
@@ -447,6 +469,8 @@
             "program": "${workspaceFolder}/cli",
             "console": "integratedTerminal",
             "args": [
+                "image",
+                "--sort-determinant",
                 "brightness",
                 "--image-file-path",
                 "image-test.png",
@@ -486,6 +510,8 @@
             "program": "${workspaceFolder}/cli",
             "console": "integratedTerminal",
             "args": [
+                "image",
+                "--sort-determinant",
                 "brightness",
                 "--image-file-path",
                 "image-test.png",
@@ -525,6 +551,8 @@
             "program": "${workspaceFolder}/cli",
             "console": "integratedTerminal",
             "args": [
+                "image",
+                "--sort-determinant",
                 "brightness",
                 "--image-file-path",
                 "image-test.png",
