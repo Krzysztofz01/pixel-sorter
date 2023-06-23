@@ -1,0 +1,42 @@
+version: '3'
+
+vars:
+  PIXEL_SORTER_TAG:
+    sh: git symbolic-ref -q --short HEAD || git describe --tags --exact-match
+
+# TODO: Add testing examples from the launch.json
+# TODO: Add profiling/benchmark tasks
+tasks:
+  build:
+    desc: Build the PixelSorterCLI for the current system and architecture with debug symbols included.
+    cmds:
+      - cmd: go build -v -o bin/pixel-sorter.exe ./cli
+        platforms: [ windows ]
+      - cmd: go build -v -o bin/pixel-sorter ./cli
+        platforms: [ linux, darwin ]
+  
+  build:prod:windows:amd64:
+    desc: Build the PixelSorterCLI for Windows system and AMD64 architecture with optimizations and without the debug symbols included.
+    cmds:
+      - GOOS=windows GOARCH=amd64 go build -v -trimpath -ldflags="-s -w -X 'cmd.Version={{.PIXEL_SORTER_TAG}}'" -o bin/pixel-sorter.exe ./cli
+
+  build:prod:linux:amd64:
+    desc: Build the PixelSorterCLI for Linux system and AMD64 architecture with optimizations and without the debug symbols included.
+    cmds:
+      - GOOS=linux GOARCH=amd64 go build -v -trimpath -ldflags="-s -w -X 'cmd.Version={{.PIXEL_SORTER_TAG}}'" -o bin/pixel-sorter ./cli
+
+  build:prod:darwin:amd64:
+    desc: Build the PixelSorterCLI for MacOS system and AMD64 architecture with optimizations and without the debug symbols included.
+    cmds:
+      - GOOS=darwin GOARCH=amd64 go build -v -trimpath -ldflags="-s -w -X 'cmd.Version={{.PIXEL_SORTER_TAG}}'" -o bin/pixel-sorter ./cli
+
+  test:
+    desc: Run tests for all packages.
+    cmds:
+      - go test ./...
+
+  test:cover:
+    desc: Run tests for all packages and generate a coverage raport.
+    cmds:
+      - go test -coverprofile coverage.out ./...
+      - go tool cover -html coverage.out
