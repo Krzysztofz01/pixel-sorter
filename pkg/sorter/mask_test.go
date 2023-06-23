@@ -8,14 +8,19 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// TODO: Implement more mask color validation tests
-
 func TestMaskShouldCreateForValidMaskImage(t *testing.T) {
 	image := mockTestBlackAndWhiteImage()
 	mask, err := CreateMask(image)
 
 	assert.Nil(t, err)
 	assert.NotNil(t, mask)
+}
+
+func TestMaskShouldNotCreateForNilMaskImage(t *testing.T) {
+	mask, err := CreateMask(nil)
+
+	assert.NotNil(t, err)
+	assert.Nil(t, mask)
 }
 
 func TestMaskShouldNotCreateForInvalidMaskImage(t *testing.T) {
@@ -26,17 +31,49 @@ func TestMaskShouldNotCreateForInvalidMaskImage(t *testing.T) {
 	assert.Nil(t, mask)
 }
 
+func TestMaskShouldCreateForValidMaskImageWithBounds(t *testing.T) {
+	image := mockTestBlackAndWhiteImage()
+	mask, err := CreateImageMask(image, image.Bounds(), 0)
+
+	assert.Nil(t, err)
+	assert.NotNil(t, mask)
+}
+
+func TestMaskShouldNotCreateForNilImageWithBounds(t *testing.T) {
+	image := mockTestBlackAndWhiteImage()
+	mask, err := CreateImageMask(nil, image.Bounds(), 0)
+
+	assert.NotNil(t, err)
+	assert.Nil(t, mask)
+}
+
+func TestMaskShouldNotCreateForInvalidBoundsWithBounds(t *testing.T) {
+	img := mockTestBlackAndWhiteImage()
+	mask, err := CreateImageMask(img, image.Rect(0, 0, 1, 1), 0)
+
+	assert.NotNil(t, err)
+	assert.Nil(t, mask)
+}
+
+func TestMaskShouldNotCreateForInvalidMaskImageWithBounds(t *testing.T) {
+	image := mockTestBlackAndRedImage()
+	mask, err := CreateImageMask(image, image.Bounds(), 0)
+
+	assert.NotNil(t, err)
+	assert.Nil(t, mask)
+}
+
 func TestMaskShouldCreateEmpty(t *testing.T) {
 	mask := CreateEmptyMask()
 	assert.NotNil(t, mask)
 }
 
-func TestMaskShouldTellIfIsMaskedForImageMasks(t *testing.T) {
+func TestMaskShouldTellIfIsMasked(t *testing.T) {
 	image := mockTestBlackAndWhiteImage()
 	mask, err := CreateMask(image)
-	assert.Nil(t, err)
 
-	// NOTE: The test image consist of black and white vertical stripes, starting with the white color
+	assert.Nil(t, err)
+	assert.NotNil(t, mask)
 
 	isMasked, err := mask.IsMasked(0, 0)
 	assert.Nil(t, err)
@@ -45,6 +82,46 @@ func TestMaskShouldTellIfIsMaskedForImageMasks(t *testing.T) {
 	isMasked, err = mask.IsMasked(1, 0)
 	assert.Nil(t, err)
 	assert.True(t, isMasked)
+}
+
+func TestMaskShouldNotTellIfIsMaskedWhenLookupIsOutOfBounds(t *testing.T) {
+	image := mockTestBlackAndWhiteImage()
+	mask, err := CreateMask(image)
+
+	assert.Nil(t, err)
+	assert.NotNil(t, mask)
+
+	_, err = mask.IsMasked(image.Bounds().Dx()+1, image.Bounds().Dy()+1)
+
+	assert.NotNil(t, err)
+}
+
+func TestMaskShouldTellIfIsMaskedWhenTranslated(t *testing.T) {
+	image := mockTestBlackAndWhiteImage()
+	mask, err := CreateImageMask(image, image.Bounds(), 90)
+
+	assert.Nil(t, err)
+	assert.NotNil(t, mask)
+
+	isMasked, err := mask.IsMasked(0, 0)
+	assert.Nil(t, err)
+	assert.True(t, isMasked)
+
+	isMasked, err = mask.IsMasked(0, 1)
+	assert.Nil(t, err)
+	assert.False(t, isMasked)
+}
+
+func TestMaskShouldNotTellIfIsMaskedWhenLookupIsOutOfBoundsWhenTranslated(t *testing.T) {
+	image := mockTestBlackAndWhiteImage()
+	mask, err := CreateImageMask(image, image.Bounds(), 90)
+
+	assert.Nil(t, err)
+	assert.NotNil(t, mask)
+
+	_, err = mask.IsMasked(image.Bounds().Dx()+1, image.Bounds().Dy()+1)
+
+	assert.NotNil(t, err)
 }
 
 func TestMaskShouldTellIfIsMaskedForEmptyMask(t *testing.T) {

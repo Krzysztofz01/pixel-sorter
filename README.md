@@ -50,6 +50,7 @@ go build ./cli
 - *interval-lower-threshold* (-l) - The lower threshold of the interval determination process.
 - *interval-upper-threshold* (-u) - The upper threshold of the interval determination process.
 - *interval-max-length* (-k) - The max length of the interval. Zero means no length limits.
+- *interval-max-length-random-factor* (-r) - The value representing the range of values that can be randomly subtracted or added to the max interval length.
 - *mask* (-m) - Exclude the sorting effect from masked out ares of the image.
 - *order* (-o) - Order of the graphic sorting stages.
     - *horizontal*
@@ -79,22 +80,23 @@ Available Commands:
   saturation  Use saturation value as color sorting parameter.
 
 Flags:
-  -a, --angle int                        The angle at which to sort the pixels.
-  -b, --blending-mode string             The blending mode algorithm to blend the sorted image into the original. Options: [none, lighten, darken]. (default "none")
-  -c, --cycles int                       The count of sorting cycles that should be performed on the image. (default 1)
-  -d, --direction string                 Pixel sorting direction in intervals. Options: [ascending, descending, random]. (default "ascending")
-  -h, --help                             help for pixel-sorter
-      --input-media-path string          The path of the input media file to be processed.
-  -i, --interval-determinant string      Parameter used to determine intervals. Options: [brightness, hue, mask, absolute, edge]. (default "brightness")
-  -l, --interval-lower-threshold float   The lower threshold of the interval determination process. Options: [0.0 - 1.0]. (default 0.1)
-  -k, --interval-max-length int          The max length of the interval. Zero means no length limits.
-  -u, --interval-upper-threshold float   The upper threshold of the interval determination process. Options: [0.0 - 1.0]. (default 0.9)
-  -m, --mask                             Exclude the sorting effect from masked out ares of the image.
-      --mask-image-path string           The path of the mask image file used to process the input media.
-  -o, --order string                     Order of the graphic sorting stages. Options: [horizontal, vertical, horizontal-vertical, vertical-horizontal]. (default "horizontal-vertical")    
-      --output-media-path string         The path of the output media file to be saved. The path should end with one of the supported extensions. [jpg, png]
-  -s, --scale float                      Image downscaling percentage factor. Options: [0.0 - 1.0]. (default 1)
-  -v, --verbose                          Enable verbose logging mode.
+  -a, --angle int                               The angle at which to sort the pixels.
+  -b, --blending-mode string                    The blending mode algorithm to blend the sorted image into the original. Options: [none, lighten, darken]. (default "none")
+  -c, --cycles int                              The count of sorting cycles that should be performed on the image. (default 1)
+  -d, --direction string                        Pixel sorting direction in intervals. Options: [ascending, descending, random]. (default "ascending")
+  -h, --help                                    help for pixel-sorter
+      --input-media-path string                 The path of the input media file to be processed.
+  -i, --interval-determinant string             Parameter used to determine intervals. Options: [brightness, hue, mask, absolute, edge]. (default "brightness")
+  -l, --interval-lower-threshold float          The lower threshold of the interval determination process. Options: [0.0 - 1.0]. (default 0.1)
+  -k, --interval-max-length int                 The max length of the interval. Zero means no length limits.
+  -r, --interval-max-length-random-factor int   The value representing the range of values that can be randomly subtracted or added to the max interval length. Options: [0 <=]
+  -u, --interval-upper-threshold float          The upper threshold of the interval determination process. Options: [0.0 - 1.0]. (default 0.9)
+  -m, --mask                                    Exclude the sorting effect from masked out ares of the image.
+      --mask-image-path string                  The path of the mask image file used to process the input media.
+  -o, --order string                            Order of the graphic sorting stages. Options: [horizontal, vertical, horizontal-vertical, vertical-horizontal]. (default "horizontal-vertical")
+      --output-media-path string                The path of the output media file to be saved. The path should end with one of the supported extensions. [jpg, png]
+  -s, --scale float                             Image downscaling percentage factor. Options: [0.0 - 1.0]. (default 1)
+  -v, --verbose                                 Enable verbose logging mode.
 
 Use "pixel-sorter [command] --help" for more information about a command.
 ```
