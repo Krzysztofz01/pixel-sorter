@@ -12,9 +12,9 @@ import (
 func TestProfilingBenchmarkSortBrightnessIntervalBrightness(t *testing.T) {
 	args := []string{
 		"brightness",
-		"--input-image-path",
+		"--input-media-path",
 		"image-test.png",
-		"--output-image-path",
+		"--output-media-path",
 		"image-test-sorted.jpg",
 		"--direction",
 		"ascending",
