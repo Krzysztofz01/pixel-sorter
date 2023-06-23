@@ -15,9 +15,9 @@ import (
 )
 
 var (
-	FlagInputImageFilePath     string
-	FlagOutputImageFilePath    string
-	FlagMaskFilePath           string
+	FlagInputMediaFilePath     string
+	FlagOutputMediaFilePath    string
+	FlagMaskImageFilePath      string
 	FlagOutputFileType         string
 	FlagSortDirection          string
 	FlagSortOrder              string
@@ -52,13 +52,13 @@ func init() {
 
 	rootCmd.PersistentFlags().BoolVarP(&FlagVerboseLogging, "verbose", "v", false, "Enable verbose logging mode.")
 
-	rootCmd.PersistentFlags().StringVar(&FlagInputImageFilePath, "input-image-path", "", "The path of the image file to be processed.")
-	rootCmd.MarkPersistentFlagRequired("input-image-path")
+	rootCmd.PersistentFlags().StringVar(&FlagInputMediaFilePath, "input-media-path", "", "The path of the input media file to be processed.")
+	rootCmd.MarkPersistentFlagRequired("input-media-path")
 
-	rootCmd.PersistentFlags().StringVar(&FlagOutputImageFilePath, "output-image-path", "", "The path of the output image file to be saved. The path should end with one of the supported extensions. [jpg, png]")
-	rootCmd.MarkPersistentFlagRequired("output-image-path")
+	rootCmd.PersistentFlags().StringVar(&FlagOutputMediaFilePath, "output-media-path", "", "The path of the output media file to be saved. The path should end with one of the supported extensions. [jpg, png]")
+	rootCmd.MarkPersistentFlagRequired("output-media-path")
 
-	rootCmd.PersistentFlags().StringVar(&FlagMaskFilePath, "mask-image-path", "", "The path of the image mask file to be process the image file.")
+	rootCmd.PersistentFlags().StringVar(&FlagMaskImageFilePath, "mask-image-path", "", "The path of the mask image file used to process the input media.")
 
 	rootCmd.PersistentFlags().StringVarP(&FlagSortDirection, "direction", "d", "ascending", "Pixel sorting direction in intervals. Options: [ascending, descending, random].")
 
@@ -131,7 +131,7 @@ func parseCommonOptions() (*sorter.SorterOptions, error) {
 		options.IntervalDeterminant = sorter.SplitBySaturation
 	case "mask":
 		{
-			if len(FlagMaskFilePath) == 0 {
+			if len(FlagMaskImageFilePath) == 0 {
 				return nil, fmt.Errorf("invalid mask path specified")
 			}
 			options.IntervalDeterminant = sorter.SplitByMask
@@ -167,7 +167,7 @@ func parseCommonOptions() (*sorter.SorterOptions, error) {
 	options.Angle = FlagAngle
 
 	if FlagMask {
-		if len(FlagMaskFilePath) == 0 {
+		if len(FlagMaskImageFilePath) == 0 {
 			return nil, fmt.Errorf("invalid mask path specified")
 		} else {
 			options.UseMask = true
@@ -218,27 +218,27 @@ func parseCommonOptions() (*sorter.SorterOptions, error) {
 
 // Helper wrapper function used to perform the whole pixel sorting and IO operations according to the flags and provided options
 func performPixelSorting(options *sorter.SorterOptions) error {
-	if len(FlagInputImageFilePath) == 0 {
-		return fmt.Errorf("invalid input image path specified: %q", FlagInputImageFilePath)
+	if len(FlagInputMediaFilePath) == 0 {
+		return fmt.Errorf("invalid input image path specified: %q", FlagInputMediaFilePath)
 	}
 
-	if len(FlagOutputImageFilePath) == 0 {
-		return fmt.Errorf("invalid output image path specified: %q", FlagOutputImageFilePath)
+	if len(FlagOutputMediaFilePath) == 0 {
+		return fmt.Errorf("invalid output image path specified: %q", FlagOutputMediaFilePath)
 	}
 
-	format, ok := determineFileExtension(FlagOutputImageFilePath, []string{"jpeg", "jpg", "png"})
+	format, ok := determineFileExtension(FlagOutputMediaFilePath, []string{"jpeg", "jpg", "png"})
 	if !ok {
-		return fmt.Errorf("invaid output image file format specified: %q", FlagOutputImageFilePath)
+		return fmt.Errorf("invaid output image file format specified: %q", FlagOutputMediaFilePath)
 	}
 
-	img, err := utils.GetImageFromFile(FlagInputImageFilePath)
+	img, err := utils.GetImageFromFile(FlagInputMediaFilePath)
 	if err != nil {
 		return err
 	}
 
 	var mask image.Image = nil
-	if len(FlagMaskFilePath) > 0 {
-		mask, err = utils.GetImageFromFile(FlagMaskFilePath)
+	if len(FlagMaskImageFilePath) > 0 {
+		mask, err = utils.GetImageFromFile(FlagMaskImageFilePath)
 		if err != nil {
 			return err
 		}
@@ -254,7 +254,7 @@ func performPixelSorting(options *sorter.SorterOptions) error {
 		return err
 	}
 
-	if err := utils.StoreImageToFile(FlagOutputImageFilePath, format, sortedImage); err != nil {
+	if err := utils.StoreImageToFile(FlagOutputMediaFilePath, format, sortedImage); err != nil {
 		return err
 	}
 
