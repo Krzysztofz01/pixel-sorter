@@ -38,10 +38,12 @@ var (
 	LocalLogger *logrus.Entry
 )
 
+var Version string
+
 var rootCmd = &cobra.Command{
 	Use:   "pixel-sorter",
 	Short: "Pixel sorting image editing utility implemented in Go.",
-	Long:  "Pixel sorting image editing utility implemented in Go.",
+	Long:  fmt.Sprintf("Pixel sorting image editing utility implemented in Go.\nVersion: %s", Version),
 }
 
 func init() {
