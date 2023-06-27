@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -14,9 +13,9 @@ import (
 )
 
 var (
-	FlagImageFilePath              string
-	FlagMaskFilePath               string
-	FlagOutputFileType             string
+	FlagInputMediaFilePath         string
+	FlagOutputMediaFilePath        string
+	FlagMaskImageFilePath          string
 	FlagSortDeterminant            string
 	FlagSortDirection              string
 	FlagSortOrder                  string
@@ -26,11 +25,11 @@ var (
 	FlagAngle                      int
 	FlagMask                       bool
 	FlagIntervalLength             int
-	FlagIntervalLengthRandomFactor int
 	FlagSortCycles                 int
 	FlagImageScale                 float64
 	FlagBlendingMode               string
 	FlagVerboseLogging             bool
+	FlagIntervalLengthRandomFactor int
 )
 
 var (
@@ -54,12 +53,13 @@ func init() {
 
 	rootCmd.PersistentFlags().BoolVarP(&FlagVerboseLogging, "verbose", "v", false, "Enable verbose logging mode.")
 
-	rootCmd.PersistentFlags().StringVar(&FlagImageFilePath, "image-file-path", "", "The path of the image file to be processed.")
-	rootCmd.MarkPersistentFlagRequired("image-file-path")
+	rootCmd.PersistentFlags().StringVar(&FlagInputMediaFilePath, "input-media-path", "", "The path of the input media file to be processed.")
+	rootCmd.MarkPersistentFlagRequired("input-media-path")
 
-	rootCmd.PersistentFlags().StringVar(&FlagMaskFilePath, "mask-file-path", "", "The path of the image mask file to be process the image file.")
+	rootCmd.PersistentFlags().StringVar(&FlagOutputMediaFilePath, "output-media-path", "", "The path of the output media file to be saved. The path should end with one of the supported extensions. [jpg, png]")
+	rootCmd.MarkPersistentFlagRequired("output-media-path")
 
-	rootCmd.PersistentFlags().StringVarP(&FlagOutputFileType, "output-format", "f", "jpg", "The output format of the graphic file. Options: [jpg, png].")
+	rootCmd.PersistentFlags().StringVar(&FlagMaskImageFilePath, "mask-image-path", "", "The path of the mask image file used to process the input media.")
 
 	rootCmd.PersistentFlags().StringVarP(&FlagSortDeterminant, "sort-determinant", "e", "brightness", "Parameter used as the argument for the sorting algorithm. Options: [brightness, hue, saturation].")
 
@@ -97,8 +97,12 @@ func parseCommonOptions() (*sorter.SorterOptions, error) {
 		LocalLogger = CreateLocalLogger(Logger)
 	}
 
-	if len(FlagImageFilePath) == 0 {
-		return nil, fmt.Errorf("cmd: invalid image file path specified (%s)", FlagImageFilePath)
+	if len(FlagInputMediaFilePath) == 0 {
+		return nil, fmt.Errorf("cmd: invalid input media path specified (%s)", FlagInputMediaFilePath)
+	}
+
+	if len(FlagOutputMediaFilePath) == 0 {
+		return nil, fmt.Errorf("cmd: invalid output media path specified (%s)", FlagOutputMediaFilePath)
 	}
 
 	options := sorter.GetDefaultSorterOptions()
@@ -147,7 +151,7 @@ func parseCommonOptions() (*sorter.SorterOptions, error) {
 		options.IntervalDeterminant = sorter.SplitBySaturation
 	case "mask":
 		{
-			if len(FlagMaskFilePath) == 0 {
+			if len(FlagMaskImageFilePath) == 0 {
 				LocalLogger.Warnf("The interval determinant is using the mask, but not mask file has been specified.")
 			}
 
@@ -180,7 +184,7 @@ func parseCommonOptions() (*sorter.SorterOptions, error) {
 	options.Cycles = FlagSortCycles
 	options.Scale = FlagImageScale
 
-	if FlagMask && len(FlagMaskFilePath) == 0 {
+	if FlagMask && len(FlagMaskImageFilePath) == 0 {
 		LocalLogger.Warnf("The mask flag is set, but not mask file has been specified.")
 	}
 
@@ -193,15 +197,18 @@ func parseCommonOptions() (*sorter.SorterOptions, error) {
 	return options, nil
 }
 
-// Helper function used to generate a output image file name based on the original file path
-func getOutputFileName(inputFilePath string) string {
-	fileName := filepath.Base(inputFilePath)
-	fileNameParts := strings.Split(fileName, ".")
-	if len(fileNameParts) != 2 {
-		return "sorted"
+// Helper function used to determine if the current path file extension matches the possible extension collection.
+func determineFileExtension(path string, extensions []string) (string, bool) {
+	lowerPath := strings.ToLower(path)
+	for _, extension := range extensions {
+		lowerExtension := strings.ToLower(extension)
+
+		if strings.HasSuffix(lowerPath, lowerExtension) {
+			return lowerExtension, true
+		}
 	}
 
-	return fmt.Sprintf("%s-sorted", fileNameParts[0])
+	return "", false
 }
 
 // Function used to execute the program (root command)

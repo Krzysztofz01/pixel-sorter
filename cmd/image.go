@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"image"
-	"strings"
 	"time"
 
 	"github.com/Krzysztofz01/pixel-sorter/pkg/sorter"
@@ -26,19 +25,19 @@ var imageCmd = &cobra.Command{
 			return err
 		}
 
-		format := strings.ToLower(FlagOutputFileType)
-		if format != "jpg" && format != "png" {
-			return fmt.Errorf("invalid output file format specified: %s", FlagOutputFileType)
+		format, ok := determineFileExtension(FlagOutputMediaFilePath, []string{"jpeg", "jpg", "png"})
+		if !ok {
+			return fmt.Errorf("cmd: invalid output image file format specified (%s)", FlagOutputMediaFilePath)
 		}
 
-		img, err := utils.GetImageFromFile(FlagImageFilePath)
+		img, err := utils.GetImageFromFile(FlagInputMediaFilePath)
 		if err != nil {
 			return err
 		}
 
 		var mask image.Image = nil
-		if len(FlagMaskFilePath) > 0 {
-			mask, err = utils.GetImageFromFile(FlagMaskFilePath)
+		if len(FlagMaskImageFilePath) > 0 {
+			mask, err = utils.GetImageFromFile(FlagMaskImageFilePath)
 			if err != nil {
 				return err
 			}
@@ -54,7 +53,7 @@ var imageCmd = &cobra.Command{
 			return err
 		}
 
-		if err := utils.StoreImageToFile(getOutputFileName(FlagImageFilePath), format, sortedImage); err != nil {
+		if err := utils.StoreImageToFile(FlagOutputMediaFilePath, format, sortedImage); err != nil {
 			return err
 		}
 
