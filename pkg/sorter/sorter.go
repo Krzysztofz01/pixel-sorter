@@ -29,7 +29,7 @@ type SortDirection int
 const (
 	SortAscending SortDirection = iota
 	SortDescending
-	// NOTE: The naming here is ugly... shuffling is not sorting
+	Shuffle
 	SortRandom
 )
 

@@ -13,7 +13,8 @@ import (
 )
 
 const (
-	test_file_name string = "test-file-utility-image"
+	test_file_name_jpg string = "test-file-utility-image.jpg"
+	test_file_name_png string = "test-file-utility-image.png"
 )
 
 func TestImageFileShouldBeStoredAsJpg(t *testing.T) {
@@ -21,11 +22,10 @@ func TestImageFileShouldBeStoredAsJpg(t *testing.T) {
 
 	expectedImage := mockTestBlackImage()
 
-	err := StoreImageToFile(test_file_name, "jpg", expectedImage)
+	err := StoreImageToFile(test_file_name_jpg, "jpg", expectedImage)
 	assert.Nil(t, err)
 
-	filePath := fmt.Sprintf("%s.jpg", test_file_name)
-	file, err := os.Open(filePath)
+	file, err := os.Open(test_file_name_jpg)
 	assert.Nil(t, err)
 
 	actualImage, err := jpeg.Decode(file)
@@ -56,11 +56,10 @@ func TestImageFileShouldBeStoredAsPng(t *testing.T) {
 
 	expectedImage := mockTestBlackImage()
 
-	err := StoreImageToFile(test_file_name, "png", expectedImage)
+	err := StoreImageToFile(test_file_name_png, "png", expectedImage)
 	assert.Nil(t, err)
 
-	filePath := fmt.Sprintf("%s.png", test_file_name)
-	file, err := os.Open(filePath)
+	file, err := os.Open(test_file_name_png)
 	assert.Nil(t, err)
 
 	actualImage, err := png.Decode(file)
@@ -91,11 +90,10 @@ func TestImageShouldBeRetrievied(t *testing.T) {
 
 	expectedImage := mockTestBlackImage()
 
-	err := StoreImageToFile(test_file_name, "png", expectedImage)
+	err := StoreImageToFile(test_file_name_png, "png", expectedImage)
 	assert.Nil(t, err)
 
-	actualImageFilePath := fmt.Sprintf("%s.png", test_file_name)
-	actualImage, err := GetImageFromFile(actualImageFilePath)
+	actualImage, err := GetImageFromFile(test_file_name_png)
 	assert.Nil(t, err)
 
 	assert.Equal(t, expectedImage.Bounds().Dx(), actualImage.Bounds().Dx())
@@ -117,17 +115,15 @@ func TestImageShouldBeRetrievied(t *testing.T) {
 
 // Helper function that is removing the image files created during the tests
 func clearEnvironmentFromTestFiles() {
-	jpgFileName := fmt.Sprintf("%s.jpg", test_file_name)
-	if info, err := os.Stat(jpgFileName); err == nil && !info.IsDir() {
-		if err := os.Remove(jpgFileName); err != nil {
+	if info, err := os.Stat(test_file_name_jpg); err == nil && !info.IsDir() {
+		if err := os.Remove(test_file_name_jpg); err != nil {
 			fmt.Println(err)
 			panic("utils-test: can not remove jpg test file")
 		}
 	}
 
-	pngFileName := fmt.Sprintf("%s.png", test_file_name)
-	if info, err := os.Stat(pngFileName); err == nil && !info.IsDir() {
-		if err := os.Remove(pngFileName); err != nil {
+	if info, err := os.Stat(test_file_name_png); err == nil && !info.IsDir() {
+		if err := os.Remove(test_file_name_png); err != nil {
 			panic("utils-test: can not remove jpg test file")
 		}
 	}
