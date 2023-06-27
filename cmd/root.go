@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"image"
 	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -16,9 +15,9 @@ import (
 )
 
 var (
-	FlagImageFilePath              string
-	FlagMaskFilePath               string
-	FlagOutputFileType             string
+	FlagInputMediaFilePath         string
+	FlagOutputMediaFilePath        string
+	FlagMaskImageFilePath          string
 	FlagSortDirection              string
 	FlagSortOrder                  string
 	FlagIntervalDeterminant        string
@@ -27,11 +26,11 @@ var (
 	FlagAngle                      int
 	FlagMask                       bool
 	FlagIntervalLength             int
-	FlagIntervalLengthRandomFactor int
 	FlagSortCycles                 int
 	FlagImageScale                 float64
 	FlagBlendingMode               string
 	FlagVerboseLogging             bool
+	FlagIntervalLengthRandomFactor int
 )
 
 var (
@@ -53,12 +52,13 @@ func init() {
 
 	rootCmd.PersistentFlags().BoolVarP(&FlagVerboseLogging, "verbose", "v", false, "Enable verbose logging mode.")
 
-	rootCmd.PersistentFlags().StringVar(&FlagImageFilePath, "image-file-path", "", "The path of the image file to be processed.")
-	rootCmd.MarkPersistentFlagRequired("image-file-path")
+	rootCmd.PersistentFlags().StringVar(&FlagInputMediaFilePath, "input-media-path", "", "The path of the input media file to be processed.")
+	rootCmd.MarkPersistentFlagRequired("input-media-path")
 
-	rootCmd.PersistentFlags().StringVar(&FlagMaskFilePath, "mask-file-path", "", "The path of the image mask file to be process the image file.")
+	rootCmd.PersistentFlags().StringVar(&FlagOutputMediaFilePath, "output-media-path", "", "The path of the output media file to be saved. The path should end with one of the supported extensions. [jpg, png]")
+	rootCmd.MarkPersistentFlagRequired("output-media-path")
 
-	rootCmd.PersistentFlags().StringVarP(&FlagOutputFileType, "output-format", "f", "jpg", "The output format of the graphic file. Options: [jpg, png].")
+	rootCmd.PersistentFlags().StringVar(&FlagMaskImageFilePath, "mask-image-path", "", "The path of the mask image file used to process the input media.")
 
 	rootCmd.PersistentFlags().StringVarP(&FlagSortDirection, "direction", "d", "ascending", "Pixel sorting direction in intervals. Options: [ascending, descending, random].")
 
@@ -96,17 +96,11 @@ func parseCommonOptions() (*sorter.SorterOptions, error) {
 
 	switch strings.ToLower(FlagSortDirection) {
 	case "ascending":
-		{
-			options.SortDirection = sorter.SortAscending
-		}
+		options.SortDirection = sorter.SortAscending
 	case "descending":
-		{
-			options.SortDirection = sorter.SortDescending
-		}
+		options.SortDirection = sorter.SortDescending
 	case "random":
-		{
-			options.SortDirection = sorter.SortRandom
-		}
+		options.SortDirection = sorter.SortRandom
 	default:
 		return nil, fmt.Errorf("cmd: invalid sort direction specified (%s)", FlagSortDirection)
 	}
@@ -133,7 +127,7 @@ func parseCommonOptions() (*sorter.SorterOptions, error) {
 		options.IntervalDeterminant = sorter.SplitBySaturation
 	case "mask":
 		{
-			if len(FlagMaskFilePath) == 0 {
+			if len(FlagMaskImageFilePath) == 0 {
 				LocalLogger.Warnf("The interval determinant is using the mask, but not mask file has been specified.")
 			}
 
@@ -166,7 +160,7 @@ func parseCommonOptions() (*sorter.SorterOptions, error) {
 	options.Cycles = FlagSortCycles
 	options.Scale = FlagImageScale
 
-	if FlagMask && len(FlagMaskFilePath) == 0 {
+	if FlagMask && len(FlagMaskImageFilePath) == 0 {
 		LocalLogger.Warnf("The mask flag is set, but not mask file has been specified.")
 	}
 
@@ -181,23 +175,27 @@ func parseCommonOptions() (*sorter.SorterOptions, error) {
 
 // Helper wrapper function used to perform the whole pixel sorting and IO operations according to the flags and provided options
 func performPixelSorting(options *sorter.SorterOptions) error {
-	if len(FlagImageFilePath) == 0 {
-		return fmt.Errorf("invalid image path specified: %q", FlagImageFilePath)
+	if len(FlagInputMediaFilePath) == 0 {
+		return fmt.Errorf("invalid input image path specified: %q", FlagInputMediaFilePath)
 	}
 
-	format := strings.ToLower(FlagOutputFileType)
-	if format != "jpg" && format != "png" {
-		return fmt.Errorf("invalid output file format specified: %q", FlagOutputFileType)
+	if len(FlagOutputMediaFilePath) == 0 {
+		return fmt.Errorf("invalid output image path specified: %q", FlagOutputMediaFilePath)
 	}
 
-	img, err := utils.GetImageFromFile(FlagImageFilePath)
+	format, ok := determineFileExtension(FlagOutputMediaFilePath, []string{"jpeg", "jpg", "png"})
+	if !ok {
+		return fmt.Errorf("invaid output image file format specified: %q", FlagOutputMediaFilePath)
+	}
+
+	img, err := utils.GetImageFromFile(FlagInputMediaFilePath)
 	if err != nil {
 		return err
 	}
 
 	var mask image.Image = nil
-	if len(FlagMaskFilePath) > 0 {
-		mask, err = utils.GetImageFromFile(FlagMaskFilePath)
+	if len(FlagMaskImageFilePath) > 0 {
+		mask, err = utils.GetImageFromFile(FlagMaskImageFilePath)
 		if err != nil {
 			return err
 		}
@@ -213,22 +211,25 @@ func performPixelSorting(options *sorter.SorterOptions) error {
 		return err
 	}
 
-	if err := utils.StoreImageToFile(getOutputFileName(FlagImageFilePath), format, sortedImage); err != nil {
+	if err := utils.StoreImageToFile(FlagOutputMediaFilePath, format, sortedImage); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-// Helper function used to generate a output image file name based on the original file path
-func getOutputFileName(inputFilePath string) string {
-	fileName := filepath.Base(inputFilePath)
-	fileNameParts := strings.Split(fileName, ".")
-	if len(fileNameParts) != 2 {
-		return "sorted"
+// Helper function used to determine if the current path file extension matches the possible extension collection.
+func determineFileExtension(path string, extensions []string) (string, bool) {
+	lowerPath := strings.ToLower(path)
+	for _, extension := range extensions {
+		lowerExtension := strings.ToLower(extension)
+
+		if strings.HasSuffix(lowerPath, lowerExtension) {
+			return lowerExtension, true
+		}
 	}
 
-	return fmt.Sprintf("%s-sorted", fileNameParts[0])
+	return "", false
 }
 
 // Function used to execute the program (root command)
