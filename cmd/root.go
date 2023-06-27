@@ -2,13 +2,11 @@ package cmd
 
 import (
 	"fmt"
-	"image"
 	"os"
 	"strings"
 	"time"
 
 	"github.com/Krzysztofz01/pixel-sorter/pkg/sorter"
-	"github.com/Krzysztofz01/pixel-sorter/pkg/utils"
 	nestedFormatter "github.com/antonfisher/nested-logrus-formatter"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -18,6 +16,7 @@ var (
 	FlagInputMediaFilePath         string
 	FlagOutputMediaFilePath        string
 	FlagMaskImageFilePath          string
+	FlagSortDeterminant            string
 	FlagSortDirection              string
 	FlagSortOrder                  string
 	FlagIntervalDeterminant        string
@@ -38,10 +37,12 @@ var (
 	LocalLogger *logrus.Entry
 )
 
+var Version string
+
 var rootCmd = &cobra.Command{
 	Use:   "pixel-sorter",
 	Short: "Pixel sorting image editing utility implemented in Go.",
-	Long:  "Pixel sorting image editing utility implemented in Go.",
+	Long:  fmt.Sprintf("Pixel sorting image editing utility implemented in Go.\nVersion: %s", Version),
 }
 
 func init() {
@@ -60,12 +61,16 @@ func init() {
 
 	rootCmd.PersistentFlags().StringVar(&FlagMaskImageFilePath, "mask-image-path", "", "The path of the mask image file used to process the input media.")
 
+	rootCmd.PersistentFlags().StringVarP(&FlagSortDeterminant, "sort-determinant", "e", "brightness", "Parameter used as the argument for the sorting algorithm. Options: [brightness, hue, saturation].")
+
 	rootCmd.PersistentFlags().StringVarP(&FlagSortDirection, "direction", "d", "ascending", "Pixel sorting direction in intervals. Options: [ascending, descending, random].")
 
 	rootCmd.PersistentFlags().StringVarP(&FlagSortOrder, "order", "o", "horizontal-vertical", "Order of the graphic sorting stages. Options: [horizontal, vertical, horizontal-vertical, vertical-horizontal].")
 
 	rootCmd.PersistentFlags().StringVarP(&FlagIntervalDeterminant, "interval-determinant", "i", "brightness", "Parameter used to determine intervals. Options: [brightness, hue, mask, absolute, edge].")
+
 	rootCmd.PersistentFlags().Float64VarP(&FlagIntervalLowerThreshold, "interval-lower-threshold", "l", 0.1, "The lower threshold of the interval determination process. Options: [0.0 - 1.0].")
+
 	rootCmd.PersistentFlags().Float64VarP(&FlagIntervalUpperThreshold, "interval-upper-threshold", "u", 0.9, "The upper threshold of the interval determination process. Options: [0.0 - 1.0].")
 
 	rootCmd.PersistentFlags().IntVarP(&FlagAngle, "angle", "a", 0, "The angle at which to sort the pixels.")
@@ -74,7 +79,7 @@ func init() {
 
 	rootCmd.PersistentFlags().IntVarP(&FlagIntervalLength, "interval-max-length", "k", 0, "The max length of the interval. Zero means no length limits.")
 
-	rootCmd.PersistentFlags().IntVarP(&FlagIntervalLengthRandomFactor, "interval-max-length-random-factor", "r", 0, "The value representing the range of values that can be randomly subtracted or added to the max interval length. Options: [0 <=]")
+	rootCmd.PersistentFlags().IntVarP(&FlagIntervalLengthRandomFactor, "interval-max-length-random-factor", "r", 0, "The value representing the range of values that can be randomly subtracted or added to the max interval length. Options: [>= 0]")
 
 	rootCmd.PersistentFlags().IntVarP(&FlagSortCycles, "cycles", "c", 1, "The count of sorting cycles that should be performed on the image.")
 
@@ -92,7 +97,26 @@ func parseCommonOptions() (*sorter.SorterOptions, error) {
 		LocalLogger = CreateLocalLogger(Logger)
 	}
 
+	if len(FlagInputMediaFilePath) == 0 {
+		return nil, fmt.Errorf("cmd: invalid input media path specified (%s)", FlagInputMediaFilePath)
+	}
+
+	if len(FlagOutputMediaFilePath) == 0 {
+		return nil, fmt.Errorf("cmd: invalid output media path specified (%s)", FlagOutputMediaFilePath)
+	}
+
 	options := sorter.GetDefaultSorterOptions()
+
+	switch strings.ToLower(FlagSortDeterminant) {
+	case "brightness":
+		options.SortDeterminant = sorter.SortByBrightness
+	case "hue":
+		options.SortDeterminant = sorter.SortByHue
+	case "saturation":
+		options.SortDeterminant = sorter.SortBySaturation
+	default:
+		return nil, fmt.Errorf("cmd: invalid sort determinant specified (%s)", FlagSortDeterminant)
+	}
 
 	switch strings.ToLower(FlagSortDirection) {
 	case "ascending":
@@ -173,51 +197,6 @@ func parseCommonOptions() (*sorter.SorterOptions, error) {
 	return options, nil
 }
 
-// Helper wrapper function used to perform the whole pixel sorting and IO operations according to the flags and provided options
-func performPixelSorting(options *sorter.SorterOptions) error {
-	if len(FlagInputMediaFilePath) == 0 {
-		return fmt.Errorf("invalid input image path specified: %q", FlagInputMediaFilePath)
-	}
-
-	if len(FlagOutputMediaFilePath) == 0 {
-		return fmt.Errorf("invalid output image path specified: %q", FlagOutputMediaFilePath)
-	}
-
-	format, ok := determineFileExtension(FlagOutputMediaFilePath, []string{"jpeg", "jpg", "png"})
-	if !ok {
-		return fmt.Errorf("invaid output image file format specified: %q", FlagOutputMediaFilePath)
-	}
-
-	img, err := utils.GetImageFromFile(FlagInputMediaFilePath)
-	if err != nil {
-		return err
-	}
-
-	var mask image.Image = nil
-	if len(FlagMaskImageFilePath) > 0 {
-		mask, err = utils.GetImageFromFile(FlagMaskImageFilePath)
-		if err != nil {
-			return err
-		}
-	}
-
-	sorter, err := sorter.CreateSorter(img, mask, Logger, options)
-	if err != nil {
-		return err
-	}
-
-	sortedImage, err := sorter.Sort()
-	if err != nil {
-		return err
-	}
-
-	if err := utils.StoreImageToFile(FlagOutputMediaFilePath, format, sortedImage); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 // Helper function used to determine if the current path file extension matches the possible extension collection.
 func determineFileExtension(path string, extensions []string) (string, bool) {
 	lowerPath := strings.ToLower(path)
@@ -234,13 +213,36 @@ func determineFileExtension(path string, extensions []string) (string, bool) {
 
 // Function used to execute the program (root command)
 func Execute(args []string) {
-	LocalLogger.Info("Starting the pixel sorter.")
 	rootCmd.SetArgs(args)
 	if err := rootCmd.Execute(); err != nil {
 		LocalLogger.Fatalf("Pixel sorting fatal failure: %s", err)
 		os.Exit(1)
 	}
-	LocalLogger.Info("Pixel sorting finished.")
+}
+
+// TODO: Currently there is no support for setting the "image" command as the default one
+func setDefaultCommand(args []string, defaultCommand string) []string {
+	if len(args) > 1 {
+		commands := make([]string, 5)
+		for _, command := range rootCmd.Commands() {
+			commands = append(commands, append(command.Aliases, command.Name())...)
+		}
+
+		commandSpecified := false
+		currentCommand := args[0]
+		for _, command := range commands {
+			if command == currentCommand {
+				commandSpecified = true
+				break
+			}
+		}
+
+		if !commandSpecified {
+			args = append([]string{defaultCommand}, args...)
+		}
+	}
+
+	return args
 }
 
 // Create a new instance of the logger

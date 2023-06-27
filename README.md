@@ -25,9 +25,7 @@ go build ./cli
 # Usage
 
 ### Commands
-- *brightness* - Use perceived brightness value as color sorting parameter.
-- *hue* - Use hue value as color sorting parameter.
-- *saturation* - Use saturation value as color sorting parameter.
+- *image* - Perform a pixel sorting operation on the specified image file. 
 - *help* - Print program help page.
 
 ### Flags
@@ -37,6 +35,10 @@ go build ./cli
 
 - *angle* (-a) - The angle at which to sort the pixels.
 - *cycles* (-c) - The count of sorting cycles that should be performed on the image.
+- *sort-determinant* (-e) - Parameter used as the argument for the sorting algorithm. 
+    - *brightness* - Use the perceived brightness as the sorting argument
+    - *hue* - use the HSL color space hue value as the sorting argument
+    - *saturation* - use the HSL color space saturation value as the sorting argument
 - *direction* (-d) - Pixel sorting direction in intervals.
     - *ascending* - Sort asceding according to the sorting determinant
     - *descending* - Sort descending according to the sorting determinant
@@ -73,11 +75,9 @@ Pixel sorting image editing utility implemented in Go.
 Usage:
   pixel-sorter [command]
 
-Available Commands:
-  brightness  Use brightness value as color sorting parameter.
+Available Commands:     
   help        Help about any command
-  hue         Use hue value as color sorting parameter.
-  saturation  Use saturation value as color sorting parameter.
+  image       Perform a pixel sorting operation on the specified image file.
 
 Flags:
   -a, --angle int                               The angle at which to sort the pixels.
@@ -96,6 +96,7 @@ Flags:
   -o, --order string                            Order of the graphic sorting stages. Options: [horizontal, vertical, horizontal-vertical, vertical-horizontal]. (default "horizontal-vertical")
       --output-media-path string                The path of the output media file to be saved. The path should end with one of the supported extensions. [jpg, png]
   -s, --scale float                             Image downscaling percentage factor. Options: [0.0 - 1.0]. (default 1)
+  -e, --sort-determinant string                 Parameter used as the argument for the sorting algorithm. Options: [brightness, hue, saturation]. (default "brightness")
   -v, --verbose                                 Enable verbose logging mode.
 
 Use "pixel-sorter [command] --help" for more information about a command.
