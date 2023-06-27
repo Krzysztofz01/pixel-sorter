@@ -26,14 +26,14 @@ var videoCmd = &cobra.Command{
 		outputFileName := "sorter-video.mp4"
 
 		var mask image.Image = nil
-		if len(FlagMaskFilePath) > 0 {
-			mask, err = utils.GetImageFromFile(FlagMaskFilePath)
+		if len(FlagMaskImageFilePath) > 0 {
+			mask, err = utils.GetImageFromFile(FlagMaskImageFilePath)
 			if err != nil {
 				return err
 			}
 		}
 
-		sorter, err := sorter.CreateVideoSorter(FlagImageFilePath, outputFileName, mask, Logger, options)
+		sorter, err := sorter.CreateVideoSorter(FlagInputMediaFilePath, outputFileName, mask, Logger, options)
 		if err != nil {
 			return err
 		}
