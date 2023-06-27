@@ -63,7 +63,7 @@ func init() {
 
 	rootCmd.PersistentFlags().StringVarP(&FlagSortDeterminant, "sort-determinant", "e", "brightness", "Parameter used as the argument for the sorting algorithm. Options: [brightness, hue, saturation].")
 
-	rootCmd.PersistentFlags().StringVarP(&FlagSortDirection, "direction", "d", "ascending", "Pixel sorting direction in intervals. Options: [ascending, descending, random].")
+	rootCmd.PersistentFlags().StringVarP(&FlagSortDirection, "direction", "d", "ascending", "Pixel sorting direction in intervals. Options: [ascending, descending, shuffle, random].")
 
 	rootCmd.PersistentFlags().StringVarP(&FlagSortOrder, "order", "o", "horizontal-vertical", "Order of the graphic sorting stages. Options: [horizontal, vertical, horizontal-vertical, vertical-horizontal].")
 
@@ -123,6 +123,8 @@ func parseCommonOptions() (*sorter.SorterOptions, error) {
 		options.SortDirection = sorter.SortAscending
 	case "descending":
 		options.SortDirection = sorter.SortDescending
+	case "shuffle":
+		options.SortDirection = sorter.Shuffle
 	case "random":
 		options.SortDirection = sorter.SortRandom
 	default:

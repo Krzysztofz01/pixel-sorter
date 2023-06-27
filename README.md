@@ -40,9 +40,10 @@ go build ./cli
     - *hue* - use the HSL color space hue value as the sorting argument
     - *saturation* - use the HSL color space saturation value as the sorting argument
 - *direction* (-d) - Pixel sorting direction in intervals.
-    - *ascending* - Sort asceding according to the sorting determinant
+    - *ascending* - Sort ascending according to the sorting determinant
     - *descending* - Sort descending according to the sorting determinant
-    - *random* - Shuffle by the sorting determinant
+    - *shuffle* - Shuffle by the sorting determinant
+    - *random* - Randomly sort ascending or descending according to the sorting determinant
 - *interval-determinant* (-i) - Parameter used to determine intervals.
     - *brightness* - Use the perceived brightness to determine intervals
     - *hue* - Use the HSL color space hue value to determine intervals
@@ -83,7 +84,7 @@ Flags:
   -a, --angle int                               The angle at which to sort the pixels.
   -b, --blending-mode string                    The blending mode algorithm to blend the sorted image into the original. Options: [none, lighten, darken]. (default "none")
   -c, --cycles int                              The count of sorting cycles that should be performed on the image. (default 1)
-  -d, --direction string                        Pixel sorting direction in intervals. Options: [ascending, descending, random]. (default "ascending")
+  -d, --direction string                        Pixel sorting direction in intervals. Options: [ascending, descending, shuffle, random]. (default "ascending")
   -h, --help                                    help for pixel-sorter
       --input-media-path string                 The path of the input media file to be processed.
   -i, --interval-determinant string             Parameter used to determine intervals. Options: [brightness, hue, mask, absolute, edge]. (default "brightness")
