@@ -1,4 +1,5 @@
 # Pixel-Sorter
+[![Go Reference](https://pkg.go.dev/badge/github.com/Krzysztofz01/pixel-sorter.svg)](https://pkg.go.dev/github.com/Krzysztofz01/pixel-sorter)
 [![Go Report Card](https://goreportcard.com/badge/github.com/Krzysztofz01/pixel-sorter)](https://goreportcard.com/report/github.com/Krzysztofz01/pixel-sorter)
 ![GitHub](https://img.shields.io/github/license/Krzysztofz01/pixel-sorter)
 ![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/Krzysztofz01/pixel-sorter?include_prereleases)
@@ -24,17 +25,20 @@ go build ./cli
 # Usage
 
 ### Commands
-- *brightness* - Use perceived brightness value as color sorting parameter.
-- *hue* - Use hue value as color sorting parameter.
-- *saturation* - Use saturation value as color sorting parameter.
+- *image* - Perform a pixel sorting operation on the specified image file. 
 - *help* - Print program help page.
 
 ### Flags
-- *image-file-path string* - The path of the image file to be processed.
-- *mask-file-path string* - The path of the image mask file to be process the image file.
+- *input-media-path* - The path of the input media file to be processed.
+- *output-media-path* - The path of the output media file to be saved. The path should end with one of the supported extensions.
+- *mask-image-path* - The path of the mask image file used to process the input media.
 
 - *angle* (-a) - The angle at which to sort the pixels.
 - *cycles* (-c) - The count of sorting cycles that should be performed on the image.
+- *sort-determinant* (-e) - Parameter used as the argument for the sorting algorithm. 
+    - *brightness* - Use the perceived brightness as the sorting argument
+    - *hue* - use the HSL color space hue value as the sorting argument
+    - *saturation* - use the HSL color space saturation value as the sorting argument
 - *direction* (-d) - Pixel sorting direction in intervals.
     - *ascending* - Sort ascending according to the sorting determinant
     - *descending* - Sort descending according to the sorting determinant
@@ -72,11 +76,9 @@ Pixel sorting image editing utility implemented in Go.
 Usage:
   pixel-sorter [command]
 
-Available Commands:
-  brightness  Use brightness value as color sorting parameter.
+Available Commands:     
   help        Help about any command
-  hue         Use hue value as color sorting parameter.
-  saturation  Use saturation value as color sorting parameter.
+  image       Perform a pixel sorting operation on the specified image file.
 
 Flags:
   -a, --angle int                               The angle at which to sort the pixels.
@@ -84,17 +86,18 @@ Flags:
   -c, --cycles int                              The count of sorting cycles that should be performed on the image. (default 1)
   -d, --direction string                        Pixel sorting direction in intervals. Options: [ascending, descending, shuffle, random]. (default "ascending")
   -h, --help                                    help for pixel-sorter
-      --image-file-path string                  The path of the image file to be processed.
+      --input-media-path string                 The path of the input media file to be processed.
   -i, --interval-determinant string             Parameter used to determine intervals. Options: [brightness, hue, mask, absolute, edge]. (default "brightness")
   -l, --interval-lower-threshold float          The lower threshold of the interval determination process. Options: [0.0 - 1.0]. (default 0.1)
   -k, --interval-max-length int                 The max length of the interval. Zero means no length limits.
-  -r, --interval-max-length-random-factor int   The value representing the range of values that can be randomly subtracted or added to the max interval length. Options: [>= 0]
+  -r, --interval-max-length-random-factor int   The value representing the range of values that can be randomly subtracted or added to the max interval length. Options: [0 <=]
   -u, --interval-upper-threshold float          The upper threshold of the interval determination process. Options: [0.0 - 1.0]. (default 0.9)
   -m, --mask                                    Exclude the sorting effect from masked out ares of the image.
-      --mask-file-path string                   The path of the image mask file to be process the image file.
+      --mask-image-path string                  The path of the mask image file used to process the input media.
   -o, --order string                            Order of the graphic sorting stages. Options: [horizontal, vertical, horizontal-vertical, vertical-horizontal]. (default "horizontal-vertical")
-  -f, --output-format string                    The output format of the graphic file. Options: [jpg, png]. (default "jpg")
+      --output-media-path string                The path of the output media file to be saved. The path should end with one of the supported extensions. [jpg, png]
   -s, --scale float                             Image downscaling percentage factor. Options: [0.0 - 1.0]. (default 1)
+  -e, --sort-determinant string                 Parameter used as the argument for the sorting algorithm. Options: [brightness, hue, saturation]. (default "brightness")
   -v, --verbose                                 Enable verbose logging mode.
 
 Use "pixel-sorter [command] --help" for more information about a command.

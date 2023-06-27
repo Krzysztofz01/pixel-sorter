@@ -113,33 +113,33 @@ func (sorter *defaultSorter) Sort() (image.Image, error) {
 		switch sorter.options.SortOrder {
 		case SortVertical:
 			{
-				if err := sorter.performParallelVerticalSort(&drawableImage); err != nil {
+				if err := sorter.performParallelVerticalSort(drawableImage); err != nil {
 					return nil, fmt.Errorf("sorter: failed to perform the vertical sort: %w", err)
 				}
 			}
 		case SortHorizontal:
 			{
-				if err := sorter.performParallelHorizontalSort(&drawableImage); err != nil {
+				if err := sorter.performParallelHorizontalSort(drawableImage); err != nil {
 					return nil, fmt.Errorf("sorter: failed to perform the horizontal sort: %w", err)
 				}
 			}
 		case SortVerticalAndHorizontal:
 			{
-				if err := sorter.performParallelVerticalSort(&drawableImage); err != nil {
+				if err := sorter.performParallelVerticalSort(drawableImage); err != nil {
 					return nil, fmt.Errorf("sorter: failed to perform the vertical sort: %w", err)
 				}
 
-				if err := sorter.performParallelHorizontalSort(&drawableImage); err != nil {
+				if err := sorter.performParallelHorizontalSort(drawableImage); err != nil {
 					return nil, fmt.Errorf("sorter: failed to perform the horizontal sort: %w", err)
 				}
 			}
 		case SortHorizontalAndVertical:
 			{
-				if err := sorter.performParallelHorizontalSort(&drawableImage); err != nil {
+				if err := sorter.performParallelHorizontalSort(drawableImage); err != nil {
 					return nil, fmt.Errorf("sorter: failed to perform the horizontal sort: %w", err)
 				}
 
-				if err := sorter.performParallelVerticalSort(&drawableImage); err != nil {
+				if err := sorter.performParallelVerticalSort(drawableImage); err != nil {
 					return nil, fmt.Errorf("sorter: failed to perform the vertical sort: %w", err)
 				}
 			}
@@ -174,8 +174,8 @@ func (sorter *defaultSorter) Sort() (image.Image, error) {
 	return drawableImage, nil
 }
 
-func (sorter *defaultSorter) performParallelHorizontalSort(drawableImage *draw.Image) error {
-	yLength := (*drawableImage).Bounds().Dy()
+func (sorter *defaultSorter) performParallelHorizontalSort(drawableImage draw.Image) error {
+	yLength := drawableImage.Bounds().Dy()
 	wg := sync.WaitGroup{}
 	wg.Add(yLength)
 
@@ -188,7 +188,7 @@ func (sorter *defaultSorter) performParallelHorizontalSort(drawableImage *draw.I
 
 			mu.RLock()
 
-			row, err := utils.GetImageRow(*drawableImage, yIndex)
+			row, err := utils.GetImageRow(drawableImage, yIndex)
 			if err != nil {
 				errCh <- fmt.Errorf("sorter: failed to retrieve the image pixel row for a given index: %w", err)
 				mu.RUnlock()
@@ -229,8 +229,8 @@ func (sorter *defaultSorter) performParallelHorizontalSort(drawableImage *draw.I
 	return err
 }
 
-func (sorter *defaultSorter) performParallelVerticalSort(drawableImage *draw.Image) error {
-	xLength := (*drawableImage).Bounds().Dx()
+func (sorter *defaultSorter) performParallelVerticalSort(drawableImage draw.Image) error {
+	xLength := drawableImage.Bounds().Dx()
 	wg := sync.WaitGroup{}
 	wg.Add(xLength)
 
@@ -243,7 +243,7 @@ func (sorter *defaultSorter) performParallelVerticalSort(drawableImage *draw.Ima
 
 			mu.RLock()
 
-			column, err := utils.GetImageColumn(*drawableImage, xIndex)
+			column, err := utils.GetImageColumn(drawableImage, xIndex)
 			if err != nil {
 				errCh <- fmt.Errorf("sorter: failed to retrieve the image pixel column for a given index: %w", err)
 				mu.RUnlock()
