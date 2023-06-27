@@ -1,11 +1,12 @@
 version: '3'
 
 vars:
+  CLI_PACKAGE: github.com/Krzysztofz01/pixel-sorter/cli
+  LIB_PACKAGE: github.com/Krzysztofz01/pixel-sorter/pkg
   PIXEL_SORTER_TAG:
     sh: git symbolic-ref -q --short HEAD || git describe --tags --exact-match
 
 # TODO: Add testing examples from the launch.json
-# TODO: Add profiling/benchmark tasks
 tasks:
   build:
     desc: Build the PixelSorterCLI for the current system and architecture with debug symbols included.
@@ -33,10 +34,27 @@ tasks:
   test:
     desc: Run tests for all packages.
     cmds:
-      - go test ./...
+      - go test -v ./...
 
   test:cover:
     desc: Run tests for all packages and generate a coverage raport.
+    vars:
+      COVERAGE: coverage.out
     cmds:
-      - go test -coverprofile coverage.out ./...
-      - go tool cover -html coverage.out
+      - go test -v -coverprofile {{.COVERAGE}} ./...
+      - go tool cover -html {{.COVERAGE}}
+
+  profile:
+    desc: Run a profiling test with given pixel sorter arguments (task profile --args) and display the pprof tool results.
+    vars:
+      CPU_PROFILE: cpu.prof
+      MEM_PROFILE: mem.prof
+    cmds:
+      - PIXEL_SORTER_CLI_ARGS="{{.CLI_ARGS}}" go test -v -cpuprofile {{.CPU_PROFILE}} -memprofile {{.MEM_PROFILE}} -run ^$ -bench . {{.CLI_PACKAGE}}
+      - go tool pprof -text {{.CPU_PROFILE}}
+      - go tool pprof -text {{.MEM_PROFILE}}
+
+  benchmark:
+    desc: Run a benchmark with given pixel sorter arguments (task benchark -- <args>).
+    cmds:
+      - PIXEL_SORTER_CLI_ARGS="{{.CLI_ARGS}}" go test -v -count 5 -run ^$ -bench . {{.CLI_PACKAGE}} -benchmem 
