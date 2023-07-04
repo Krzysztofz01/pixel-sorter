@@ -7,7 +7,7 @@
 
 Pixel sorting is a kind of photo editing, which is a subgenre of glitch art, the operation of which consists in reorganizing groups of pixels in a photo according to certain criteria. There are many programs whose task is to create the pixel sorting effect, but when creating my implementation in Go, I focused on optimizing this process in terms of time and creating a modular platform, thanks to which, implementation of new functionalities related to pixel sorting will be simple task.
 
-There are two crucial stages in the sorting process, the first of which is the division of pixel rows into intervals, i.e. pixels that, according to certain criteria, have common features. The next step is to perform a sort by a certain pixel parameter in a given interval. Intervals can be determined based on the perceived brightness, hue and saturation of the HSL color space, by a mask which is a external black and white image showing which areas are to be sorted, or by performing edge detection. The sorting itself can also be performed on the basis of perceived brightness, HSL color space parameters, or instead of sorting, pixels can be arranged randomly. The sorting operation can be performed vertically and horizontally in any order once any number of times. It is possible to sort colors according to a given angle, it is aslo possible to set fixed length intervals.
+There are two crucial stages in the sorting process, the first of which is the division of pixel rows into intervals, i.e. pixels that, according to certain criteria, have common features. The next step is to perform a sort by a certain pixel parameter in a given interval. Intervals can be determined based on the perceived brightness, hue and saturation of the HSL color space, by a mask which is a external black and white image showing which areas are to be sorted, or by performing edge detection. The sorting itself can also be performed on the basis of perceived brightness, HSL color space parameters, or instead of sorting, pixels can be arranged randomly. The sorting operation can be performed vertically and horizontally in any order once any number of times. It is possible to sort colors according to a given angle, it is also possible to set fixed length intervals.
 
 # Requirements and installation
 Required software:
@@ -47,6 +47,7 @@ go build ./cli
 - *interval-determinant* (-i) - Parameter used to determine intervals.
     - *brightness* - Use the perceived brightness to determine intervals
     - *hue* - Use the HSL color space hue value to determine intervals
+    - *saturation* - Use the HSL color space saturation value to determine intervals
     - *mask* - Use the external mask image to determine intervals
     - *absolute* - Use the color absolute value (old imprecise approach, but classic)
     - *edge* - Use a Canny edge detection algorithm to determine intervals
@@ -87,10 +88,10 @@ Flags:
   -d, --direction string                        Pixel sorting direction in intervals. Options: [ascending, descending, shuffle, random]. (default "ascending")
   -h, --help                                    help for pixel-sorter
       --input-media-path string                 The path of the input media file to be processed.
-  -i, --interval-determinant string             Parameter used to determine intervals. Options: [brightness, hue, mask, absolute, edge]. (default "brightness")
+  -i, --interval-determinant string             Parameter used to determine intervals. Options: [brightness, hue, saturation, mask, absolute, edge]. (default "brightness")
   -l, --interval-lower-threshold float          The lower threshold of the interval determination process. Options: [0.0 - 1.0]. (default 0.1)
   -k, --interval-max-length int                 The max length of the interval. Zero means no length limits.
-  -r, --interval-max-length-random-factor int   The value representing the range of values that can be randomly subtracted or added to the max interval length. Options: [0 <=]
+  -r, --interval-max-length-random-factor int   The value representing the range of values that can be randomly subtracted or added to the max interval length. Options: [>= 0]
   -u, --interval-upper-threshold float          The upper threshold of the interval determination process. Options: [0.0 - 1.0]. (default 0.9)
   -m, --mask                                    Exclude the sorting effect from masked out ares of the image.
       --mask-image-path string                  The path of the mask image file used to process the input media.
