@@ -1,95 +1,421 @@
 package sorter
 
 import (
-	"bytes"
 	"image"
 	"image/color"
 	"image/draw"
 	"testing"
 
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
-// TODO: Implement tests for all option combinations
-// TODO: Implement tests for masks
+// TODO: Currently the test are verifying that no errors occure but the resulting image is not verified
 
-func TestDefaultSorterShouldSortForSortByBrightnessSplitByBrightnessZeroAngle(t *testing.T) {
-	sorterOptions := SorterOptions{
-		SortByBrightness,
-		SortAscending,
-		SortHorizontalAndVertical,
-		SplitByBrightness,
-		0.0,
-		1.0,
-		0,
-		0,
-		0,
-		false,
-		1,
-		1,
-		BlendingNone,
-	}
+func TestDefaultOptionsAndSortDeterminantBrightness(t *testing.T) {
+	options := GetDefaultSorterOptions()
+	options.SortDeterminant = SortByBrightness
 
-	// NOTE: Preparing the expected image
-	p1 := image.Point{0, 0}
-	p2 := image.Point{mock_image_width, mock_image_height}
-	cBlack := color.RGBA{0, 0, 0, 0xff}
-	cWhite := color.RGBA{255, 255, 255, 0xff}
-	expectedImage := image.NewRGBA(image.Rectangle{p1, p2})
-	for xIndex := 0; xIndex < mock_image_width; xIndex += 1 {
-		for yIndex := 0; yIndex < mock_image_height; yIndex += 1 {
-			if xIndex < 2 {
-				expectedImage.Set(xIndex, yIndex, cBlack)
-			} else {
-				expectedImage.Set(xIndex, yIndex, cWhite)
-			}
-		}
-	}
+	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), nil, nil, options)
 
-	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), nil, mockLogger(), &sorterOptions)
+	assert.NotNil(t, sorter)
 	assert.Nil(t, err)
 
-	actualImage, err := sorter.Sort()
+	result, err := sorter.Sort()
+
+	assert.NotNil(t, result)
 	assert.Nil(t, err)
-
-	for yIndex := 0; yIndex < mock_image_height; yIndex += 1 {
-		for xIndex := 0; xIndex < mock_image_width; xIndex += 1 {
-			eR, eG, eB, _ := expectedImage.At(xIndex, yIndex).RGBA()
-			aR, aG, aB, _ := actualImage.At(xIndex, yIndex).RGBA()
-
-			assert.Equal(t, eR, aR)
-			assert.Equal(t, eG, aG)
-			assert.Equal(t, eB, aB)
-		}
-	}
 }
 
-func TestDefaultSorterShouldSortForSortByBrightnessSplitByBrightnessNonZeroAngle(t *testing.T) {
-	sorterOptions := SorterOptions{
-		SortByBrightness,
-		SortAscending,
-		SortHorizontalAndVertical,
-		SplitByBrightness,
-		0.0,
-		1.0,
-		0,
-		0,
-		45,
-		false,
-		1,
-		1,
-		BlendingNone,
-	}
+func TestDefaultOptionsAndSortDeterminantHue(t *testing.T) {
+	options := GetDefaultSorterOptions()
+	options.SortDeterminant = SortByHue
 
-	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), nil, mockLogger(), &sorterOptions)
+	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), nil, nil, options)
+
+	assert.NotNil(t, sorter)
 	assert.Nil(t, err)
 
-	actualImage, err := sorter.Sort()
+	result, err := sorter.Sort()
+
+	assert.NotNil(t, result)
+	assert.Nil(t, err)
+}
+
+func TestDefaultOptionsAndSortDeterminantSaturation(t *testing.T) {
+	options := GetDefaultSorterOptions()
+	options.SortDeterminant = SortBySaturation
+
+	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), nil, nil, options)
+
+	assert.NotNil(t, sorter)
 	assert.Nil(t, err)
 
-	// TODO: There is no ease way to check if the angle sort was successful.
-	assert.NotNil(t, actualImage)
+	result, err := sorter.Sort()
+
+	assert.NotNil(t, result)
+	assert.Nil(t, err)
+}
+
+func TestDefaultOptionsAndAngle45Degrees(t *testing.T) {
+	options := GetDefaultSorterOptions()
+	options.Angle = 45
+
+	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), nil, nil, options)
+
+	assert.NotNil(t, sorter)
+	assert.Nil(t, err)
+
+	result, err := sorter.Sort()
+
+	assert.NotNil(t, result)
+	assert.Nil(t, err)
+}
+
+func TestDefaultOptionsAndCycles3(t *testing.T) {
+	options := GetDefaultSorterOptions()
+	options.Cycles = 3
+
+	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), nil, nil, options)
+
+	assert.NotNil(t, sorter)
+	assert.Nil(t, err)
+
+	result, err := sorter.Sort()
+
+	assert.NotNil(t, result)
+	assert.Nil(t, err)
+}
+
+func TestDefaultOptionsAndSortDirectionAscending(t *testing.T) {
+	options := GetDefaultSorterOptions()
+	options.SortDirection = SortAscending
+
+	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), nil, nil, options)
+
+	assert.NotNil(t, sorter)
+	assert.Nil(t, err)
+
+	result, err := sorter.Sort()
+
+	assert.NotNil(t, result)
+	assert.Nil(t, err)
+}
+
+func TestDefaultOptionsAndSortDirectionDescending(t *testing.T) {
+	options := GetDefaultSorterOptions()
+	options.SortDirection = SortDescending
+
+	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), nil, nil, options)
+
+	assert.NotNil(t, sorter)
+	assert.Nil(t, err)
+
+	result, err := sorter.Sort()
+
+	assert.NotNil(t, result)
+	assert.Nil(t, err)
+}
+
+func TestDefaultOptionsAndSortDirectionShuffle(t *testing.T) {
+	options := GetDefaultSorterOptions()
+	options.SortDirection = Shuffle
+
+	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), nil, nil, options)
+
+	assert.NotNil(t, sorter)
+	assert.Nil(t, err)
+
+	result, err := sorter.Sort()
+
+	assert.NotNil(t, result)
+	assert.Nil(t, err)
+}
+
+func TestDefaultOptionsAndSortDirectionRandom(t *testing.T) {
+	options := GetDefaultSorterOptions()
+	options.SortDirection = SortRandom
+
+	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), nil, nil, options)
+
+	assert.NotNil(t, sorter)
+	assert.Nil(t, err)
+
+	result, err := sorter.Sort()
+
+	assert.NotNil(t, result)
+	assert.Nil(t, err)
+}
+
+func TestDefaultOptionsAndIntervalDeterminantBrightness(t *testing.T) {
+	options := GetDefaultSorterOptions()
+	options.IntervalDeterminant = SplitByBrightness
+
+	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), nil, nil, options)
+
+	assert.NotNil(t, sorter)
+	assert.Nil(t, err)
+
+	result, err := sorter.Sort()
+
+	assert.NotNil(t, result)
+	assert.Nil(t, err)
+}
+
+func TestDefaultOptionsAndIntervalDeterminantHue(t *testing.T) {
+	options := GetDefaultSorterOptions()
+	options.IntervalDeterminant = SplitByHue
+
+	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), nil, nil, options)
+
+	assert.NotNil(t, sorter)
+	assert.Nil(t, err)
+
+	result, err := sorter.Sort()
+
+	assert.NotNil(t, result)
+	assert.Nil(t, err)
+}
+
+func TestDefaultOptionsAndIntervalDeterminantSaturation(t *testing.T) {
+	options := GetDefaultSorterOptions()
+	options.IntervalDeterminant = SplitBySaturation
+
+	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), nil, nil, options)
+
+	assert.NotNil(t, sorter)
+	assert.Nil(t, err)
+
+	result, err := sorter.Sort()
+
+	assert.NotNil(t, result)
+	assert.Nil(t, err)
+}
+
+func TestDefaultOptionsAndIntervalDeterminantMask(t *testing.T) {
+	options := GetDefaultSorterOptions()
+	options.IntervalDeterminant = SplitByMask
+
+	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), mockTestBlackAndWhiteStripesImage(), nil, options)
+
+	assert.NotNil(t, sorter)
+	assert.Nil(t, err)
+
+	result, err := sorter.Sort()
+
+	assert.NotNil(t, result)
+	assert.Nil(t, err)
+}
+
+func TestDefaultOptionsAndIntervalDeterminantAbsolute(t *testing.T) {
+	options := GetDefaultSorterOptions()
+	options.IntervalDeterminant = SplitByAbsoluteColor
+
+	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), nil, nil, options)
+
+	assert.NotNil(t, sorter)
+	assert.Nil(t, err)
+
+	result, err := sorter.Sort()
+
+	assert.NotNil(t, result)
+	assert.Nil(t, err)
+}
+
+func TestDefaultOptionsAndIntervalDeterminantEdge(t *testing.T) {
+	options := GetDefaultSorterOptions()
+	options.IntervalDeterminant = SplitByEdgeDetection
+
+	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), nil, nil, options)
+
+	assert.NotNil(t, sorter)
+	assert.Nil(t, err)
+
+	result, err := sorter.Sort()
+
+	assert.NotNil(t, result)
+	assert.Nil(t, err)
+}
+
+func TestDefaultOptionsAndLowerIntervalThreshold04UpperIntervalThreshold06(t *testing.T) {
+	options := GetDefaultSorterOptions()
+	options.IntervalDeterminantLowerThreshold = 0.4
+	options.IntervalDeterminantUpperThreshold = 0.6
+
+	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), nil, nil, options)
+
+	assert.NotNil(t, sorter)
+	assert.Nil(t, err)
+
+	result, err := sorter.Sort()
+
+	assert.NotNil(t, result)
+	assert.Nil(t, err)
+}
+
+func TestDefaultOptionsAndIntervalMaxLength2(t *testing.T) {
+	options := GetDefaultSorterOptions()
+	options.IntervalLength = 2
+
+	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), nil, nil, options)
+
+	assert.NotNil(t, sorter)
+	assert.Nil(t, err)
+
+	result, err := sorter.Sort()
+
+	assert.NotNil(t, result)
+	assert.Nil(t, err)
+}
+
+func TestDefaultOptionsAndIntervalMaxLength1RandomFactor1(t *testing.T) {
+	options := GetDefaultSorterOptions()
+	options.IntervalLength = 1
+	options.IntervalLengthRandomFactor = 1
+
+	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), nil, nil, options)
+
+	assert.NotNil(t, sorter)
+	assert.Nil(t, err)
+
+	result, err := sorter.Sort()
+
+	assert.NotNil(t, result)
+	assert.Nil(t, err)
+}
+
+func TestDefaultOptionsAndUseMask(t *testing.T) {
+	options := GetDefaultSorterOptions()
+	options.UseMask = true
+
+	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), mockTestBlackAndWhiteStripesImage(), nil, options)
+
+	assert.NotNil(t, sorter)
+	assert.Nil(t, err)
+
+	result, err := sorter.Sort()
+
+	assert.NotNil(t, result)
+	assert.Nil(t, err)
+}
+
+func TestDefaultOptionsAndOrderHorizontal(t *testing.T) {
+	options := GetDefaultSorterOptions()
+	options.SortOrder = SortHorizontal
+
+	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), nil, nil, options)
+
+	assert.NotNil(t, sorter)
+	assert.Nil(t, err)
+
+	result, err := sorter.Sort()
+
+	assert.NotNil(t, result)
+	assert.Nil(t, err)
+}
+
+func TestDefaultOptionsAndOrderVertical(t *testing.T) {
+	options := GetDefaultSorterOptions()
+	options.SortOrder = SortVertical
+
+	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), nil, nil, options)
+
+	assert.NotNil(t, sorter)
+	assert.Nil(t, err)
+
+	result, err := sorter.Sort()
+
+	assert.NotNil(t, result)
+	assert.Nil(t, err)
+}
+
+func TestDefaultOptionsAndOrderHorizontalVertical(t *testing.T) {
+	options := GetDefaultSorterOptions()
+	options.SortOrder = SortHorizontalAndVertical
+
+	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), nil, nil, options)
+
+	assert.NotNil(t, sorter)
+	assert.Nil(t, err)
+
+	result, err := sorter.Sort()
+
+	assert.NotNil(t, result)
+	assert.Nil(t, err)
+}
+
+func TestDefaultOptionsAndOrderVerticalHorizontal(t *testing.T) {
+	options := GetDefaultSorterOptions()
+	options.SortOrder = SortVerticalAndHorizontal
+
+	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), nil, nil, options)
+
+	assert.NotNil(t, sorter)
+	assert.Nil(t, err)
+
+	result, err := sorter.Sort()
+
+	assert.NotNil(t, result)
+	assert.Nil(t, err)
+}
+
+func TestDefaultOptionsAndScale05(t *testing.T) {
+	options := GetDefaultSorterOptions()
+	options.Scale = 0.5
+
+	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), nil, nil, options)
+
+	assert.NotNil(t, sorter)
+	assert.Nil(t, err)
+
+	result, err := sorter.Sort()
+
+	assert.NotNil(t, result)
+	assert.Nil(t, err)
+}
+
+func TestDefaultOptionsAndBlendingModeNone(t *testing.T) {
+	options := GetDefaultSorterOptions()
+	options.Blending = BlendingNone
+
+	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), nil, nil, options)
+
+	assert.NotNil(t, sorter)
+	assert.Nil(t, err)
+
+	result, err := sorter.Sort()
+
+	assert.NotNil(t, result)
+	assert.Nil(t, err)
+}
+
+func TestDefaultOptionsAndBlendingModeLighten(t *testing.T) {
+	options := GetDefaultSorterOptions()
+	options.Blending = BlendingLighten
+
+	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), nil, nil, options)
+
+	assert.NotNil(t, sorter)
+	assert.Nil(t, err)
+
+	result, err := sorter.Sort()
+
+	assert.NotNil(t, result)
+	assert.Nil(t, err)
+}
+
+func TestDefaultOptionsAndBlendingModeDarken(t *testing.T) {
+	options := GetDefaultSorterOptions()
+	options.Blending = BlendingDarken
+
+	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), nil, nil, options)
+
+	assert.NotNil(t, sorter)
+	assert.Nil(t, err)
+
+	result, err := sorter.Sort()
+
+	assert.NotNil(t, result)
+	assert.Nil(t, err)
 }
 
 const (
@@ -117,13 +443,4 @@ func mockTestBlackAndWhiteStripesImage() draw.Image {
 	}
 
 	return image
-}
-
-func mockLogger() *logrus.Logger {
-	loggerBuffer := bytes.Buffer{}
-
-	return &logrus.Logger{
-		Out:       &loggerBuffer,
-		Formatter: &logrus.TextFormatter{},
-	}
 }
