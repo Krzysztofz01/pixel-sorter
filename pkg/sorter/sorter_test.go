@@ -95,7 +95,7 @@ func TestSorterOptionsShouldNotValidateInvalidScale(t *testing.T) {
 
 func TestSorterOptionsShouldNotValidateIntervalLength(t *testing.T) {
 	options := GetDefaultSorterOptions()
-	options.Scale = -1
+	options.IntervalLength = -1
 
 	valid, msg := options.AreValid()
 
