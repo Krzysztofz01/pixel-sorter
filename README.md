@@ -11,15 +11,18 @@ There are two crucial stages in the sorting process, the first of which is the d
 
 # Requirements and installation
 Required software:
-- **git** - to download the source code from the repository
-- **go (version: 1.19+)** - to build the source code locally
+- **[git](https://git-scm.com/)** - to download the source code from the repository
+- **[task](https://taskfile.dev/)** - task is used as the main build tool
+- **[go (version: 1.19+)](https://go.dev/)** - to build the source code locally
 
+
+Installation (Linux, Windows and MacOS):
 ```sh
 git clone https://github.com/Krzysztofz01/pixel-sorter
 
 cd pixel-sorter
 
-go build ./cli
+task build
 ```
 
 # Usage
