@@ -76,8 +76,10 @@ func (sorter *defaultVideoSorter) Sort() error {
 		videoOptions.StreamFile = inputVideo.FileName()
 	}
 
-	// FIXME: Take the sorter options scale factor under account
-	outputVideo, err := vidio.NewVideoWriter(sorter.videoOutputPath, inputVideo.Width(), inputVideo.Height(), videoOptions)
+	targetWidth := int(float64(inputVideo.Width()) * sorter.options.Scale)
+	targetHeight := int(float64(inputVideo.Height()) * sorter.options.Scale)
+
+	outputVideo, err := vidio.NewVideoWriter(sorter.videoOutputPath, targetWidth, targetHeight, videoOptions)
 	if err != nil {
 		return fmt.Errorf("sorter: failed to create the output video file: %w", err)
 	}
@@ -93,7 +95,7 @@ func (sorter *defaultVideoSorter) Sort() error {
 		sorter.logger.Debugf("Frame %d/%d starting the processing step", frameNumber, frameCount)
 		frameSortingExecTime := time.Now()
 
-		frameSorter, err := CreateSorter(frameBuffer, sorter.maskImage, sorter.logger.Logger, sorter.options)
+		frameSorter, err := CreateSorter(frameBuffer, sorter.maskImage, nil, sorter.options)
 		if err != nil {
 			return fmt.Errorf("sorter: failed to create a default sorter instance for the frame %d/%d: %w", frameNumber, frameCount, err)
 		}
