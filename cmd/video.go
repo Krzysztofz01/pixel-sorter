@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"image"
+	"time"
 
 	"github.com/Krzysztofz01/pixel-sorter/pkg/sorter"
 	"github.com/Krzysztofz01/pixel-sorter/pkg/utils"
@@ -14,16 +15,14 @@ var videoCmd = &cobra.Command{
 	Long:  "Accept a video as the sorting input.",
 
 	RunE: func(cmd *cobra.Command, args []string) error {
+		LocalLogger.Info("Starting the video pixel sorting.")
+		commandExecTime := time.Now()
+
 		options, err := parseCommonOptions()
 		if err != nil {
 			LocalLogger.Errorf("Failed to parse the options: %s", err)
 			return err
 		}
-
-		// TODO: Hardcoded for now. The sort determinant should be a flag and not a command
-		options.SortDeterminant = sorter.SortByBrightness
-		// TODO: Hardcoded for now. The explicit output path will be implemented in the future
-		outputFileName := "sorter-video.mp4"
 
 		var mask image.Image = nil
 		if len(FlagMaskImageFilePath) > 0 {
@@ -33,7 +32,7 @@ var videoCmd = &cobra.Command{
 			}
 		}
 
-		sorter, err := sorter.CreateVideoSorter(FlagInputMediaFilePath, outputFileName, mask, Logger, options)
+		sorter, err := sorter.CreateVideoSorter(FlagInputMediaFilePath, FlagOutputMediaFilePath, mask, Logger, options)
 		if err != nil {
 			return err
 		}
@@ -42,6 +41,7 @@ var videoCmd = &cobra.Command{
 			return err
 		}
 
+		LocalLogger.Infof("Video pixel sorting finished (%s).", time.Since(commandExecTime))
 		return nil
 	},
 }
