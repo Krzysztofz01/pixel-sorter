@@ -1,7 +1,7 @@
 package sorter
 
 import (
-	"errors"
+	"bytes"
 	"fmt"
 	"image"
 	"image/color"
@@ -22,15 +22,23 @@ type defaultSorter struct {
 	options *SorterOptions
 }
 
+// Create a new image sorter instance by providing the image to be sorted and optional parameters such as mask image
+// logger instance and custom sorter options. This function will return a new sorter instance or a error.
 func CreateSorter(image image.Image, mask image.Image, logger *logrus.Logger, options *SorterOptions) (Sorter, error) {
 	sorter := new(defaultSorter)
 	sorter.image = image
 
 	if logger == nil {
-		return nil, errors.New("sorter: invalid logger reference provided")
-	}
+		loggerBuffer := bytes.Buffer{}
+		defaultLogger := &logrus.Logger{
+			Out:       &loggerBuffer,
+			Formatter: &logrus.TextFormatter{},
+		}
 
-	sorter.logger = logger.WithField("prefix", "pixel-sorter")
+		sorter.logger = defaultLogger.WithField("prefix", "pixel-sorter")
+	} else {
+		sorter.logger = logger.WithField("prefix", "pixel-sorter")
+	}
 
 	if options != nil {
 		sorter.logger.Debugln("Running the sorter with specified sorter options.")
