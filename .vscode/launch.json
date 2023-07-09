@@ -556,7 +556,7 @@
                 "image",
                 "--sort-determinant",
                 "brightness",
-                "--image-media-path",
+                "--input-media-path",
                 "image-test.png",
                 "--output-media-path",
                 "image-test-sorted.jpg",
