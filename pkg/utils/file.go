@@ -12,6 +12,11 @@ import (
 
 // Get the image from a file specified by the given path
 func GetImageFromFile(filePath string) (image.Image, error) {
+	filePath, err := EscapePathQuotes(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("utils: failed to escape the specified image path: %w", err)
+	}
+
 	file, err := os.Open(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("utils: can not open the specified file: %w", err)
@@ -31,8 +36,39 @@ func GetImageFromFile(filePath string) (image.Image, error) {
 	return img, nil
 }
 
+// Remove the quotes surrounding the path. The operation will fail for more than 10 iterations.
+func EscapePathQuotes(path string) (string, error) {
+	const maxIterations int = 10
+
+	var currentIterations int = 0
+	var pathTrimmed string = path
+
+	for {
+		pathTrimmed = path
+		pathTrimmed = strings.TrimPrefix(strings.TrimSuffix(pathTrimmed, "\""), "\"")
+		pathTrimmed = strings.TrimPrefix(strings.TrimSuffix(pathTrimmed, "'"), "'")
+
+		if pathTrimmed == path {
+			return pathTrimmed, nil
+		}
+
+		path = pathTrimmed
+
+		if currentIterations >= maxIterations {
+			return "", errors.New("file: the path quite trim operation iterations count exceeded the limit")
+		}
+
+		currentIterations += 1
+	}
+}
+
 // Create a new file with the given name and format and store the given image in it
 func StoreImageToFile(filePath string, fileFormat string, img image.Image) error {
+	filePath, err := EscapePathQuotes(filePath)
+	if err != nil {
+		return fmt.Errorf("utils: failed to escape the specified image path: %w", err)
+	}
+
 	fileFormatLower := strings.ToLower(fileFormat)
 
 	switch fileFormatLower {
