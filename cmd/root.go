@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -201,12 +202,33 @@ func parseCommonOptions() (*sorter.SorterOptions, error) {
 
 // Helper function used to determine if the current path file extension matches the possible extension collection.
 func determineFileExtension(path string, extensions []string) (string, bool) {
-	lowerPath := strings.ToLower(path)
-	for _, extension := range extensions {
-		lowerExtension := strings.ToLower(extension)
+	const trimIterationsMax int = 10
+	var trimIterations int = 0
+	var pathTrimmed string = path
 
-		if strings.HasSuffix(lowerPath, lowerExtension) {
-			return lowerExtension, true
+	for {
+		pathTrimmed = path
+		pathTrimmed = strings.TrimPrefix(strings.TrimSuffix(pathTrimmed, "\""), "\"")
+		pathTrimmed = strings.TrimPrefix(strings.TrimSuffix(pathTrimmed, "'"), "'")
+
+		if pathTrimmed == path {
+			break
+		}
+
+		path = pathTrimmed
+
+		if trimIterations == trimIterationsMax {
+			return "", false
+		}
+	}
+
+	targetExtension := strings.ToLower(filepath.Ext(path))
+
+	for _, allowedExtension := range extensions {
+		lowerAllowedExtension := strings.ToLower(allowedExtension)
+
+		if strings.HasSuffix(targetExtension, lowerAllowedExtension) {
+			return lowerAllowedExtension, true
 		}
 	}
 
