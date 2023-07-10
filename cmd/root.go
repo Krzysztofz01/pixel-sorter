@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/Krzysztofz01/pixel-sorter/pkg/sorter"
+	"github.com/Krzysztofz01/pixel-sorter/pkg/utils"
 	nestedFormatter "github.com/antonfisher/nested-logrus-formatter"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -202,24 +203,9 @@ func parseCommonOptions() (*sorter.SorterOptions, error) {
 
 // Helper function used to determine if the current path file extension matches the possible extension collection.
 func determineFileExtension(path string, extensions []string) (string, bool) {
-	const trimIterationsMax int = 10
-	var trimIterations int = 0
-	var pathTrimmed string = path
-
-	for {
-		pathTrimmed = path
-		pathTrimmed = strings.TrimPrefix(strings.TrimSuffix(pathTrimmed, "\""), "\"")
-		pathTrimmed = strings.TrimPrefix(strings.TrimSuffix(pathTrimmed, "'"), "'")
-
-		if pathTrimmed == path {
-			break
-		}
-
-		path = pathTrimmed
-
-		if trimIterations == trimIterationsMax {
-			return "", false
-		}
+	path, err := utils.EscapePathQuotes(path)
+	if err != nil {
+		return "", false
 	}
 
 	targetExtension := strings.ToLower(filepath.Ext(path))

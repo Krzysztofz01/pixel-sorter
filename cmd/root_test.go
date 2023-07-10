@@ -11,12 +11,13 @@ func TestDetermineFileExtensionShouldCorrectlyPickTheFileExtension(t *testing.T)
 		extension string
 		ok        bool
 	}{
-		"hello/world.jpg":             {"jpg", true},
-		"hello/world.pNg":             {"png", true},
-		"hello/world.gif":             {"", false},
-		"'hello/world.jpg'":           {"jpg", true},
-		"\"hello/world.png\"":         {"png", true},
-		"\"'\"'hellp/world.jpg'\"'\"": {"jpg", true},
+		"hello/world.jpg":                       {"jpg", true},
+		"hello/world.pNg":                       {"png", true},
+		"hello/world.gif":                       {"", false},
+		"'hello/world.jpg'":                     {"jpg", true},
+		"\"hello/world.png\"":                   {"png", true},
+		"\"'\"'hellp/world.jpg'\"'\"":           {"jpg", true},
+		"'''''''''''hello/world.jpg'''''''''''": {"", false},
 	}
 
 	for path, expected := range cases {
