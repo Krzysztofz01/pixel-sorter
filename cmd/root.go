@@ -129,6 +129,10 @@ func parseCommonOptions() (*sorter.SorterOptions, error) {
 		options.SortDirection = sorter.Shuffle
 	case "random":
 		options.SortDirection = sorter.SortRandom
+	case "ascending-gradient":
+		options.SortDirection = sorter.SortAscendingGradient
+	case "descending-gradient":
+		options.SortDirection = sorter.SortDescendingGradient
 	default:
 		return nil, fmt.Errorf("cmd: invalid sort direction specified (%s)", FlagSortDirection)
 	}
