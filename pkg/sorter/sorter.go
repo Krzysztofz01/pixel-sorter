@@ -31,6 +31,11 @@ const (
 	SortDescending
 	Shuffle
 	SortRandom
+	// TODO: Other SortDirection's are interpreting the the order of the existing colors in the intervals via
+	// the weight value. The gradient ones are using the weight partialy, and create colors that are not present
+	// in the original image. The way that those variants work may be misleading.
+	SortAscendingGradient
+	SortDescendingGradient
 )
 
 // Flag representing the determinant for spliting the image into intervals

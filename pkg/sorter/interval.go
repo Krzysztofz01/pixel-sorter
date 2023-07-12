@@ -3,9 +3,12 @@ package sorter
 import (
 	"fmt"
 	"image/color"
+	"math"
 	"math/rand"
 	"sort"
 	"time"
+
+	"github.com/Krzysztofz01/pixel-sorter/pkg/utils"
 )
 
 const (
@@ -116,6 +119,44 @@ func (interval *ValueWeightInterval) Sort(direction SortDirection) []color.Color
 
 				sort.Slice(interval.items, sortDeterminantFunc)
 			}
+		case SortAscendingGradient, SortDescendingGradient:
+			{
+				min := interval.items[0]
+				max := interval.items[0]
+				for _, value := range interval.items {
+					if value.weight < min.weight {
+						min = value
+					}
+
+					if value.weight > max.weight {
+						max = value
+					}
+				}
+
+				midLerp := utils.Lerp(float64(min.weight), float64(max.weight), 0.5)
+				midDelta := math.Inf(+1)
+				mid := interval.items[0]
+
+				for _, value := range interval.items {
+					delta := math.Abs(float64(value.weight) - midLerp)
+					if delta < midDelta {
+						midDelta = delta
+						mid = value
+					}
+				}
+
+				colors := make([]color.Color, interval.Count())
+				for i := 0; i < interval.Count(); i += 1 {
+					t := float64(i) / float64(interval.Count())
+
+					colorLerpMinMid := utils.InterpolateColor(min.color, mid.color, t)
+					colorLerpMidMax := utils.InterpolateColor(mid.color, max.color, t)
+
+					colors[i] = utils.InterpolateColor(colorLerpMinMid, colorLerpMidMax, t)
+				}
+
+				return colors
+			}
 		case Shuffle:
 			{
 				random := rand.New(rand.NewSource(time.Now().UnixNano()))
@@ -202,6 +243,44 @@ func (interval *NormalizedWeightInterval) Sort(direction SortDirection) []color.
 				}
 
 				sort.Slice(interval.items, sortDeterminantFunc)
+			}
+		case SortAscendingGradient, SortDescendingGradient:
+			{
+				min := interval.items[0]
+				max := interval.items[0]
+				for _, value := range interval.items {
+					if value.weight < min.weight {
+						min = value
+					}
+
+					if value.weight > max.weight {
+						max = value
+					}
+				}
+
+				midLerp := utils.Lerp(min.weight, max.weight, 0.5)
+				midDelta := math.Inf(+1)
+				mid := interval.items[0]
+
+				for _, value := range interval.items {
+					delta := math.Abs(value.weight - midLerp)
+					if delta < midDelta {
+						midDelta = delta
+						mid = value
+					}
+				}
+
+				colors := make([]color.Color, interval.Count())
+				for i := 0; i < interval.Count(); i += 1 {
+					t := float64(i) / float64(interval.Count())
+
+					colorLerpMinMid := utils.InterpolateColor(min.color, mid.color, t)
+					colorLerpMidMax := utils.InterpolateColor(mid.color, max.color, t)
+
+					colors[i] = utils.InterpolateColor(colorLerpMinMid, colorLerpMidMax, t)
+				}
+
+				return colors
 			}
 		case Shuffle:
 			{
