@@ -123,3 +123,21 @@ func BlendRGBA(a, b color.RGBA, mode BlendingMode) color.RGBA {
 		panic("color-utils: undefined blending mode provided")
 	}
 }
+
+// Perform a RGBA-based linear interpolation between two colors and return the interpolated color.RGBA for the specified point
+func InterpolateColor(a, b color.Color, t float64) color.RGBA {
+	aRgba := ColorToRgba(a)
+	bRgba := ColorToRgba(b)
+
+	rLerp := Lerp(float64(aRgba.R), float64(bRgba.R), t)
+	gLerp := Lerp(float64(aRgba.G), float64(bRgba.G), t)
+	bLerp := Lerp(float64(aRgba.B), float64(bRgba.B), t)
+	aLerp := Lerp(float64(aRgba.A), float64(bRgba.A), t)
+
+	return color.RGBA{
+		R: uint8(rLerp),
+		G: uint8(gLerp),
+		B: uint8(bLerp),
+		A: uint8(aLerp),
+	}
+}
