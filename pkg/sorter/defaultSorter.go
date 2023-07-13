@@ -321,7 +321,7 @@ func (sorter *defaultSorter) performSortOnImageStrip(imageStrip []color.Color, m
 			}
 		} else {
 			if interval.Any() {
-				sortedIntervalItems := interval.Sort(sorter.options.SortDirection)
+				sortedIntervalItems := interval.Sort(sorter.options.SortDirection, sorter.options.IntervalPainting)
 				sortedImageStrip = append(sortedImageStrip, sortedIntervalItems...)
 
 				interval = sorter.CreateInterval()
@@ -333,7 +333,7 @@ func (sorter *defaultSorter) performSortOnImageStrip(imageStrip []color.Color, m
 	}
 
 	if interval.Any() {
-		sortedIntervalItems := interval.Sort(sorter.options.SortDirection)
+		sortedIntervalItems := interval.Sort(sorter.options.SortDirection, sorter.options.IntervalPainting)
 		sortedImageStrip = append(sortedImageStrip, sortedIntervalItems...)
 	}
 
