@@ -123,3 +123,26 @@ func BlendRGBA(a, b color.RGBA, mode BlendingMode) color.RGBA {
 		panic("color-utils: undefined blending mode provided")
 	}
 }
+
+// Create a average color based on the provided colors depending
+// on the RGBA color components.
+// TODO: Unit tests implementation
+func AverageColor(c ...color.Color) color.Color {
+	r, g, b, a := 0, 0, 0, 0
+	for _, color := range c {
+		rgba := ColorToRgba(color)
+
+		r += int(rgba.R)
+		g += int(rgba.G)
+		b += int(rgba.B)
+		a += int(rgba.A)
+	}
+
+	paramCount := len(c)
+	return color.RGBA{
+		R: uint8(r / paramCount),
+		G: uint8(g / paramCount),
+		B: uint8(b / paramCount),
+		A: uint8(a / paramCount),
+	}
+}
