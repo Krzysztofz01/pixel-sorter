@@ -58,6 +58,52 @@ func GetImageColumn(image image.Image, xIndex int) ([]color.Color, error) {
 	return column, nil
 }
 
+// Create a column of colors representing the averaged value of the colors of several columns. A "scaling of pixels"
+// to the size of the number of columns passed follows. Example: passing three columns for the averaging, will create
+// an averaged column that can replace the mentioned three columns. This will then create "pixels" with a size of 3x3.
+// TODO: Unit test implementation.
+func AverageImageColumns(columns [][]color.Color) ([]color.Color, error) {
+	width := len(columns)
+	if width == 0 {
+		return nil, errors.New("image-utils: no columns provided to calculate average column color values")
+	}
+
+	height := len(columns[0])
+	for _, column := range columns {
+		if len(column) != height {
+			return nil, errors.New("image-utils: provided column length missmatch")
+		}
+	}
+
+	averageColumn := make([]color.Color, 0, height)
+
+	for sectionIndex := 0; sectionIndex < height; sectionIndex += width {
+		colors := make([]color.Color, 0, width*width)
+
+		for innerSectionIndex := sectionIndex; innerSectionIndex < sectionIndex+width; innerSectionIndex += 1 {
+			if innerSectionIndex >= height {
+				continue
+			}
+
+			for columnIndex := 0; columnIndex < width; columnIndex += 1 {
+				color := columns[columnIndex][innerSectionIndex]
+				colors = append(colors, color)
+			}
+		}
+
+		averageColor := AverageColor(colors...)
+		for averageColumnIndex := sectionIndex; averageColumnIndex < sectionIndex+width; averageColumnIndex += 1 {
+			if averageColumnIndex >= height {
+				continue
+			}
+
+			averageColumn[averageColumnIndex] = averageColor
+		}
+	}
+
+	return averageColumn, nil
+}
+
 // Get the image row as a color.Color interface implementation slice specified by the y image index. The retrieval
 // process is run parallel in several goroutines.
 func GetImageRow(image image.Image, yIndex int) ([]color.Color, error) {
