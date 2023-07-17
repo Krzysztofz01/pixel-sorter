@@ -61,7 +61,6 @@ func GetImageColumn(image image.Image, xIndex int) ([]color.Color, error) {
 // Create a column of colors representing the averaged value of the colors of several columns. A "scaling of pixels"
 // to the size of the number of columns passed follows. Example: passing three columns for the averaging, will create
 // an averaged column that can replace the mentioned three columns. This will then create "pixels" with a size of 3x3.
-// TODO: Unit test implementation.
 func AverageImageColumns(columns [][]color.Color) ([]color.Color, error) {
 	width := len(columns)
 	if width == 0 {
@@ -75,7 +74,18 @@ func AverageImageColumns(columns [][]color.Color) ([]color.Color, error) {
 		}
 	}
 
-	averageColumn := make([]color.Color, 0, height)
+	if height == 0 {
+		return nil, errors.New("image-utils: the provided columns are empty")
+	}
+
+	if width == 1 {
+		averageColumn := make([]color.Color, height)
+		copy(averageColumn, columns[0])
+
+		return averageColumn, nil
+	}
+
+	averageColumn := make([]color.Color, height)
 
 	for sectionIndex := 0; sectionIndex < height; sectionIndex += width {
 		colors := make([]color.Color, 0, width*width)
