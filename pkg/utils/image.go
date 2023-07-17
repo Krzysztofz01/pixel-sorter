@@ -61,6 +61,7 @@ func GetImageColumn(image image.Image, xIndex int) ([]color.Color, error) {
 // Create a column of colors representing the averaged value of the colors of several columns. A "scaling of pixels"
 // to the size of the number of columns passed follows. Example: passing three columns for the averaging, will create
 // an averaged column that can replace the mentioned three columns. This will then create "pixels" with a size of 3x3.
+// TODO: The AverageImageColumn and AverageImageRow function can be shared. Naming like "width" and "length" could be used.
 func AverageImageColumns(columns [][]color.Color) ([]color.Color, error) {
 	width := len(columns)
 	if width == 0 {
@@ -117,6 +118,7 @@ func AverageImageColumns(columns [][]color.Color) ([]color.Color, error) {
 // Create a row of colors representing the averaged value of the colors of several rows. A "scaling of pixels"
 // to the size of the number of rows passed follows. Example: passing three rows for the averaging, will create
 // an averaged row that can replace the mentioned three rows. This will then create "pixels" with a size of 3x3.
+// TODO: The AverageImageColumn and AverageImageRow function can be shared. Naming like "width" and "length" could be used.
 func AverageImageRow(rows [][]color.Color) ([]color.Color, error) {
 	height := len(rows)
 	if height == 0 {

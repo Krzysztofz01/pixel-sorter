@@ -15,6 +15,10 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// TODO: IntervalWidth. When should be the averaging step performed? On row/column insertion extraction
+// will cause the whole image to be pixelated. Only the intervals should be pixelated but the intervals
+// does not have the same length (should the first interval decide about the final length?)
+
 type defaultSorter struct {
 	image   image.Image
 	mask    *Mask
