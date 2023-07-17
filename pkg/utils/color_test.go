@@ -184,3 +184,20 @@ func TestShouldBlendColorUsingDarkenOnlyMode(t *testing.T) {
 		assert.Equal(t, exptected, actual)
 	}
 }
+
+func TestAverageColorShouldCalculateAverageColor(t *testing.T) {
+	cases := []struct {
+		colors   []color.Color
+		expected color.Color
+	}{
+		{[]color.Color{color.RGBA{0, 0, 0, 0xff}}, color.RGBA{0, 0, 0, 0xff}},
+		{[]color.Color{color.RGBA{0, 0, 0, 0xff}, color.RGBA{255, 255, 255, 0xff}}, color.RGBA{127, 127, 127, 0xff}},
+		{[]color.Color{color.RGBA{0, 0, 0, 0xff}, color.RGBA{255, 255, 255, 0xff}, color.RGBA{10, 50, 100, 0xff}}, color.RGBA{88, 101, 118, 0xff}},
+	}
+
+	for _, c := range cases {
+		actual := AverageColor(c.colors...)
+
+		assert.Equal(t, c.expected, actual)
+	}
+}
