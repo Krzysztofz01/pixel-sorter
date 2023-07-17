@@ -321,12 +321,7 @@ func TestShouldNotBlendImagesWithDifferentHeight(t *testing.T) {
 	assert.Nil(t, resultImage)
 }
 
-const (
-	mock_image_width  = 25
-	mock_image_height = 25
-)
-
-func TestAverageImageShouldNotAverageForInvalidInput(t *testing.T) {
+func TestAverageImageColumnShouldNotAverageForInvalidInput(t *testing.T) {
 	cases := make([][][]color.Color, 0)
 
 	cases = append(cases, [][]color.Color{})
@@ -387,11 +382,11 @@ func TestAverageImageColumnShouldAverageTwoColumns(t *testing.T) {
 		color.RGBA{115, 115, 115, 0xff},
 	}
 
-	actualColumns, err := AverageImageColumns(columns)
+	actualColumn, err := AverageImageColumns(columns)
 
 	assert.Nil(t, err)
-	assert.NotNil(t, actualColumns)
-	assert.Equal(t, expectedColumns, actualColumns)
+	assert.NotNil(t, actualColumn)
+	assert.Equal(t, expectedColumns, actualColumn)
 }
 
 func TestAverageImageColumnShouldAverageThreeColumns(t *testing.T) {
@@ -425,12 +420,123 @@ func TestAverageImageColumnShouldAverageThreeColumns(t *testing.T) {
 		color.RGBA{96, 96, 96, 0xff},
 	}
 
-	actualColumns, err := AverageImageColumns(columns)
+	actualColumn, err := AverageImageColumns(columns)
 
 	assert.Nil(t, err)
-	assert.NotNil(t, actualColumns)
-	assert.Equal(t, expectedColumns, actualColumns)
+	assert.NotNil(t, actualColumn)
+	assert.Equal(t, expectedColumns, actualColumn)
 }
+
+func TestAverageImageRowShouldNotAverageForInvalidInput(t *testing.T) {
+	cases := make([][][]color.Color, 0)
+
+	cases = append(cases, [][]color.Color{})
+
+	cases = append(cases, [][]color.Color{{}})
+
+	cases = append(cases, [][]color.Color{
+		{color.RGBA{0, 0, 0, 0xff}},
+		{color.RGBA{0, 0, 0, 0xff}, color.RGBA{1, 1, 1, 0xff}},
+	})
+
+	for _, c := range cases {
+		result, err := AverageImageRow(c)
+
+		assert.Nil(t, result)
+		assert.NotNil(t, err)
+	}
+}
+
+func TestAverageImageRowShouldAverageSingleRow(t *testing.T) {
+	expectedRow := []color.Color{
+		color.RGBA{0, 0, 0, 0xff},
+		color.RGBA{10, 10, 10, 0xff},
+		color.RGBA{240, 240, 240, 0xff},
+		color.RGBA{120, 120, 120, 0xff},
+	}
+
+	rows := make([][]color.Color, 0, 1)
+	rows = append(rows, expectedRow)
+	actualRow, err := AverageImageRow(rows)
+
+	assert.Nil(t, err)
+	assert.NotNil(t, actualRow)
+	assert.Equal(t, expectedRow, actualRow)
+}
+
+func TestAverageImageRowShouldAverageTwoRows(t *testing.T) {
+	rows := make([][]color.Color, 0, 2)
+
+	rows = append(rows, []color.Color{
+		color.RGBA{0, 0, 0, 0xff},
+		color.RGBA{10, 10, 10, 0xff},
+		color.RGBA{20, 20, 20, 0xff},
+		color.RGBA{40, 40, 40, 0xff},
+	})
+
+	rows = append(rows, []color.Color{
+		color.RGBA{100, 100, 100, 0xff},
+		color.RGBA{100, 100, 100, 0xff},
+		color.RGBA{200, 200, 200, 0xff},
+		color.RGBA{200, 200, 200, 0xff},
+	})
+
+	expectedRow := []color.Color{
+		color.RGBA{52, 52, 52, 0xff},
+		color.RGBA{52, 52, 52, 0xff},
+		color.RGBA{115, 115, 115, 0xff},
+		color.RGBA{115, 115, 115, 0xff},
+	}
+
+	actualRow, err := AverageImageRow(rows)
+
+	assert.Nil(t, err)
+	assert.NotNil(t, actualRow)
+	assert.Equal(t, expectedRow, actualRow)
+}
+
+func TestAverageImageRowShouldAverageThreeRows(t *testing.T) {
+	rows := make([][]color.Color, 0, 3)
+
+	rows = append(rows, []color.Color{
+		color.RGBA{0, 0, 0, 0xff},
+		color.RGBA{10, 10, 10, 0xff},
+		color.RGBA{20, 20, 20, 0xff},
+		color.RGBA{40, 40, 40, 0xff},
+	})
+
+	rows = append(rows, []color.Color{
+		color.RGBA{100, 100, 100, 0xff},
+		color.RGBA{100, 100, 100, 0xff},
+		color.RGBA{200, 200, 200, 0xff},
+		color.RGBA{200, 200, 200, 0xff},
+	})
+
+	rows = append(rows, []color.Color{
+		color.RGBA{50, 50, 50, 0xff},
+		color.RGBA{50, 50, 50, 0xff},
+		color.RGBA{50, 50, 50, 0xff},
+		color.RGBA{50, 50, 50, 0xff},
+	})
+
+	expectedRow := []color.Color{
+		color.RGBA{64, 64, 64, 0xff},
+		color.RGBA{64, 64, 64, 0xff},
+		color.RGBA{64, 64, 64, 0xff},
+		color.RGBA{96, 96, 96, 0xff},
+	}
+
+	acutalRow, err := AverageImageRow(rows)
+
+	assert.Nil(t, err)
+	assert.NotNil(t, acutalRow)
+	assert.Equal(t, expectedRow, acutalRow)
+}
+
+const (
+	mock_image_width  = 25
+	mock_image_height = 25
+)
 
 // Create a test image which is a linear, left to right, black to white gradient of the size specifed by the mock_image prefixed constants
 func mockTestGradientImage() draw.Image {

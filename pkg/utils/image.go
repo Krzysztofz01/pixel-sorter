@@ -70,7 +70,7 @@ func AverageImageColumns(columns [][]color.Color) ([]color.Color, error) {
 	height := len(columns[0])
 	for _, column := range columns {
 		if len(column) != height {
-			return nil, errors.New("image-utils: provided column length missmatch")
+			return nil, errors.New("image-utils: provided columns length missmatch")
 		}
 	}
 
@@ -104,6 +104,62 @@ func AverageImageColumns(columns [][]color.Color) ([]color.Color, error) {
 		averageColor := AverageColor(colors...)
 		for averageColumnIndex := sectionIndex; averageColumnIndex < sectionIndex+width; averageColumnIndex += 1 {
 			if averageColumnIndex >= height {
+				continue
+			}
+
+			averageColumn[averageColumnIndex] = averageColor
+		}
+	}
+
+	return averageColumn, nil
+}
+
+// Create a row of colors representing the averaged value of the colors of several rows. A "scaling of pixels"
+// to the size of the number of rows passed follows. Example: passing three rows for the averaging, will create
+// an averaged row that can replace the mentioned three rows. This will then create "pixels" with a size of 3x3.
+func AverageImageRow(rows [][]color.Color) ([]color.Color, error) {
+	height := len(rows)
+	if height == 0 {
+		return nil, errors.New("image-utils: no rows provided to calculate average row color values")
+	}
+
+	width := len(rows[0])
+	for _, column := range rows {
+		if len(column) != width {
+			return nil, errors.New("image-utils: provided rows length missmatch")
+		}
+	}
+
+	if width == 0 {
+		return nil, errors.New("image-utils: the provided rows are empty")
+	}
+
+	if height == 1 {
+		averageColumn := make([]color.Color, width)
+		copy(averageColumn, rows[0])
+
+		return averageColumn, nil
+	}
+
+	averageColumn := make([]color.Color, width)
+
+	for sectionIndex := 0; sectionIndex < width; sectionIndex += height {
+		colors := make([]color.Color, 0, height*height)
+
+		for innerSectionIndex := sectionIndex; innerSectionIndex < sectionIndex+height; innerSectionIndex += 1 {
+			if innerSectionIndex >= width {
+				continue
+			}
+
+			for columnIndex := 0; columnIndex < height; columnIndex += 1 {
+				color := rows[columnIndex][innerSectionIndex]
+				colors = append(colors, color)
+			}
+		}
+
+		averageColor := AverageColor(colors...)
+		for averageColumnIndex := sectionIndex; averageColumnIndex < sectionIndex+height; averageColumnIndex += 1 {
+			if averageColumnIndex >= width {
 				continue
 			}
 
