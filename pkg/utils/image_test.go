@@ -43,6 +43,66 @@ func TestGetRowShouldReturnImageColumn(t *testing.T) {
 	assert.Equal(t, expectedLength, acutalLength)
 }
 
+func TestSetColumnShouldSetColorsForTheImageColumn(t *testing.T) {
+	image := mockTestWhiteImage()
+	width := image.Bounds().Dx()
+	height := image.Bounds().Dy()
+
+	black := color.RGBA{0x00, 0x00, 0x00, 0xff}
+	white := color.RGBA{0xff, 0xff, 0xff, 0xff}
+	xIndexTarget := 2
+
+	column := make([]color.Color, height)
+	for yIndex := 0; yIndex < height; yIndex += 1 {
+		column[yIndex] = color.Black
+	}
+
+	err := SetImageColumn(image, column, xIndexTarget)
+	assert.Nil(t, err)
+
+	for xIndex := 0; xIndex < width; xIndex += 1 {
+		for yIndex := 0; yIndex < height; yIndex += 1 {
+			c := image.At(xIndex, yIndex)
+
+			if xIndex == xIndexTarget {
+				assert.Equal(t, black, c)
+			} else {
+				assert.Equal(t, white, c)
+			}
+		}
+	}
+}
+
+func TestSetRowShouldSetColorsForTheImageRow(t *testing.T) {
+	image := mockTestWhiteImage()
+	width := image.Bounds().Dx()
+	height := image.Bounds().Dy()
+
+	black := color.RGBA{0x00, 0x00, 0x00, 0xff}
+	white := color.RGBA{0xff, 0xff, 0xff, 0xff}
+	yIndexTarget := 2
+
+	row := make([]color.Color, width)
+	for xIndex := 0; xIndex < width; xIndex += 1 {
+		row[xIndex] = color.Black
+	}
+
+	err := SetImageRow(image, row, yIndexTarget)
+	assert.Nil(t, err)
+
+	for xIndex := 0; xIndex < width; xIndex += 1 {
+		for yIndex := 0; yIndex < height; yIndex += 1 {
+			c := image.At(xIndex, yIndex)
+
+			if yIndex == yIndexTarget {
+				assert.Equal(t, black, c)
+			} else {
+				assert.Equal(t, white, c)
+			}
+		}
+	}
+}
+
 func TestRotateImageShouldCorrectlyRotateImage(t *testing.T) {
 	image := mockTestGradientImage()
 	imageWidth := image.Bounds().Dx()
@@ -119,9 +179,13 @@ func TestImageInvertShouldInvertImage(t *testing.T) {
 
 	expectedColor := color.RGBA{0, 0, 0, 0xff}
 
+	invertedImage, err := InvertImage(image)
+
+	assert.Nil(t, err)
+
 	for y := 0; y < imageHeight; y += 1 {
 		for x := 0; x < imageWidth; x += 1 {
-			actualColor := image.At(x, y)
+			actualColor := invertedImage.At(x, y)
 
 			assert.Equal(t, expectedColor, actualColor)
 		}
@@ -145,6 +209,116 @@ func TestImageShouldResize(t *testing.T) {
 
 	assert.Equal(t, expectedWidth, actualWidth)
 	assert.Equal(t, expectedHeight, actualHeight)
+}
+
+func TestShouldBlendImagesUsingLightenOnlyMode(t *testing.T) {
+	cases := map[struct {
+		a color.RGBA
+		b color.RGBA
+	}]color.RGBA{
+		{color.RGBA{0, 0, 0, 0xff}, color.RGBA{0, 0, 0, 0xff}}:             {0, 0, 0, 0xff},
+		{color.RGBA{255, 255, 255, 0xff}, color.RGBA{255, 255, 255, 0xff}}: {255, 255, 255, 0xff},
+		{color.RGBA{0, 0, 0, 0xff}, color.RGBA{255, 255, 255, 0xff}}:       {255, 255, 255, 0xff},
+		{color.RGBA{25, 50, 200, 0xff}, color.RGBA{200, 40, 20, 0xff}}:     {200, 50, 200, 0xff},
+	}
+
+	const height int = 2
+	const width int = 2
+
+	for c, expected := range cases {
+		rect := image.Rect(0, 0, width, height)
+
+		aImage := image.NewRGBA(rect)
+		bImage := image.NewRGBA(rect)
+		expectedImage := image.NewRGBA(rect)
+
+		for xIndex := 0; xIndex < width; xIndex += 1 {
+			for yIndex := 0; yIndex < height; yIndex += 1 {
+				aImage.SetRGBA(xIndex, yIndex, c.a)
+				bImage.SetRGBA(xIndex, yIndex, c.b)
+				expectedImage.SetRGBA(xIndex, yIndex, expected)
+			}
+		}
+
+		actualImage, err := BlendImages(aImage, bImage, LightenOnly)
+
+		assert.Nil(t, err)
+		assert.NotNil(t, actualImage)
+
+		for xIndex := 0; xIndex < width; xIndex += 1 {
+			for yIndex := 0; yIndex < height; yIndex += 1 {
+				actualColor := actualImage.At(xIndex, yIndex)
+				expectedColor := expectedImage.At(xIndex, yIndex)
+
+				assert.Equal(t, expectedColor, actualColor)
+			}
+		}
+	}
+}
+
+func TestShouldBlendImagesUsingDarkenOnlyMode(t *testing.T) {
+	cases := map[struct {
+		a color.RGBA
+		b color.RGBA
+	}]color.RGBA{
+		{color.RGBA{0, 0, 0, 0xff}, color.RGBA{0, 0, 0, 0xff}}:             {0, 0, 0, 0xff},
+		{color.RGBA{255, 255, 255, 0xff}, color.RGBA{255, 255, 255, 0xff}}: {255, 255, 255, 0xff},
+		{color.RGBA{0, 0, 0, 0xff}, color.RGBA{255, 255, 255, 0xff}}:       {0, 0, 0, 0xff},
+		{color.RGBA{25, 50, 200, 0xff}, color.RGBA{200, 40, 20, 0xff}}:     {25, 40, 20, 0xff},
+	}
+
+	const height int = 2
+	const width int = 2
+
+	for c, expected := range cases {
+		rect := image.Rect(0, 0, width, height)
+
+		aImage := image.NewRGBA(rect)
+		bImage := image.NewRGBA(rect)
+		expectedImage := image.NewRGBA(rect)
+
+		for xIndex := 0; xIndex < width; xIndex += 1 {
+			for yIndex := 0; yIndex < height; yIndex += 1 {
+				aImage.SetRGBA(xIndex, yIndex, c.a)
+				bImage.SetRGBA(xIndex, yIndex, c.b)
+				expectedImage.SetRGBA(xIndex, yIndex, expected)
+			}
+		}
+
+		actualImage, err := BlendImages(aImage, bImage, DarkenOnly)
+
+		assert.Nil(t, err)
+		assert.NotNil(t, actualImage)
+
+		for xIndex := 0; xIndex < width; xIndex += 1 {
+			for yIndex := 0; yIndex < height; yIndex += 1 {
+				actualColor := actualImage.At(xIndex, yIndex)
+				expectedColor := expectedImage.At(xIndex, yIndex)
+
+				assert.Equal(t, expectedColor, actualColor)
+			}
+		}
+	}
+}
+
+func TestShouldNotBlendImagesWithDifferentWidth(t *testing.T) {
+	aImage := image.NewRGBA(image.Rect(0, 0, 2, 4))
+	bImage := image.NewRGBA(image.Rect(0, 0, 4, 4))
+
+	resultImage, err := BlendImages(aImage, bImage, LightenOnly)
+
+	assert.NotNil(t, err)
+	assert.Nil(t, resultImage)
+}
+
+func TestShouldNotBlendImagesWithDifferentHeight(t *testing.T) {
+	aImage := image.NewRGBA(image.Rect(0, 0, 4, 2))
+	bImage := image.NewRGBA(image.Rect(0, 0, 4, 4))
+
+	resultImage, err := BlendImages(aImage, bImage, LightenOnly)
+
+	assert.NotNil(t, err)
+	assert.Nil(t, resultImage)
 }
 
 const (
@@ -191,7 +365,7 @@ func mockTestWhiteImage() draw.Image {
 
 	for yIndex := 0; yIndex < mock_image_height; yIndex += 1 {
 		for xIndex := 0; xIndex < mock_image_width; xIndex += 1 {
-			image.Set(xIndex, yIndex, color.Black)
+			image.Set(xIndex, yIndex, color.White)
 		}
 	}
 

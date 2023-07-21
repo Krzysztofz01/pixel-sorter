@@ -12,6 +12,11 @@ import (
 
 // Get the image from a file specified by the given path
 func GetImageFromFile(filePath string) (image.Image, error) {
+	filePath, err := EscapePathQuotes(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("utils: failed to escape the specified image path: %w", err)
+	}
+
 	file, err := os.Open(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("utils: can not open the specified file: %w", err)
@@ -31,44 +36,83 @@ func GetImageFromFile(filePath string) (image.Image, error) {
 	return img, nil
 }
 
+// Remove the quotes surrounding the path. The operation will fail for more than 10 iterations.
+func EscapePathQuotes(path string) (string, error) {
+	const maxIterations int = 10
+
+	var currentIterations int = 0
+	var pathTrimmed string = path
+
+	for {
+		pathTrimmed = path
+		pathTrimmed = strings.TrimPrefix(strings.TrimSuffix(pathTrimmed, "\""), "\"")
+		pathTrimmed = strings.TrimPrefix(strings.TrimSuffix(pathTrimmed, "'"), "'")
+
+		if pathTrimmed == path {
+			return pathTrimmed, nil
+		}
+
+		path = pathTrimmed
+
+		if currentIterations >= maxIterations {
+			return "", errors.New("file: the path quite trim operation iterations count exceeded the limit")
+		}
+
+		currentIterations += 1
+	}
+}
+
 // Create a new file with the given name and format and store the given image in it
-func StoreImageToFile(fileName string, fileFormat string, img image.Image) error {
-	if strings.ToLower(fileFormat) == "jpg" {
-		file, err := os.Create(fmt.Sprintf("%s.jpg", fileName))
-		if err != nil {
-			return fmt.Errorf("utils: failed to create a new file: %w", err)
-		}
+func StoreImageToFile(filePath string, fileFormat string, img image.Image) error {
+	filePath, err := EscapePathQuotes(filePath)
+	if err != nil {
+		return fmt.Errorf("utils: failed to escape the specified image path: %w", err)
+	}
 
-		defer func() {
-			if err := file.Close(); err != nil {
-				panic(err)
+	fileFormatLower := strings.ToLower(fileFormat)
+
+	switch fileFormatLower {
+	case "jpg", "jpeg":
+		{
+			file, err := os.Create(filePath)
+			if err != nil {
+				return fmt.Errorf("utils: failed to create a new file: %w", err)
 			}
-		}()
 
-		if err := jpeg.Encode(file, img, &jpeg.Options{Quality: 100}); err != nil {
-			return fmt.Errorf("utils: failed to encode the image to jpeg: %w", err)
-		}
+			defer func() {
+				if err := file.Close(); err != nil {
+					panic(err)
+				}
+			}()
 
-		return nil
-
-	} else if strings.ToLower(fileFormat) == "png" {
-		file, err := os.Create(fmt.Sprintf("%s.png", fileName))
-		if err != nil {
-			return fmt.Errorf("utils: failed to create a new file: %w", err)
-		}
-
-		defer func() {
-			if err := file.Close(); err != nil {
-				panic(err)
+			if err := jpeg.Encode(file, img, &jpeg.Options{Quality: 100}); err != nil {
+				return fmt.Errorf("utils: failed to encode the image to jpeg: %w", err)
 			}
-		}()
 
-		if err := png.Encode(file, img); err != nil {
-			return fmt.Errorf("utils: failed to encode the image to png: %w", err)
+			return nil
 		}
+	case "png":
+		{
+			file, err := os.Create(filePath)
+			if err != nil {
+				return fmt.Errorf("utils: failed to create a new file: %w", err)
+			}
 
-		return nil
-	} else {
-		return errors.New("utils: specified file format is not supported")
+			defer func() {
+				if err := file.Close(); err != nil {
+					panic(err)
+				}
+			}()
+
+			if err := png.Encode(file, img); err != nil {
+				return fmt.Errorf("utils: failed to encode the image to png: %w", err)
+			}
+
+			return nil
+		}
+	default:
+		{
+			return errors.New("utils: specified file format is not supported")
+		}
 	}
 }
