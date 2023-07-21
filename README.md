@@ -69,9 +69,6 @@ task build
     - *none*
     - *lighten*
     - *darken*
-- *output-format* (-f) - The output format of the graphic file.
-    - *jpg*
-    - *png*
 
 Output of the help command:
 ```sh

@@ -3,10 +3,12 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/Krzysztofz01/pixel-sorter/pkg/sorter"
+	"github.com/Krzysztofz01/pixel-sorter/pkg/utils"
 	nestedFormatter "github.com/antonfisher/nested-logrus-formatter"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -201,12 +203,18 @@ func parseCommonOptions() (*sorter.SorterOptions, error) {
 
 // Helper function used to determine if the current path file extension matches the possible extension collection.
 func determineFileExtension(path string, extensions []string) (string, bool) {
-	lowerPath := strings.ToLower(path)
-	for _, extension := range extensions {
-		lowerExtension := strings.ToLower(extension)
+	path, err := utils.EscapePathQuotes(path)
+	if err != nil {
+		return "", false
+	}
 
-		if strings.HasSuffix(lowerPath, lowerExtension) {
-			return lowerExtension, true
+	targetExtension := strings.ToLower(filepath.Ext(path))
+
+	for _, allowedExtension := range extensions {
+		lowerAllowedExtension := strings.ToLower(allowedExtension)
+
+		if strings.HasSuffix(targetExtension, lowerAllowedExtension) {
+			return lowerAllowedExtension, true
 		}
 	}
 

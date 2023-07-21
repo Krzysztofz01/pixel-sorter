@@ -113,6 +113,33 @@ func TestImageShouldBeRetrievied(t *testing.T) {
 	clearEnvironmentFromTestFiles()
 }
 
+func TestEscapedPathQuotesShouldCorrectlyRemoveSurroundingQuotes(t *testing.T) {
+	cases := map[string]struct {
+		path string
+		ok   bool
+	}{
+		"hello/world.jpg":                       {"hello/world.jpg", true},
+		"hello/world.pNg":                       {"hello/world.pNg", true},
+		"hello/world.gif":                       {"hello/world.gif", true},
+		"'hello/world.jpg'":                     {"hello/world.jpg", true},
+		"\"hello/world.png\"":                   {"hello/world.png", true},
+		"\"'\"'hello/world.jpg'\"'\"":           {"hello/world.jpg", true},
+		"'''''''''''hello/world.jpg'''''''''''": {"", false},
+	}
+
+	for path, expected := range cases {
+		actualPath, err := EscapePathQuotes(path)
+
+		assert.Equal(t, expected.path, actualPath)
+
+		if expected.ok {
+			assert.Nil(t, err)
+		} else {
+			assert.NotNil(t, err)
+		}
+	}
+}
+
 // Helper function that is removing the image files created during the tests
 func clearEnvironmentFromTestFiles() {
 	if info, err := os.Stat(test_file_name_jpg); err == nil && !info.IsDir() {
