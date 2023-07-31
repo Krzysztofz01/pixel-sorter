@@ -7,9 +7,12 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/goleak"
 )
 
 func TestGetColumnShouldReturnImageColumn(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
 	image := mockTestGradientImage()
 
 	lookupMap := make(map[color.Color]bool)
@@ -27,6 +30,8 @@ func TestGetColumnShouldReturnImageColumn(t *testing.T) {
 }
 
 func TestGetRowShouldReturnImageColumn(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
 	image := mockTestGradientImage()
 
 	lookupMap := make(map[color.Color]bool)
@@ -44,6 +49,8 @@ func TestGetRowShouldReturnImageColumn(t *testing.T) {
 }
 
 func TestSetColumnShouldSetColorsForTheImageColumn(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
 	image := mockTestWhiteImage()
 	width := image.Bounds().Dx()
 	height := image.Bounds().Dy()
@@ -74,6 +81,8 @@ func TestSetColumnShouldSetColorsForTheImageColumn(t *testing.T) {
 }
 
 func TestSetRowShouldSetColorsForTheImageRow(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
 	image := mockTestWhiteImage()
 	width := image.Bounds().Dx()
 	height := image.Bounds().Dy()
@@ -152,6 +161,8 @@ func TestRotateImageShouldCorrectlyRotateImage(t *testing.T) {
 }
 
 func TestTrimImageTransparentWorkspaceSohuldCorrectlyTrimRotatedImage(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
 	image := mockTestGradientImage()
 	imageWidth := image.Bounds().Dx()
 	imageHeight := image.Bounds().Dy()
@@ -173,6 +184,8 @@ func TestTrimImageTransparentWorkspaceSohuldCorrectlyTrimRotatedImage(t *testing
 }
 
 func TestImageInvertShouldInvertImage(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
 	image := mockTestWhiteImage()
 	imageWidth := image.Bounds().Dx()
 	imageHeight := image.Bounds().Dy()
@@ -212,6 +225,8 @@ func TestImageShouldResize(t *testing.T) {
 }
 
 func TestShouldBlendImagesUsingLightenOnlyMode(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
 	cases := map[struct {
 		a color.RGBA
 		b color.RGBA
@@ -257,6 +272,8 @@ func TestShouldBlendImagesUsingLightenOnlyMode(t *testing.T) {
 }
 
 func TestShouldBlendImagesUsingDarkenOnlyMode(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
 	cases := map[struct {
 		a color.RGBA
 		b color.RGBA
@@ -302,6 +319,8 @@ func TestShouldBlendImagesUsingDarkenOnlyMode(t *testing.T) {
 }
 
 func TestShouldNotBlendImagesWithDifferentWidth(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
 	aImage := image.NewRGBA(image.Rect(0, 0, 2, 4))
 	bImage := image.NewRGBA(image.Rect(0, 0, 4, 4))
 
@@ -312,6 +331,8 @@ func TestShouldNotBlendImagesWithDifferentWidth(t *testing.T) {
 }
 
 func TestShouldNotBlendImagesWithDifferentHeight(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
 	aImage := image.NewRGBA(image.Rect(0, 0, 4, 2))
 	bImage := image.NewRGBA(image.Rect(0, 0, 4, 4))
 
