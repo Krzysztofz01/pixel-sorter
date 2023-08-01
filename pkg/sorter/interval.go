@@ -92,7 +92,7 @@ func (interval *genericInterval[T]) Any() bool {
 }
 
 func (interval *genericInterval[T]) Sort(direction SortDirection, painting IntervalPainting) []color.Color {
-	if interval.Count() < 1 {
+	if interval.Count() <= 1 {
 		colors := make([]color.Color, interval.Count())
 		for i := 0; i < interval.Count(); i += 1 {
 			colors[i] = interval.items[i].color
@@ -148,27 +148,17 @@ func (interval *genericInterval[T]) Sort(direction SortDirection, painting Inter
 			}
 
 			switch direction {
-			case SortAscending, SortDescending:
+			case SortAscending:
 				{
-					var sortDeterminantFunc func(i, j int) bool = nil
-
-					if direction == SortAscending {
-						sortDeterminantFunc = func(i, j int) bool {
-							return interval.items[i].weight < interval.items[j].weight
-						}
-					}
-
-					if direction == SortDescending {
-						sortDeterminantFunc = func(i, j int) bool {
-							return interval.items[i].weight > interval.items[j].weight
-						}
-					}
-
-					if sortDeterminantFunc == nil {
-						panic("sorter: undefined sort direction specified")
-					}
-
-					sort.Slice(interval.items, sortDeterminantFunc)
+					sort.Slice(interval.items, func(i, j int) bool {
+						return interval.items[i].weight < interval.items[j].weight
+					})
+				}
+			case SortDescending:
+				{
+					sort.Slice(interval.items, func(i, j int) bool {
+						return interval.items[i].weight > interval.items[j].weight
+					})
 				}
 			case Shuffle:
 				{
