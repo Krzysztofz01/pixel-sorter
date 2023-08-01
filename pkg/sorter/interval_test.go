@@ -1,6 +1,7 @@
 package sorter
 
 import (
+	"errors"
 	"image/color"
 	"sort"
 	"testing"
@@ -12,6 +13,18 @@ import (
 func TestValueWeightIntervalShouldCreate(t *testing.T) {
 	interval := CreateValueWeightInterval(mockTestValueWeightDeterminant())
 	assert.NotNil(t, interval)
+}
+
+func TestValueWeightIntervalShouldNotCreateForNilWeightDeterminantFunc(t *testing.T) {
+	assert.Panics(t, func() {
+		CreateValueWeightInterval(nil)
+	})
+}
+
+func TestNormalizedIntervalShouldNotCreateForNilWeightDeterminantFunc(t *testing.T) {
+	assert.Panics(t, func() {
+		CreateNormalizedWeightInterval(nil)
+	})
 }
 
 func TestValueWeightIntervalShouldTellIfContainsAnyColors(t *testing.T) {
@@ -36,6 +49,58 @@ func TestValueWeightIntervalShouldTellTheCountOfContainedColors(t *testing.T) {
 	assert.Nil(t, err)
 
 	assert.Equal(t, 1, interval.Count())
+}
+
+func TestValueWeightIntervalShoulNotAppendWhenWeightDeterminantFuncReturnsError(t *testing.T) {
+	interval := CreateValueWeightInterval(func(r color.RGBA) (int, error) {
+		return 0, errors.New("sorter: test error")
+	})
+
+	assert.NotNil(t, interval)
+
+	err := interval.Append(color.RGBA{0, 0, 0, 255})
+	assert.NotNil(t, err)
+}
+
+func TestValueWeightIntervalShouldSortWhenContainingSingleElement(t *testing.T) {
+	interval := CreateValueWeightInterval(mockTestValueWeightDeterminant())
+	assert.NotNil(t, interval)
+
+	color := color.RGBA{0, 0, 0, 255}
+	err := interval.Append(color)
+	assert.Nil(t, err)
+
+	result := interval.Sort(SortAscending, IntervalFill)
+
+	assert.NotNil(t, result)
+	assert.NotEmpty(t, result)
+	assert.Equal(t, color, result[0])
+}
+
+func TestValueWeightIntervalShouldPanicForInvalidDirectionAndPaintingValues(t *testing.T) {
+	cases := []struct {
+		d SortDirection
+		p IntervalPainting
+	}{
+		{-100, IntervalFill},
+		{-100, IntervalGradient},
+		{-100, -100},
+	}
+
+	for _, c := range cases {
+		assert.Panics(t, func() {
+			interval := CreateValueWeightInterval(mockTestValueWeightDeterminant())
+			assert.NotNil(t, interval)
+
+			err := interval.Append(color.RGBA{0, 0, 0, 255})
+			assert.Nil(t, err)
+
+			err = interval.Append(color.RGBA{255, 255, 255, 255})
+			assert.Nil(t, err)
+
+			interval.Sort(c.d, c.p)
+		})
+	}
 }
 
 func TestValueWeightIntervalShouldPaintRepeat(t *testing.T) {
@@ -404,6 +469,58 @@ func TestNormalizedWeightIntervalShouldTellTheCountOfContainedColors(t *testing.
 	assert.Nil(t, err)
 
 	assert.Equal(t, 1, interval.Count())
+}
+
+func TestNormalizedWeightIntervalShoulNotAppendWhenWeightDeterminantFuncReturnsError(t *testing.T) {
+	interval := CreateNormalizedWeightInterval(func(r color.RGBA) (float64, error) {
+		return 0, errors.New("sorter: test error")
+	})
+
+	assert.NotNil(t, interval)
+
+	err := interval.Append(color.RGBA{0, 0, 0, 255})
+	assert.NotNil(t, err)
+}
+
+func TestNormalziedWeightIntervalShouldSortWhenContainingSingleElement(t *testing.T) {
+	interval := CreateNormalizedWeightInterval(mockTestNormalizedWeightDeterminant())
+	assert.NotNil(t, interval)
+
+	color := color.RGBA{0, 0, 0, 255}
+	err := interval.Append(color)
+	assert.Nil(t, err)
+
+	result := interval.Sort(SortAscending, IntervalFill)
+
+	assert.NotNil(t, result)
+	assert.NotEmpty(t, result)
+	assert.Equal(t, color, result[0])
+}
+
+func TestNormalizedWeightIntervalShouldPanicForInvalidDirectionAndPaintingValues(t *testing.T) {
+	cases := []struct {
+		d SortDirection
+		p IntervalPainting
+	}{
+		{-100, IntervalFill},
+		{-100, IntervalGradient},
+		{-100, -100},
+	}
+
+	for _, c := range cases {
+		assert.Panics(t, func() {
+			interval := CreateNormalizedWeightInterval(mockTestNormalizedWeightDeterminant())
+			assert.NotNil(t, interval)
+
+			err := interval.Append(color.RGBA{0, 0, 0, 255})
+			assert.Nil(t, err)
+
+			err = interval.Append(color.RGBA{255, 255, 255, 255})
+			assert.Nil(t, err)
+
+			interval.Sort(c.d, c.p)
+		})
+	}
 }
 
 func TestNormalizedWeightIntervalShouldPaintRepeat(t *testing.T) {
