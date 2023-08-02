@@ -7,11 +7,14 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/goleak"
 )
 
 // TODO: Currently the test are verifying that no errors occure but the resulting image is not verified
 
 func TestDefaultOptionsAndSortDeterminantBrightness(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
 	options := GetDefaultSorterOptions()
 	options.SortDeterminant = SortByBrightness
 
@@ -27,6 +30,8 @@ func TestDefaultOptionsAndSortDeterminantBrightness(t *testing.T) {
 }
 
 func TestDefaultOptionsAndSortDeterminantHue(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
 	options := GetDefaultSorterOptions()
 	options.SortDeterminant = SortByHue
 
@@ -42,6 +47,8 @@ func TestDefaultOptionsAndSortDeterminantHue(t *testing.T) {
 }
 
 func TestDefaultOptionsAndSortDeterminantSaturation(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
 	options := GetDefaultSorterOptions()
 	options.SortDeterminant = SortBySaturation
 
@@ -57,6 +64,8 @@ func TestDefaultOptionsAndSortDeterminantSaturation(t *testing.T) {
 }
 
 func TestDefaultOptionsAndAngle45Degrees(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
 	options := GetDefaultSorterOptions()
 	options.Angle = 45
 
@@ -72,6 +81,8 @@ func TestDefaultOptionsAndAngle45Degrees(t *testing.T) {
 }
 
 func TestDefaultOptionsAndCycles3(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
 	options := GetDefaultSorterOptions()
 	options.Cycles = 3
 
@@ -87,6 +98,8 @@ func TestDefaultOptionsAndCycles3(t *testing.T) {
 }
 
 func TestDefaultOptionsAndSortDirectionAscending(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
 	options := GetDefaultSorterOptions()
 	options.SortDirection = SortAscending
 
@@ -102,6 +115,8 @@ func TestDefaultOptionsAndSortDirectionAscending(t *testing.T) {
 }
 
 func TestDefaultOptionsAndSortDirectionDescending(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
 	options := GetDefaultSorterOptions()
 	options.SortDirection = SortDescending
 
@@ -117,6 +132,8 @@ func TestDefaultOptionsAndSortDirectionDescending(t *testing.T) {
 }
 
 func TestDefaultOptionsAndSortDirectionShuffle(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
 	options := GetDefaultSorterOptions()
 	options.SortDirection = Shuffle
 
@@ -132,6 +149,8 @@ func TestDefaultOptionsAndSortDirectionShuffle(t *testing.T) {
 }
 
 func TestDefaultOptionsAndSortDirectionRandom(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
 	options := GetDefaultSorterOptions()
 	options.SortDirection = SortRandom
 
@@ -147,6 +166,8 @@ func TestDefaultOptionsAndSortDirectionRandom(t *testing.T) {
 }
 
 func TestDefaultOptionsAndIntervalDeterminantBrightness(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
 	options := GetDefaultSorterOptions()
 	options.IntervalDeterminant = SplitByBrightness
 
@@ -162,6 +183,8 @@ func TestDefaultOptionsAndIntervalDeterminantBrightness(t *testing.T) {
 }
 
 func TestDefaultOptionsAndIntervalDeterminantHue(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
 	options := GetDefaultSorterOptions()
 	options.IntervalDeterminant = SplitByHue
 
@@ -177,6 +200,8 @@ func TestDefaultOptionsAndIntervalDeterminantHue(t *testing.T) {
 }
 
 func TestDefaultOptionsAndIntervalDeterminantSaturation(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
 	options := GetDefaultSorterOptions()
 	options.IntervalDeterminant = SplitBySaturation
 
@@ -192,6 +217,8 @@ func TestDefaultOptionsAndIntervalDeterminantSaturation(t *testing.T) {
 }
 
 func TestDefaultOptionsAndIntervalDeterminantMask(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
 	options := GetDefaultSorterOptions()
 	options.IntervalDeterminant = SplitByMask
 
@@ -207,6 +234,8 @@ func TestDefaultOptionsAndIntervalDeterminantMask(t *testing.T) {
 }
 
 func TestDefaultOptionsAndIntervalDeterminantAbsolute(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
 	options := GetDefaultSorterOptions()
 	options.IntervalDeterminant = SplitByAbsoluteColor
 
@@ -222,6 +251,8 @@ func TestDefaultOptionsAndIntervalDeterminantAbsolute(t *testing.T) {
 }
 
 func TestDefaultOptionsAndIntervalDeterminantEdge(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
 	options := GetDefaultSorterOptions()
 	options.IntervalDeterminant = SplitByEdgeDetection
 
@@ -237,6 +268,8 @@ func TestDefaultOptionsAndIntervalDeterminantEdge(t *testing.T) {
 }
 
 func TestDefaultOptionsAndLowerIntervalThreshold04UpperIntervalThreshold06(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
 	options := GetDefaultSorterOptions()
 	options.IntervalDeterminantLowerThreshold = 0.4
 	options.IntervalDeterminantUpperThreshold = 0.6
@@ -253,6 +286,8 @@ func TestDefaultOptionsAndLowerIntervalThreshold04UpperIntervalThreshold06(t *te
 }
 
 func TestDefaultOptionsAndIntervalMaxLength2(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
 	options := GetDefaultSorterOptions()
 	options.IntervalLength = 2
 
@@ -268,6 +303,8 @@ func TestDefaultOptionsAndIntervalMaxLength2(t *testing.T) {
 }
 
 func TestDefaultOptionsAndIntervalMaxLength1RandomFactor1(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
 	options := GetDefaultSorterOptions()
 	options.IntervalLength = 1
 	options.IntervalLengthRandomFactor = 1
@@ -284,6 +321,8 @@ func TestDefaultOptionsAndIntervalMaxLength1RandomFactor1(t *testing.T) {
 }
 
 func TestDefaultOptionsAndUseMask(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
 	options := GetDefaultSorterOptions()
 	options.UseMask = true
 
@@ -299,6 +338,8 @@ func TestDefaultOptionsAndUseMask(t *testing.T) {
 }
 
 func TestDefaultOptionsAndOrderHorizontal(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
 	options := GetDefaultSorterOptions()
 	options.SortOrder = SortHorizontal
 
@@ -314,6 +355,8 @@ func TestDefaultOptionsAndOrderHorizontal(t *testing.T) {
 }
 
 func TestDefaultOptionsAndOrderVertical(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
 	options := GetDefaultSorterOptions()
 	options.SortOrder = SortVertical
 
@@ -329,6 +372,8 @@ func TestDefaultOptionsAndOrderVertical(t *testing.T) {
 }
 
 func TestDefaultOptionsAndOrderHorizontalVertical(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
 	options := GetDefaultSorterOptions()
 	options.SortOrder = SortHorizontalAndVertical
 
@@ -344,6 +389,8 @@ func TestDefaultOptionsAndOrderHorizontalVertical(t *testing.T) {
 }
 
 func TestDefaultOptionsAndOrderVerticalHorizontal(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
 	options := GetDefaultSorterOptions()
 	options.SortOrder = SortVerticalAndHorizontal
 
@@ -359,6 +406,8 @@ func TestDefaultOptionsAndOrderVerticalHorizontal(t *testing.T) {
 }
 
 func TestDefaultOptionsAndScale05(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
 	options := GetDefaultSorterOptions()
 	options.Scale = 0.5
 
@@ -374,6 +423,8 @@ func TestDefaultOptionsAndScale05(t *testing.T) {
 }
 
 func TestDefaultOptionsAndBlendingModeNone(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
 	options := GetDefaultSorterOptions()
 	options.Blending = BlendingNone
 
@@ -389,6 +440,8 @@ func TestDefaultOptionsAndBlendingModeNone(t *testing.T) {
 }
 
 func TestDefaultOptionsAndBlendingModeLighten(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
 	options := GetDefaultSorterOptions()
 	options.Blending = BlendingLighten
 
@@ -404,6 +457,8 @@ func TestDefaultOptionsAndBlendingModeLighten(t *testing.T) {
 }
 
 func TestDefaultOptionsAndBlendingModeDarken(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
 	options := GetDefaultSorterOptions()
 	options.Blending = BlendingDarken
 
