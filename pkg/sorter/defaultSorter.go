@@ -431,6 +431,13 @@ func (sorter *defaultSorter) CreateInterval() Interval {
 				return s, nil
 			})
 		}
+	case SortByAbsoluteColor:
+		{
+			return CreateValueWeightInterval(func(c color.RGBA) (int, error) {
+				value := int(c.R) * int(c.G) * int(c.B)
+				return value, nil
+			})
+		}
 	default:
 		panic("sorter: invalid sorter state due to a corrupted sorter weight determinant function value")
 	}

@@ -11,6 +11,7 @@ const (
 	SortByBrightness SortDeterminant = iota
 	SortByHue
 	SortBySaturation
+	SortByAbsoluteColor
 )
 
 // Flag representing the order in which should be the image sorted
