@@ -6,6 +6,7 @@ import (
 	"image"
 	"image/color"
 	"math"
+	"sync"
 
 	"github.com/Krzysztofz01/pimit"
 	"github.com/Krzysztofz01/pixel-sorter/pkg/utils"
@@ -89,7 +90,8 @@ func PerformEdgeDetection(i image.Image, performNonMaxSupression bool) (image.Im
 func calculateGradientPoints(vertical *image.NRGBA, horizontal *image.NRGBA) ([][]gradientPoint, error) {
 	width := vertical.Bounds().Dx()
 	height := vertical.Bounds().Dy()
-	magnitudeMax := math.Inf(-1)
+	magnitudeMaxValue := math.Inf(-1)
+	magnitudeMaxLock := sync.Mutex{}
 
 	gp := make([][]gradientPoint, width)
 	for x := 0; x < width; x += 1 {
@@ -101,11 +103,17 @@ func calculateGradientPoints(vertical *image.NRGBA, horizontal *image.NRGBA) ([]
 		hColor := float64(utils.ColorToGrayscaleComponent(horizontal.NRGBAAt(xIndex, yIndex)))
 
 		magnitude := math.Hypot(vColor, hColor)
-		if magnitude > magnitudeMax {
-			magnitudeMax = magnitude
-		}
-
 		direction := math.Atan2(vColor, hColor)
+
+		// TODO: The changes of magnitudeMax caused data-race in v0.2.0-beta release. This can be fixed in the
+		// future using a atomic float64. For now, we are locking using a mutex before magnitudeMax access.
+		// (We can even remove it!)
+		magnitudeMaxLock.Lock()
+		if magnitude > magnitudeMaxValue {
+			magnitudeMaxValue = magnitude
+		}
+		magnitudeMaxLock.Unlock()
+
 		return gradientPoint{
 			magnitude: magnitude,
 			direction: direction,
