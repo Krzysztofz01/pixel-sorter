@@ -63,6 +63,57 @@ func TestDefaultOptionsAndSortDeterminantSaturation(t *testing.T) {
 	assert.Nil(t, err)
 }
 
+func TestDefaultOptionsAndSortDeterminantRedChannel(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
+	options := GetDefaultSorterOptions()
+	options.SortDeterminant = SortByRedChannel
+
+	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), nil, nil, options)
+
+	assert.NotNil(t, sorter)
+	assert.Nil(t, err)
+
+	result, err := sorter.Sort()
+
+	assert.NotNil(t, result)
+	assert.Nil(t, err)
+}
+
+func TestDefaultOptionsAndSortDeterminantGreenChannel(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
+	options := GetDefaultSorterOptions()
+	options.SortDeterminant = SortByGreenChannel
+
+	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), nil, nil, options)
+
+	assert.NotNil(t, sorter)
+	assert.Nil(t, err)
+
+	result, err := sorter.Sort()
+
+	assert.NotNil(t, result)
+	assert.Nil(t, err)
+}
+
+func TestDefaultOptionsAndSortDeterminantBlueChannel(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
+	options := GetDefaultSorterOptions()
+	options.SortDeterminant = SortByBlueChannel
+
+	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), nil, nil, options)
+
+	assert.NotNil(t, sorter)
+	assert.Nil(t, err)
+
+	result, err := sorter.Sort()
+
+	assert.NotNil(t, result)
+	assert.Nil(t, err)
+}
+
 func TestDefaultOptionsAndAngle45Degrees(t *testing.T) {
 	defer goleak.VerifyNone(t)
 

@@ -431,6 +431,24 @@ func (sorter *defaultSorter) CreateInterval() Interval {
 				return s, nil
 			})
 		}
+	case SortByRedChannel:
+		{
+			return CreateValueWeightInterval(func(c color.RGBA) (int, error) {
+				return int(c.R), nil
+			})
+		}
+	case SortByGreenChannel:
+		{
+			return CreateValueWeightInterval(func(c color.RGBA) (int, error) {
+				return int(c.G), nil
+			})
+		}
+	case SortByBlueChannel:
+		{
+			return CreateValueWeightInterval(func(c color.RGBA) (int, error) {
+				return int(c.B), nil
+			})
+		}
 	default:
 		panic("sorter: invalid sorter state due to a corrupted sorter weight determinant function value")
 	}
