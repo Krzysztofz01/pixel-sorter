@@ -1,6 +1,7 @@
 package sorter
 
 import (
+	"encoding/json"
 	"image"
 )
 
@@ -55,19 +56,19 @@ const (
 
 // Structure representing all the parameters for the sorter
 type SorterOptions struct {
-	SortDeterminant                   SortDeterminant
-	SortDirection                     SortDirection
-	SortOrder                         SortOrder
-	IntervalDeterminant               IntervalDeterminant
-	IntervalDeterminantLowerThreshold float64
-	IntervalDeterminantUpperThreshold float64
-	IntervalLength                    int
-	IntervalLengthRandomFactor        int
-	Angle                             int
-	UseMask                           bool
-	Cycles                            int
-	Scale                             float64
-	Blending                          ResultImageBlending
+	SortDeterminant                   SortDeterminant     `json:"sort-determinant"`
+	SortDirection                     SortDirection       `json:"sort-direction"`
+	SortOrder                         SortOrder           `json:"sort-order"`
+	IntervalDeterminant               IntervalDeterminant `json:"interval-determinant"`
+	IntervalDeterminantLowerThreshold float64             `json:"interval-determinant-lower-threshold"`
+	IntervalDeterminantUpperThreshold float64             `json:"interval-determinant-upper-threshold"`
+	IntervalLength                    int                 `json:"interval-max-length"`
+	IntervalLengthRandomFactor        int                 `json:"interval-max-length-random-factor"`
+	Angle                             int                 `json:"angle"`
+	UseMask                           bool                `json:"mask"`
+	Cycles                            int                 `json:"cycles"`
+	Scale                             float64             `json:"scale"`
+	Blending                          ResultImageBlending `json:"blending-mode"`
 }
 
 // Return a boolean value indicating if the given sorter options combination is valid
@@ -104,6 +105,17 @@ func (options *SorterOptions) AreValid() (bool, string) {
 	return true, ""
 }
 
+// Return the sorter options represented as JSON encoded string
+// TODO: Unit tests
+func (options *SorterOptions) ToJsonString() string {
+	buffer, err := json.Marshal(options)
+	if err != nil {
+		panic(err)
+	}
+
+	return string(buffer)
+}
+
 // Get a SorterOptions structure instance with default values
 func GetDefaultSorterOptions() *SorterOptions {
 	options := new(SorterOptions)
@@ -128,6 +140,12 @@ func GetDefaultSorterOptions() *SorterOptions {
 type Sorter interface {
 	// Perform the sorting operation and return the sorted version of the image
 	Sort() (image.Image, error)
+}
+
+// Utility used to create a pixel sorting animation of a given image
+type AnimatedSorter interface {
+	// Perform the sorting operation and store the sorter version in the sorter specifed path
+	Sort() error
 }
 
 // Utility used to create a pixel sorted version of a given video
