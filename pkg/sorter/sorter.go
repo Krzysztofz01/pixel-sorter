@@ -54,12 +54,23 @@ const (
 	BlendingDarken
 )
 
+// Flag representing the behaviour of interval painting process
+type IntervalPainting int
+
+const (
+	IntervalFill IntervalPainting = iota
+	IntervalGradient
+	IntervalRepeat
+	IntervalAverage
+)
+
 // Structure representing all the parameters for the sorter
 type SorterOptions struct {
 	SortDeterminant                   SortDeterminant
 	SortDirection                     SortDirection
 	SortOrder                         SortOrder
 	IntervalDeterminant               IntervalDeterminant
+	IntervalPainting                  IntervalPainting
 	IntervalDeterminantLowerThreshold float64
 	IntervalDeterminantUpperThreshold float64
 	IntervalLength                    int
@@ -113,6 +124,7 @@ func GetDefaultSorterOptions() *SorterOptions {
 	options.SortDirection = SortAscending
 	options.SortOrder = SortHorizontalAndVertical
 	options.IntervalDeterminant = SplitByBrightness
+	options.IntervalPainting = IntervalFill
 	options.IntervalDeterminantLowerThreshold = 0.0
 	options.IntervalDeterminantUpperThreshold = 1.0
 	options.UseMask = false

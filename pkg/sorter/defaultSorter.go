@@ -301,7 +301,7 @@ func (sorter *defaultSorter) performSortOnImageStrip(imageStrip []color.Color, m
 	stripLength := len(imageStrip)
 	sortedImageStrip := make([]color.Color, 0, stripLength)
 
-	interval := sorter.CreateInterval()
+	interval := CreateInterval(sorter.options.SortDeterminant)
 	intervalMaxLength := sorter.calculateMaxIntervalLength()
 
 	for x := 0; x < stripLength; x += 1 {
@@ -321,10 +321,10 @@ func (sorter *defaultSorter) performSortOnImageStrip(imageStrip []color.Color, m
 			}
 		} else {
 			if interval.Any() {
-				sortedIntervalItems := interval.Sort(sorter.options.SortDirection)
+				sortedIntervalItems := interval.Sort(sorter.options.SortDirection, sorter.options.IntervalPainting)
 				sortedImageStrip = append(sortedImageStrip, sortedIntervalItems...)
 
-				interval = sorter.CreateInterval()
+				interval = CreateInterval(sorter.options.SortDeterminant)
 				intervalMaxLength = sorter.calculateMaxIntervalLength()
 			}
 
@@ -333,7 +333,7 @@ func (sorter *defaultSorter) performSortOnImageStrip(imageStrip []color.Color, m
 	}
 
 	if interval.Any() {
-		sortedIntervalItems := interval.Sort(sorter.options.SortDirection)
+		sortedIntervalItems := interval.Sort(sorter.options.SortDirection, sorter.options.IntervalPainting)
 		sortedImageStrip = append(sortedImageStrip, sortedIntervalItems...)
 	}
 
@@ -405,40 +405,5 @@ func (sorter *defaultSorter) calculateMaxIntervalLength() int {
 		return 1
 	} else {
 		return length
-	}
-}
-
-func (sorter *defaultSorter) CreateInterval() Interval {
-	switch sorter.options.SortDeterminant {
-	case SortByBrightness:
-		{
-			return CreateNormalizedWeightInterval(func(c color.RGBA) (float64, error) {
-				brightness := utils.CalculatePerceivedBrightness(c)
-				return brightness, nil
-			})
-		}
-	case SortByHue:
-		{
-			return CreateValueWeightInterval(func(c color.RGBA) (int, error) {
-				h, _, _, _ := utils.ColorToHsla(c)
-				return h, nil
-			})
-		}
-	case SortBySaturation:
-		{
-			return CreateNormalizedWeightInterval(func(c color.RGBA) (float64, error) {
-				_, s, _, _ := utils.ColorToHsla(c)
-				return s, nil
-			})
-		}
-	case SortByAbsoluteColor:
-		{
-			return CreateValueWeightInterval(func(c color.RGBA) (int, error) {
-				value := int(c.R) * int(c.G) * int(c.B)
-				return value, nil
-			})
-		}
-	default:
-		panic("sorter: invalid sorter state due to a corrupted sorter weight determinant function value")
 	}
 }

@@ -22,6 +22,7 @@ var (
 	FlagSortDirection              string
 	FlagSortOrder                  string
 	FlagIntervalDeterminant        string
+	FlagIntervalPainting           string
 	FlagIntervalLowerThreshold     float64
 	FlagIntervalUpperThreshold     float64
 	FlagAngle                      int
@@ -70,6 +71,8 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&FlagSortOrder, "order", "o", "horizontal-vertical", "Order of the graphic sorting stages. Options: [horizontal, vertical, horizontal-vertical, vertical-horizontal].")
 
 	rootCmd.PersistentFlags().StringVarP(&FlagIntervalDeterminant, "interval-determinant", "i", "brightness", "Parameter used to determine intervals. Options: [brightness, hue, saturation, mask, absolute, edge].")
+
+	rootCmd.PersistentFlags().StringVarP(&FlagIntervalPainting, "interval-painting", "p", "fill", "Parameter used to specify the interval color painting behaviour. Options: [fill, gradient, repeat, average].")
 
 	rootCmd.PersistentFlags().Float64VarP(&FlagIntervalLowerThreshold, "interval-lower-threshold", "l", 0.1, "The lower threshold of the interval determination process. Options: [0.0 - 1.0].")
 
@@ -169,6 +172,19 @@ func parseCommonOptions() (*sorter.SorterOptions, error) {
 		options.IntervalDeterminant = sorter.SplitByEdgeDetection
 	default:
 		return nil, fmt.Errorf("cmd: invalid interval determinant specified (%s)", FlagIntervalDeterminant)
+	}
+
+	switch strings.ToLower(FlagIntervalPainting) {
+	case "fill":
+		options.IntervalPainting = sorter.IntervalFill
+	case "gradient":
+		options.IntervalPainting = sorter.IntervalGradient
+	case "repeat":
+		options.IntervalPainting = sorter.IntervalRepeat
+	case "average":
+		options.IntervalPainting = sorter.IntervalAverage
+	default:
+		return nil, fmt.Errorf("cmd: invalid interval painting specified (%s)", FlagIntervalPainting)
 	}
 
 	switch FlagBlendingMode {
