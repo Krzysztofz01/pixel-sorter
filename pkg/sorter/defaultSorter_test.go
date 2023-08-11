@@ -473,6 +473,66 @@ func TestDefaultOptionsAndBlendingModeDarken(t *testing.T) {
 	assert.Nil(t, err)
 }
 
+func TestDefaultOptionsAndIntervalPaintingFill(t *testing.T) {
+	options := GetDefaultSorterOptions()
+	options.IntervalPainting = IntervalFill
+
+	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), nil, nil, options)
+
+	assert.NotNil(t, sorter)
+	assert.Nil(t, err)
+
+	result, err := sorter.Sort()
+
+	assert.NotNil(t, result)
+	assert.Nil(t, err)
+}
+
+func TestDefaultOptionsAndIntervalPaintingGradient(t *testing.T) {
+	options := GetDefaultSorterOptions()
+	options.IntervalPainting = IntervalGradient
+
+	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), nil, nil, options)
+
+	assert.NotNil(t, sorter)
+	assert.Nil(t, err)
+
+	result, err := sorter.Sort()
+
+	assert.NotNil(t, result)
+	assert.Nil(t, err)
+}
+
+func TestDefaultOptionsAndIntervalPaintingRepeat(t *testing.T) {
+	options := GetDefaultSorterOptions()
+	options.IntervalPainting = IntervalRepeat
+
+	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), nil, nil, options)
+
+	assert.NotNil(t, sorter)
+	assert.Nil(t, err)
+
+	result, err := sorter.Sort()
+
+	assert.NotNil(t, result)
+	assert.Nil(t, err)
+}
+
+func TestDefaultOptionsAndIntervalPaintingAverage(t *testing.T) {
+	options := GetDefaultSorterOptions()
+	options.IntervalPainting = IntervalAverage
+
+	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), nil, nil, options)
+
+	assert.NotNil(t, sorter)
+	assert.Nil(t, err)
+
+	result, err := sorter.Sort()
+
+	assert.NotNil(t, result)
+	assert.Nil(t, err)
+}
+
 const (
 	mock_image_width  = 5
 	mock_image_height = 5

@@ -184,3 +184,24 @@ func TestShouldBlendColorUsingDarkenOnlyMode(t *testing.T) {
 		assert.Equal(t, exptected, actual)
 	}
 }
+
+func TestInterpolateColorShouldCorrectlyInterpolateColors(t *testing.T) {
+	cases := map[struct {
+		a color.Color
+		b color.Color
+		t float64
+	}]color.Color{
+		{color.RGBA{0, 0, 0, 0xff}, color.RGBA{255, 255, 255, 0xff}, 0.5}: color.RGBA{127, 127, 127, 0xff},
+		{color.RGBA{255, 0, 0, 0xff}, color.RGBA{0, 0, 255, 0xff}, 0.0}:   color.RGBA{255, 0, 0, 0xff},
+		{color.RGBA{255, 0, 0, 0xff}, color.RGBA{0, 0, 255, 0xff}, 0.25}:  color.RGBA{191, 0, 63, 0xff},
+		{color.RGBA{255, 0, 0, 0xff}, color.RGBA{0, 0, 255, 0xff}, 0.5}:   color.RGBA{127, 0, 127, 0xff},
+		{color.RGBA{255, 0, 0, 0xff}, color.RGBA{0, 0, 255, 0xff}, 0.75}:  color.RGBA{63, 0, 191, 0xff},
+		{color.RGBA{255, 0, 0, 0xff}, color.RGBA{0, 0, 255, 0xff}, 1.0}:   color.RGBA{0, 0, 255, 0xff},
+	}
+
+	for c, expected := range cases {
+		actual := InterpolateColor(c.a, c.b, c.t)
+
+		assert.Equal(t, expected, actual)
+	}
+}

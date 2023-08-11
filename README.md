@@ -47,6 +47,11 @@ task build
     - *descending* - Sort descending according to the sorting determinant
     - *shuffle* - Shuffle by the sorting determinant
     - *random* - Randomly sort ascending or descending according to the sorting determinant
+- *interval-painting* (-p) - Parameter used to specify the interval color painting behaviour
+    - *fill* - The pixels are sorted according to the sort direction and painted on the image.
+    - *gradient* - The pixels are sorted according to the sort direction and a calculated gradient of the sorted colors is painted on the image.
+    - *repeat* - The first color appended to the interval is repeated throughout the whole interval length and is painted on the image.
+    - *average* - The mean of all colors appended to the interval is calculated, then the color is repeated throughout the whole interval length and is painted on the image.
 - *interval-determinant* (-i) - Parameter used to determine intervals.
     - *brightness* - Use the perceived brightness to determine intervals
     - *hue* - Use the HSL color space hue value to determine intervals
@@ -77,7 +82,7 @@ Pixel sorting image editing utility implemented in Go.
 Usage:
   pixel-sorter [command]
 
-Available Commands:     
+Available Commands:
   help        Help about any command
   image       Perform a pixel sorting operation on the specified image file.
 
@@ -92,6 +97,7 @@ Flags:
   -l, --interval-lower-threshold float          The lower threshold of the interval determination process. Options: [0.0 - 1.0]. (default 0.1)
   -k, --interval-max-length int                 The max length of the interval. Zero means no length limits.
   -r, --interval-max-length-random-factor int   The value representing the range of values that can be randomly subtracted or added to the max interval length. Options: [>= 0]
+  -p, --interval-painting string                Parameter used to specify the interval color painting behaviour. Options: [fill, gradient, repeat, average]. (default "fill")
   -u, --interval-upper-threshold float          The upper threshold of the interval determination process. Options: [0.0 - 1.0]. (default 0.9)
   -m, --mask                                    Exclude the sorting effect from masked out ares of the image.
       --mask-image-path string                  The path of the mask image file used to process the input media.
