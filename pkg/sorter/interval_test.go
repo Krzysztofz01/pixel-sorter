@@ -10,6 +10,27 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestCreateIntervalShouldCreateIntervalForSortByBrightness(t *testing.T) {
+	interval := CreateInterval(SortByBrightness)
+	assert.NotNil(t, interval)
+}
+
+func TestCreateIntervalShouldCreateIntervalForSortByHue(t *testing.T) {
+	interval := CreateInterval(SortByHue)
+	assert.NotNil(t, interval)
+}
+
+func TestCreateIntervalShouldCreateIntervalForSortBySaturation(t *testing.T) {
+	interval := CreateInterval(SortBySaturation)
+	assert.NotNil(t, interval)
+}
+
+func TestCreateIntervalShouldPanicForInvalidSortDeterminant(t *testing.T) {
+	assert.Panics(t, func() {
+		CreateInterval(-1)
+	})
+}
+
 func TestValueWeightIntervalShouldCreate(t *testing.T) {
 	interval := CreateValueWeightInterval(mockTestValueWeightDeterminant())
 	assert.NotNil(t, interval)

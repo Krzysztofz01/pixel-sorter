@@ -69,6 +69,35 @@ func CreateNormalizedWeightInterval(weightDeterminantFunc func(color.RGBA) (floa
 	}
 }
 
+// Create a new interval instance based on the specifications required by the provided sort determinant
+func CreateInterval(sort SortDeterminant) Interval {
+	switch sort {
+	case SortByBrightness:
+		{
+			return CreateNormalizedWeightInterval(func(c color.RGBA) (float64, error) {
+				brightness := utils.CalculatePerceivedBrightness(c)
+				return brightness, nil
+			})
+		}
+	case SortByHue:
+		{
+			return CreateValueWeightInterval(func(c color.RGBA) (int, error) {
+				h, _, _, _ := utils.ColorToHsla(c)
+				return h, nil
+			})
+		}
+	case SortBySaturation:
+		{
+			return CreateNormalizedWeightInterval(func(c color.RGBA) (float64, error) {
+				_, s, _, _ := utils.ColorToHsla(c)
+				return s, nil
+			})
+		}
+	default:
+		panic("sorter: invalid sorter state due to a corrupted sorter weight determinant function value")
+	}
+}
+
 func (interval *genericInterval[T]) Append(color color.RGBA) error {
 	weight, err := interval.weightDeterminantFunc(color)
 	if err != nil {
