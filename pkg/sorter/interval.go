@@ -1,7 +1,6 @@
 package sorter
 
 import (
-	"fmt"
 	"image/color"
 	"math"
 	"math/rand"
@@ -37,7 +36,7 @@ type Interval interface {
 
 type genericInterval[T int | float64] struct {
 	items                 []genericIntervalItem[T]
-	weightDeterminantFunc func(color.RGBA) (T, error)
+	weightDeterminantFunc func(color.RGBA) T
 }
 
 type genericIntervalItem[T int | float64] struct {
@@ -46,7 +45,7 @@ type genericIntervalItem[T int | float64] struct {
 }
 
 // Create a new interval instance with the item weights represented as a integer values
-func CreateValueWeightInterval(weightDeterminantFunc func(color.RGBA) (int, error)) Interval {
+func CreateValueWeightInterval(weightDeterminantFunc func(color.RGBA) int) Interval {
 	if weightDeterminantFunc == nil {
 		panic("sorter: the provided weight determinant function is nil")
 	}
@@ -58,7 +57,7 @@ func CreateValueWeightInterval(weightDeterminantFunc func(color.RGBA) (int, erro
 }
 
 // Create a new interval instance with the item weights represented as normalzied values
-func CreateNormalizedWeightInterval(weightDeterminantFunc func(color.RGBA) (float64, error)) Interval {
+func CreateNormalizedWeightInterval(weightDeterminantFunc func(color.RGBA) float64) Interval {
 	if weightDeterminantFunc == nil {
 		panic("sorter: the provided weight determinant function is nil")
 	}
@@ -74,23 +73,22 @@ func CreateInterval(sort SortDeterminant) Interval {
 	switch sort {
 	case SortByBrightness:
 		{
-			return CreateNormalizedWeightInterval(func(c color.RGBA) (float64, error) {
-				brightness := utils.CalculatePerceivedBrightness(c)
-				return brightness, nil
+			return CreateNormalizedWeightInterval(func(c color.RGBA) float64 {
+				return utils.CalculatePerceivedBrightness(c)
 			})
 		}
 	case SortByHue:
 		{
-			return CreateValueWeightInterval(func(c color.RGBA) (int, error) {
+			return CreateValueWeightInterval(func(c color.RGBA) int {
 				h, _, _, _ := utils.ColorToHsla(c)
-				return h, nil
+				return h
 			})
 		}
 	case SortBySaturation:
 		{
-			return CreateNormalizedWeightInterval(func(c color.RGBA) (float64, error) {
+			return CreateNormalizedWeightInterval(func(c color.RGBA) float64 {
 				_, s, _, _ := utils.ColorToHsla(c)
-				return s, nil
+				return s
 			})
 		}
 	default:
@@ -99,11 +97,7 @@ func CreateInterval(sort SortDeterminant) Interval {
 }
 
 func (interval *genericInterval[T]) Append(color color.RGBA) error {
-	weight, err := interval.weightDeterminantFunc(color)
-	if err != nil {
-		return fmt.Errorf("sorter: calculation of the color value weight failed: %w", err)
-	}
-
+	weight := interval.weightDeterminantFunc(color)
 	interval.items = append(interval.items, genericIntervalItem[T]{
 		color:  color,
 		weight: weight,
@@ -227,6 +221,7 @@ func (interval *genericInterval[T]) Sort(direction SortDirection, painting Inter
 					a := interval.items[0]
 					c := interval.items[0]
 					for _, item := range interval.items {
+						// NOTE: According to the case statement values, assuming that the direction is not ascending it must be descending
 						if direction == SortAscending {
 							if item.weight < a.weight {
 								a = item
@@ -235,11 +230,7 @@ func (interval *genericInterval[T]) Sort(direction SortDirection, painting Inter
 							if item.weight > c.weight {
 								c = item
 							}
-
-							continue
-						}
-
-						if direction == SortDescending {
+						} else {
 							if item.weight > a.weight {
 								a = item
 							}
@@ -247,11 +238,7 @@ func (interval *genericInterval[T]) Sort(direction SortDirection, painting Inter
 							if item.weight < c.weight {
 								c = item
 							}
-
-							continue
 						}
-
-						panic("sorter: invalid sort direction state for gradient painting")
 					}
 
 					b := interval.items[0]
