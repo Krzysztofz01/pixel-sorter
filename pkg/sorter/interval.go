@@ -173,13 +173,13 @@ func (interval *genericInterval[T]) Sort(direction SortDirection, painting Inter
 			switch direction {
 			case SortAscending:
 				{
-					sort.Slice(interval.items, func(i, j int) bool {
+					sort.SliceStable(interval.items, func(i, j int) bool {
 						return interval.items[i].weight < interval.items[j].weight
 					})
 				}
 			case SortDescending:
 				{
-					sort.Slice(interval.items, func(i, j int) bool {
+					sort.SliceStable(interval.items, func(i, j int) bool {
 						return interval.items[i].weight > interval.items[j].weight
 					})
 				}
