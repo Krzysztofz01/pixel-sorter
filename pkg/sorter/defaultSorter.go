@@ -83,7 +83,9 @@ func CreateSorter(image image.Image, mask image.Image, logger *logrus.Logger, op
 	if mask != nil {
 		maskExecTime := time.Now()
 
-		if sorter.options.Scale != 1.0 {
+		// NOTE: We are preventing the scaling when the IntervalDeterminant is set to edge detection, because the edge
+		// detection based mask is already scaled, because it was performed on the scaled version of the  original image
+		if sorter.options.Scale != 1.0 && sorter.options.IntervalDeterminant != SplitByEdgeDetection {
 			scaledMask, err := utils.ScaleImage(mask, sorter.options.Scale)
 			if err != nil {
 				return nil, fmt.Errorf("sorter: failed to scale the target image mask: %w", err)
