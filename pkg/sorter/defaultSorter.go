@@ -307,19 +307,8 @@ func (sorter *defaultSorter) performSortOnImageStrip(imageStrip []color.Color, m
 	for x := 0; x < stripLength; x += 1 {
 		currentColor := utils.ColorToRgba(imageStrip[x])
 
-		isMasked, err := sorter.mask.IsMasked(maskCoordinateFunc(x))
-		if err != nil {
-			return nil, fmt.Errorf("sorter: failed to perform a lookup to the mask image: %w", err)
-		}
-
-		// NOTE: isMasked and options dependecy solved using a quick K-Map
-		passThrough := !isMasked || !sorter.options.UseMask
-
-		if !utils.HasAnyTransparency(currentColor) && sorter.isMeetingIntervalRequirements(currentColor, isMasked, intervalMaxLength, interval) && passThrough {
-			if err := interval.Append(currentColor); err != nil {
-				return nil, fmt.Errorf("sorter: failed to append color to the interval: %w", err)
-			}
-		} else {
+		// NOTE: Don't pass to interval if the pixel has any transparancy
+		if utils.HasAnyTransparency(currentColor) {
 			if interval.Any() {
 				sortedIntervalItems := interval.Sort(sorter.options.SortDirection, sorter.options.IntervalPainting)
 				sortedImageStrip = append(sortedImageStrip, sortedIntervalItems...)
@@ -329,6 +318,61 @@ func (sorter *defaultSorter) performSortOnImageStrip(imageStrip []color.Color, m
 			}
 
 			sortedImageStrip = append(sortedImageStrip, currentColor)
+			continue
+		}
+
+		// NOTE: Don't pass to interval if the interval max length has ben reached. (Solved using K-Map)
+		if !(intervalMaxLength == 0) && (intervalMaxLength <= interval.Count()) {
+			if interval.Any() {
+				sortedIntervalItems := interval.Sort(sorter.options.SortDirection, sorter.options.IntervalPainting)
+				sortedImageStrip = append(sortedImageStrip, sortedIntervalItems...)
+
+				interval = CreateInterval(sorter.options.SortDeterminant)
+				intervalMaxLength = sorter.calculateMaxIntervalLength()
+			}
+
+			sortedImageStrip = append(sortedImageStrip, currentColor)
+			continue
+		}
+
+		isMasked, err := sorter.mask.IsMasked(maskCoordinateFunc(x))
+		if err != nil {
+			return nil, fmt.Errorf("sorter: failed to perform a lookup to the mask image: %w", err)
+		}
+
+		// NOTE: Don't pass to interval if the pixel is masked and the mask is used
+		if isMasked && sorter.options.UseMask {
+			if interval.Any() {
+				sortedIntervalItems := interval.Sort(sorter.options.SortDirection, sorter.options.IntervalPainting)
+				sortedImageStrip = append(sortedImageStrip, sortedIntervalItems...)
+
+				interval = CreateInterval(sorter.options.SortDeterminant)
+				intervalMaxLength = sorter.calculateMaxIntervalLength()
+			}
+
+			sortedImageStrip = append(sortedImageStrip, currentColor)
+			continue
+		}
+
+		lowerThreshold := sorter.options.IntervalDeterminantLowerThreshold
+		upperThreshold := sorter.options.IntervalDeterminantUpperThreshold
+
+		// NOTE" Don't pass to interval if the interval determinant requirements are not meet
+		if !sorter.isMeetingIntervalDeterminant(interval, currentColor, lowerThreshold, upperThreshold, isMasked) {
+			if interval.Any() {
+				sortedIntervalItems := interval.Sort(sorter.options.SortDirection, sorter.options.IntervalPainting)
+				sortedImageStrip = append(sortedImageStrip, sortedIntervalItems...)
+
+				interval = CreateInterval(sorter.options.SortDeterminant)
+				intervalMaxLength = sorter.calculateMaxIntervalLength()
+			}
+
+			sortedImageStrip = append(sortedImageStrip, currentColor)
+			continue
+		}
+
+		if err := interval.Append(currentColor); err != nil {
+			return nil, fmt.Errorf("sorter: failed to append color to the interval: %w", err)
 		}
 	}
 
@@ -340,38 +384,25 @@ func (sorter *defaultSorter) performSortOnImageStrip(imageStrip []color.Color, m
 	return sortedImageStrip, nil
 }
 
-func (sorter *defaultSorter) isMeetingIntervalRequirements(color color.RGBA, isMasked bool, maxLength int, interval Interval) bool {
-	// NOTE: interval length and options dependecy solved using a quick K-Map
-	if !(maxLength == 0) && (maxLength <= interval.Count()) {
-		return false
-	}
-
+// This function return a boolean value represenitng if the given color meets the interval determinant requirements
+func (sorter *defaultSorter) isMeetingIntervalDeterminant(i Interval, c color.RGBA, lowerThreshold, upperThreshold float64, isMasked bool) bool {
 	switch sorter.options.IntervalDeterminant {
 	case SplitByBrightness:
 		{
-			lThreshold := sorter.options.IntervalDeterminantLowerThreshold
-			uThreshold := sorter.options.IntervalDeterminantUpperThreshold
-
-			brightness := utils.CalculatePerceivedBrightness(color)
-			return brightness >= lThreshold && brightness <= uThreshold
+			brightness := utils.CalculatePerceivedBrightness(c)
+			return brightness >= lowerThreshold && brightness <= upperThreshold
 		}
 	case SplitByHue:
 		{
-			lThreshold := sorter.options.IntervalDeterminantLowerThreshold
-			uThreshold := sorter.options.IntervalDeterminantUpperThreshold
-
-			h, _, _, _ := utils.ColorToHsla(color)
+			h, _, _, _ := utils.ColorToHsla(c)
 			hNorm := float64(h) / 360.0
 
-			return hNorm >= lThreshold && hNorm <= uThreshold
+			return hNorm >= lowerThreshold && hNorm <= upperThreshold
 		}
 	case SplitBySaturation:
 		{
-			lThreshold := sorter.options.IntervalDeterminantLowerThreshold
-			uThreshold := sorter.options.IntervalDeterminantUpperThreshold
-
-			_, s, _, _ := utils.ColorToHsla(color)
-			return s >= lThreshold && s <= uThreshold
+			_, s, _, _ := utils.ColorToHsla(c)
+			return s >= lowerThreshold && s <= upperThreshold
 		}
 	case SplitByMask, SplitByEdgeDetection:
 		{
@@ -379,12 +410,9 @@ func (sorter *defaultSorter) isMeetingIntervalRequirements(color color.RGBA, isM
 		}
 	case SplitByAbsoluteColor:
 		{
-			lThreshold := sorter.options.IntervalDeterminantLowerThreshold
-			uThreshold := sorter.options.IntervalDeterminantUpperThreshold
+			abs := float64(int(c.R)*int(c.G)*int(c.B)) / 16581375.0
 
-			abs := float64(int(color.R)*int(color.G)*int(color.B)) / 16581375.0
-
-			return abs >= lThreshold && abs < uThreshold
+			return abs >= lowerThreshold && abs < upperThreshold
 		}
 	default:
 		panic("sorter: invalid sorter state due to a corrupted interval determinant value")
