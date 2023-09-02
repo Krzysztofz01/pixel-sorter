@@ -11,6 +11,7 @@ const (
 	SortByBrightness SortDeterminant = iota
 	SortByHue
 	SortBySaturation
+	SortByAbsoluteColor
 	SortByRedChannel
 	SortByGreenChannel
 	SortByBlueChannel

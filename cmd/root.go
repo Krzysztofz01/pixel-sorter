@@ -64,7 +64,7 @@ func init() {
 
 	rootCmd.PersistentFlags().StringVar(&FlagMaskImageFilePath, "mask-image-path", "", "The path of the mask image file used to process the input media.")
 
-	rootCmd.PersistentFlags().StringVarP(&FlagSortDeterminant, "sort-determinant", "e", "brightness", "Parameter used as the argument for the sorting algorithm. Options: [brightness, hue, saturation, red, green, blue ].")
+	rootCmd.PersistentFlags().StringVarP(&FlagSortDeterminant, "sort-determinant", "e", "brightness", "Parameter used as the argument for the sorting algorithm. Options: [brightness, hue, saturation, absolute, red, green, blue ].")
 
 	rootCmd.PersistentFlags().StringVarP(&FlagSortDirection, "direction", "d", "ascending", "Pixel sorting direction in intervals. Options: [ascending, descending, shuffle, random].")
 
@@ -119,6 +119,8 @@ func parseCommonOptions() (*sorter.SorterOptions, error) {
 		options.SortDeterminant = sorter.SortByHue
 	case "saturation":
 		options.SortDeterminant = sorter.SortBySaturation
+	case "absolute":
+		options.SortDeterminant = sorter.SortByAbsoluteColor
 	case "red":
 		options.SortDeterminant = sorter.SortByRedChannel
 	case "green":

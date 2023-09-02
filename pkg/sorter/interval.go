@@ -91,6 +91,12 @@ func CreateInterval(sort SortDeterminant) Interval {
 				return s
 			})
 		}
+	case SortByAbsoluteColor:
+		{
+			return CreateValueWeightInterval(func(c color.RGBA) int {
+				return int(c.R) * int(c.G) * int(c.B)
+			})
+		}
 	case SortByRedChannel:
 		{
 			return CreateValueWeightInterval(func(c color.RGBA) int {
