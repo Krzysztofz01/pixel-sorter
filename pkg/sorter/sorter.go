@@ -12,6 +12,9 @@ const (
 	SortByHue
 	SortBySaturation
 	SortByAbsoluteColor
+	SortByRedChannel
+	SortByGreenChannel
+	SortByBlueChannel
 )
 
 // Flag representing the order in which should be the image sorted

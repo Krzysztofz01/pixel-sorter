@@ -29,6 +29,21 @@ func TestCreateIntervalShouldCreateIntervalForSortByAbsolute(t *testing.T) {
 	assert.NotNil(t, interval)
 }
 
+func TestCreateIntervalShouldCreateIntervalForSortByRedChannel(t *testing.T) {
+	interval := CreateInterval(SortByRedChannel)
+	assert.NotNil(t, interval)
+}
+
+func TestCreateIntervalShouldCreateIntervalForSortByGreenChannel(t *testing.T) {
+	interval := CreateInterval(SortByGreenChannel)
+	assert.NotNil(t, interval)
+}
+
+func TestCreateIntervalShouldCreateIntervalForSortByBlueChannel(t *testing.T) {
+	interval := CreateInterval(SortByBlueChannel)
+	assert.NotNil(t, interval)
+}
+
 func TestCreateIntervalShouldPanicForInvalidSortDeterminant(t *testing.T) {
 	assert.Panics(t, func() {
 		CreateInterval(-1)

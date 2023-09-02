@@ -43,6 +43,9 @@ task build
     - *hue* - Use the HSL color space hue value as the sorting argument
     - *saturation* - Use the HSL color space saturation value as the sorting argument
     - *absolute* - Use the product of all RGB components as the sorting argument (imprecise but classic approach)
+    - *red* - Use the RGB color space red channel as the sorting argument
+    - *green* - Use the RGB color space green channel as the sorting argument
+    - *blue* - Use the RGB color space blue channel as the sorting argument
 - *direction* (-d) - Pixel sorting direction in intervals.
     - *ascending* - Sort ascending according to the sorting determinant
     - *descending* - Sort descending according to the sorting determinant
@@ -105,7 +108,7 @@ Flags:
   -o, --order string                            Order of the graphic sorting stages. Options: [horizontal, vertical, horizontal-vertical, vertical-horizontal]. (default "horizontal-vertical")
       --output-media-path string                The path of the output media file to be saved. The path should end with one of the supported extensions. [jpg, png]
   -s, --scale float                             Image downscaling percentage factor. Options: [0.0 - 1.0]. (default 1)
-  -e, --sort-determinant string                 Parameter used as the argument for the sorting algorithm. Options: [brightness, hue, saturation, absolute]. (default "brightness")
+  -e, --sort-determinant string                 Parameter used as the argument for the sorting algorithm. Options: [brightness, hue, saturation, absolute, red, green, blue ]. (default "brightness")
   -v, --verbose                                 Enable verbose logging mode.
 
 Use "pixel-sorter [command] --help" for more information about a command.
