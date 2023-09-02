@@ -40,12 +40,12 @@ task build
 - *cycles* (-c) - The count of sorting cycles that should be performed on the image.
 - *sort-determinant* (-e) - Parameter used as the argument for the sorting algorithm. 
     - *brightness* - Use the perceived brightness as the sorting argument
-    - *hue* - use the HSL color space hue value as the sorting argument
-    - *saturation* - use the HSL color space saturation value as the sorting argument
+    - *hue* - Use the HSL color space hue value as the sorting argument
+    - *saturation* - Use the HSL color space saturation value as the sorting argument
     - *absolute* - Use the product of all RGB components as the sorting argument (imprecise but classic approach)
-    - *red* - use the RGB color space red channel as the sorting argument
-    - *green* - use the RGB color space green channel as the sorting argument
-    - *blue* - use the RGB color space blue channel as the sorting argument
+    - *red* - Use the RGB color space red channel as the sorting argument
+    - *green* - Use the RGB color space green channel as the sorting argument
+    - *blue* - Use the RGB color space blue channel as the sorting argument
 - *direction* (-d) - Pixel sorting direction in intervals.
     - *ascending* - Sort ascending according to the sorting determinant
     - *descending* - Sort descending according to the sorting determinant
