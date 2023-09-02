@@ -63,6 +63,23 @@ func TestDefaultOptionsAndSortDeterminantSaturation(t *testing.T) {
 	assert.Nil(t, err)
 }
 
+func TestDefaultOptionsAndSortDeterminantAbsoluteColor(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
+	options := GetDefaultSorterOptions()
+	options.SortDeterminant = SortByAbsoluteColor
+
+	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), nil, nil, options)
+
+	assert.NotNil(t, sorter)
+	assert.Nil(t, err)
+
+	result, err := sorter.Sort()
+
+	assert.NotNil(t, result)
+	assert.Nil(t, err)
+}
+
 func TestDefaultOptionsAndAngle45Degrees(t *testing.T) {
 	defer goleak.VerifyNone(t)
 

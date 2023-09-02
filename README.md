@@ -40,8 +40,9 @@ task build
 - *cycles* (-c) - The count of sorting cycles that should be performed on the image.
 - *sort-determinant* (-e) - Parameter used as the argument for the sorting algorithm. 
     - *brightness* - Use the perceived brightness as the sorting argument
-    - *hue* - use the HSL color space hue value as the sorting argument
-    - *saturation* - use the HSL color space saturation value as the sorting argument
+    - *hue* - Use the HSL color space hue value as the sorting argument
+    - *saturation* - Use the HSL color space saturation value as the sorting argument
+    - *absolute* - Use the product of all RGB components as the sorting argument (imprecise but classic approach)
 - *direction* (-d) - Pixel sorting direction in intervals.
     - *ascending* - Sort ascending according to the sorting determinant
     - *descending* - Sort descending according to the sorting determinant
@@ -57,7 +58,7 @@ task build
     - *hue* - Use the HSL color space hue value to determine intervals
     - *saturation* - Use the HSL color space saturation value to determine intervals
     - *mask* - Use the external mask image to determine intervals
-    - *absolute* - Use the color absolute value (old imprecise approach, but classic)
+    - *absolute* - Use the product of all RGB components to determine intervals (imprecise but classic approach)
     - *edge* - Use a Canny edge detection algorithm to determine intervals
 - *interval-lower-threshold* (-l) - The lower threshold of the interval determination process.
 - *interval-upper-threshold* (-u) - The upper threshold of the interval determination process.
@@ -104,7 +105,7 @@ Flags:
   -o, --order string                            Order of the graphic sorting stages. Options: [horizontal, vertical, horizontal-vertical, vertical-horizontal]. (default "horizontal-vertical")
       --output-media-path string                The path of the output media file to be saved. The path should end with one of the supported extensions. [jpg, png]
   -s, --scale float                             Image downscaling percentage factor. Options: [0.0 - 1.0]. (default 1)
-  -e, --sort-determinant string                 Parameter used as the argument for the sorting algorithm. Options: [brightness, hue, saturation]. (default "brightness")
+  -e, --sort-determinant string                 Parameter used as the argument for the sorting algorithm. Options: [brightness, hue, saturation, absolute]. (default "brightness")
   -v, --verbose                                 Enable verbose logging mode.
 
 Use "pixel-sorter [command] --help" for more information about a command.
