@@ -6,7 +6,7 @@ require (
 	github.com/Krzysztofz01/pimit v0.1.0
 	github.com/antonfisher/nested-logrus-formatter v1.3.1
 	github.com/disintegration/imaging v1.6.2
-	github.com/sirupsen/logrus v1.9.0
+	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.6.1
 	github.com/stretchr/testify v1.8.3
 	go.uber.org/goleak v1.2.1
