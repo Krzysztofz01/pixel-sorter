@@ -102,6 +102,7 @@ func parseCommonOptions() (*sorter.SorterOptions, error) {
 		Logger.SetReportCaller(true)
 
 		LocalLogger = CreateLocalLogger(Logger)
+		SorterLogger = CreateSorterLogger(Logger)
 	}
 
 	if len(FlagInputMediaFilePath) == 0 {
@@ -312,17 +313,33 @@ type sorterLogger struct {
 }
 
 func (sl *sorterLogger) Debugf(format string, args ...interface{}) {
-	sl.logger.Debugf(format, args...)
+	if len(args) == 0 {
+		sl.logger.Debugln(format)
+	} else {
+		sl.logger.Debugf(format, args...)
+	}
 }
 
 func (sl *sorterLogger) Infof(format string, args ...interface{}) {
-	sl.logger.Infof(format, args...)
+	if len(args) == 0 {
+		sl.logger.Infoln(format)
+	} else {
+		sl.logger.Infof(format, args...)
+	}
 }
 
-func (sl *sorterLogger) Warningf(format string, args ...interface{}) {
-	sl.logger.Warningf(format, args...)
+func (sl *sorterLogger) Warnf(format string, args ...interface{}) {
+	if len(args) == 0 {
+		sl.logger.Warningln(format)
+	} else {
+		sl.logger.Warningf(format, args...)
+	}
 }
 
 func (sl *sorterLogger) Errorf(format string, args ...interface{}) {
-	sl.logger.Errorf(format, args...)
+	if len(args) == 0 {
+		sl.logger.Errorln(format)
+	} else {
+		sl.logger.Errorf(format, args...)
+	}
 }
