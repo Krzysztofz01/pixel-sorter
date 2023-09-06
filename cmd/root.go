@@ -36,8 +36,9 @@ var (
 )
 
 var (
-	Logger      *logrus.Logger
-	LocalLogger *logrus.Entry
+	Logger       *logrus.Logger
+	LocalLogger  *logrus.Entry
+	SorterLogger sorter.SorterLogger
 )
 
 var Version string
@@ -51,6 +52,7 @@ var rootCmd = &cobra.Command{
 func init() {
 	Logger = CreateLogger()
 	LocalLogger = CreateLocalLogger(Logger)
+	SorterLogger = CreateSorterLogger(Logger)
 
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 
@@ -100,6 +102,7 @@ func parseCommonOptions() (*sorter.SorterOptions, error) {
 		Logger.SetReportCaller(true)
 
 		LocalLogger = CreateLocalLogger(Logger)
+		SorterLogger = CreateSorterLogger(Logger)
 	}
 
 	if len(FlagInputMediaFilePath) == 0 {
@@ -304,4 +307,47 @@ func CreateLogger() *logrus.Logger {
 // Create a new prefixed logger entry instance
 func CreateLocalLogger(logger *logrus.Logger) *logrus.Entry {
 	return logger.WithField("prefix", "pixel-sorter-cli")
+}
+
+// Create a new prefixed sorter logger instance
+func CreateSorterLogger(logger *logrus.Logger) sorter.SorterLogger {
+	return &sorterLogger{
+		logger: logger.WithField("prefix", "pixel-sorter"),
+	}
+}
+
+type sorterLogger struct {
+	logger *logrus.Entry
+}
+
+func (sl *sorterLogger) Debugf(format string, args ...interface{}) {
+	if len(args) == 0 {
+		sl.logger.Debugln(format)
+	} else {
+		sl.logger.Debugf(format, args...)
+	}
+}
+
+func (sl *sorterLogger) Infof(format string, args ...interface{}) {
+	if len(args) == 0 {
+		sl.logger.Infoln(format)
+	} else {
+		sl.logger.Infof(format, args...)
+	}
+}
+
+func (sl *sorterLogger) Warnf(format string, args ...interface{}) {
+	if len(args) == 0 {
+		sl.logger.Warningln(format)
+	} else {
+		sl.logger.Warningf(format, args...)
+	}
+}
+
+func (sl *sorterLogger) Errorf(format string, args ...interface{}) {
+	if len(args) == 0 {
+		sl.logger.Errorln(format)
+	} else {
+		sl.logger.Errorf(format, args...)
+	}
 }

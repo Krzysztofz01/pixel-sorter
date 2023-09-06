@@ -1,7 +1,6 @@
 package sorter
 
 import (
-	"bytes"
 	"fmt"
 	"image"
 	"image/color"
@@ -12,36 +11,29 @@ import (
 
 	"github.com/Krzysztofz01/pixel-sorter/pkg/img"
 	"github.com/Krzysztofz01/pixel-sorter/pkg/utils"
-	"github.com/sirupsen/logrus"
 )
 
 type defaultSorter struct {
 	image   image.Image
 	mask    *Mask
-	logger  *logrus.Entry
+	logger  SorterLogger
 	options *SorterOptions
 }
 
 // Create a new image sorter instance by providing the image to be sorted and optional parameters such as mask image
 // logger instance and custom sorter options. This function will return a new sorter instance or a error.
-func CreateSorter(image image.Image, mask image.Image, logger *logrus.Logger, options *SorterOptions) (Sorter, error) {
+func CreateSorter(image image.Image, mask image.Image, logger SorterLogger, options *SorterOptions) (Sorter, error) {
 	sorter := new(defaultSorter)
 	sorter.image = image
 
 	if logger == nil {
-		loggerBuffer := bytes.Buffer{}
-		defaultLogger := &logrus.Logger{
-			Out:       &loggerBuffer,
-			Formatter: &logrus.TextFormatter{},
-		}
-
-		sorter.logger = defaultLogger.WithField("prefix", "pixel-sorter")
+		sorter.logger = getDiscardLogger()
 	} else {
-		sorter.logger = logger.WithField("prefix", "pixel-sorter")
+		sorter.logger = logger
 	}
 
 	if options != nil {
-		sorter.logger.Debugln("Running the sorter with specified sorter options.")
+		sorter.logger.Debugf("Running the sorter with specified sorter options.")
 
 		if valid, msg := options.AreValid(); !valid {
 			sorter.logger.Debugf("Sorter options validation failed. Sorter options: %+v", *options)
@@ -51,7 +43,7 @@ func CreateSorter(image image.Image, mask image.Image, logger *logrus.Logger, op
 		sorter.logger.Debugf("Sorter options validation passed. Sorter options: %+v", *options)
 		sorter.options = options
 	} else {
-		sorter.logger.Debugln("Running the sorter with default sorter options.")
+		sorter.logger.Debugf("Running the sorter with default sorter options.")
 		sorter.options = GetDefaultSorterOptions()
 	}
 
