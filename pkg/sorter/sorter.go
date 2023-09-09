@@ -83,6 +83,7 @@ type SorterOptions struct {
 	Cycles                            int
 	Scale                             float64
 	Blending                          ResultImageBlending
+	Downsample                        float64
 }
 
 // Return a boolean value indicating if the given sorter options combination is valid
@@ -116,6 +117,10 @@ func (options *SorterOptions) AreValid() (bool, string) {
 		return false, "the interval length random factor value must not be negative"
 	}
 
+	if options.Downsample < 0.0 || options.Downsample > 1.0 {
+		return false, "the downsample factor must be between values 0 and 1"
+	}
+
 	return true, ""
 }
 
@@ -136,6 +141,7 @@ func GetDefaultSorterOptions() *SorterOptions {
 	options.Cycles = 1
 	options.Scale = 1
 	options.Blending = BlendingNone
+	options.Downsample = 0
 
 	return options
 }

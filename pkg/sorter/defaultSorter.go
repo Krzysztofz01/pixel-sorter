@@ -107,6 +107,11 @@ func (sorter *defaultSorter) Sort() (image.Image, error) {
 		return nil, fmt.Errorf("sorter: the provided image is not drawable: %w", err)
 	}
 
+	if sorter.options.Downsample != 0 {
+		factor := int(sorter.options.Downsample * float64(drawableImage.Bounds().Dx()))
+		drawableImage = utils.Downsample(drawableImage, factor)
+	}
+
 	if sorter.options.Angle != 0 {
 		drawableImage = utils.RotateImage(drawableImage, sorter.options.Angle)
 	}
