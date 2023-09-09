@@ -347,6 +347,104 @@ const (
 	mock_image_height = 25
 )
 
+func TestDownsampleShouldPanicForNilImage(t *testing.T) {
+	assert.Panics(t, func() {
+		Downsample(nil, 2)
+	})
+}
+
+func TestDownsampleShouldPanicForInvalidFactor(t *testing.T) {
+	assert.Panics(t, func() {
+		Downsample(mockTestWhiteImage(), -1)
+	})
+}
+
+func TestDownsampleShouldDownsampleImageWithFactorZero(t *testing.T) {
+	expectedImage := mockTestGradientImage()
+
+	actualImage := Downsample(expectedImage, 0)
+
+	StoreImageToFile("expected.png", "png", expectedImage)
+	StoreImageToFile("actual.png", "png", actualImage)
+
+	assert.NotNil(t, actualImage)
+	assert.Equal(t, expectedImage, actualImage)
+}
+
+func TestDownsampleShouldDownsampleImageWithFactorOne(t *testing.T) {
+	expectedImage := mockTestGradientImage()
+
+	actualImage := Downsample(expectedImage, 1)
+
+	StoreImageToFile("expected.png", "png", expectedImage)
+	StoreImageToFile("actual.png", "png", actualImage)
+
+	assert.NotNil(t, actualImage)
+	assert.Equal(t, expectedImage, actualImage)
+}
+
+func TestDownsampleShouldDownsampleImageWithFactorEven(t *testing.T) {
+	inputImage := image.NewRGBA(image.Rect(0, 0, 4, 4))
+	expectedImage := image.NewRGBA(image.Rect(0, 0, 4, 4))
+	sw := false
+	for y := 0; y < 4; y += 1 {
+		for x := 0; x < 4; x += 1 {
+			expectedImage.Set(x, y, color.White)
+
+			if sw {
+				inputImage.Set(x, y, color.Black)
+			} else {
+				inputImage.Set(x, y, color.White)
+			}
+			sw = !sw
+		}
+	}
+
+	actualImage := Downsample(inputImage, 2)
+
+	assert.NotNil(t, actualImage)
+	assert.Equal(t, expectedImage, actualImage)
+}
+
+func TestDownsampleShouldDownsampleImageWithFactorOdd(t *testing.T) {
+	inputImage := image.NewRGBA(image.Rect(0, 0, 5, 4))
+	expectedImage := image.NewRGBA(image.Rect(0, 0, 5, 4))
+	sw := false
+	for y := 0; y < 4; y += 1 {
+		for x := 0; x < 5; x += 1 {
+			expectedImage.Set(x, y, color.Black)
+
+			if sw {
+				inputImage.Set(x, y, color.White)
+			} else {
+				inputImage.Set(x, y, color.Black)
+			}
+			sw = !sw
+		}
+	}
+
+	actualImage := Downsample(inputImage, 2)
+
+	assert.NotNil(t, actualImage)
+	assert.Equal(t, expectedImage, actualImage)
+}
+func TestDownsampleShouldDownsampleImageWithFactorGreaterThanDimensions(t *testing.T) {
+	inputImage := mockTestWhiteImage()
+	inputImage.Set(0, 0, color.Black)
+
+	expectedImage := image.NewRGBA(inputImage.Bounds())
+	for y := 0; y < inputImage.Bounds().Dy(); y += 1 {
+		for x := 0; x < inputImage.Bounds().Dx(); x += 1 {
+			expectedImage.Set(x, y, color.Black)
+		}
+	}
+
+	actualImage := Downsample(inputImage, inputImage.Bounds().Dx()*2)
+
+	assert.NotNil(t, actualImage)
+	assert.Equal(t, expectedImage, actualImage)
+}
+
 // Create a test image which is a linear, left to right, black to white gradient of the size specifed by the mock_image prefixed constants
 func mockTestGradientImage() draw.Image {
 	gradient := make([]color.Color, mock_image_width)

@@ -344,3 +344,46 @@ func BlendImages(a, b image.Image, mode BlendingMode) (draw.Image, error) {
 
 	return resultImage, nil
 }
+
+// Create a downsampled version of the provided image. The f parameter indicated the sampling step.
+// The upper left color of a sampling step is used to fill the whole sample. This function will panic
+// if the provided image is nil or if the downsampling factor is less than zero.
+func Downsample(i image.Image, f int) draw.Image {
+	if i == nil {
+		panic("image-utils: the provided image reference is nil")
+	}
+
+	if f < 0 {
+		panic("image-utils: the downsampling factor must not be less than zero")
+	}
+
+	if f < 2 {
+		if img, err := GetDrawableImage(i); err != nil {
+			panic(fmt.Errorf("image-utils: failed to perform the zero factor downsampling: %w", err))
+		} else {
+			return img
+		}
+	}
+
+	img := image.NewRGBA(i.Bounds())
+	for xIndex := 0; xIndex < img.Bounds().Dx(); xIndex += f {
+		for yIndex := 0; yIndex < img.Bounds().Dy(); yIndex += f {
+			c := i.At(xIndex, yIndex)
+
+			for xxIndex := 0; xxIndex < f; xxIndex += 1 {
+				for yyIndex := 0; yyIndex < f; yyIndex += 1 {
+					xOffset := xIndex + xxIndex
+					yOffset := yIndex + yyIndex
+
+					if xOffset >= img.Bounds().Dx() || yOffset >= img.Bounds().Dy() {
+						continue
+					} else {
+						img.Set(xOffset, yOffset, c)
+					}
+				}
+			}
+		}
+	}
+
+	return img
+}
