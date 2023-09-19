@@ -133,7 +133,7 @@ func createGradientMapImage(i *image.NRGBA, g [][]gradientPoint) (*image.NRGBA, 
 	height := i.Bounds().Dy()
 
 	outputImage := newWhiteNRGBA(image.Rect(0, 0, width, height))
-	pimit.ParallelColumnReadWrite(outputImage, func(xIndex, yIndex int, _ color.Color) color.Color {
+	pimit.ParallelReadWrite(outputImage, func(xIndex, yIndex int, _ color.Color) color.Color {
 		magnitude := g[xIndex][yIndex].magnitude
 		colorValue := uint8(math.Max(0, math.Min(255, magnitude)))
 
@@ -153,7 +153,7 @@ func performNonMaxSuppresion(i *image.NRGBA, g [][]gradientPoint) (*image.NRGBA,
 	height := i.Bounds().Dy()
 
 	outputImage := newWhiteNRGBA(image.Rect(0, 0, width, height))
-	pimit.ParallelColumnReadWrite(outputImage, func(xIndex, yIndex int, _ color.Color) color.Color {
+	pimit.ParallelReadWrite(outputImage, func(xIndex, yIndex int, _ color.Color) color.Color {
 		magnitude := g[xIndex][yIndex].magnitude
 		colorValue := uint8(math.Max(0, math.Min(255, magnitude)))
 
@@ -225,7 +225,7 @@ func performHysteresis(i *image.NRGBA) *image.NRGBA {
 	colorStrong := color.Gray{Y: doubleThresholdStrong}
 
 	outputImage := newWhiteNRGBA(image.Rect(0, 0, width, height))
-	pimit.ParallelColumnReadWrite(outputImage, func(xIndex, yIndex int, _ color.Color) color.Color {
+	pimit.ParallelReadWrite(outputImage, func(xIndex, yIndex int, _ color.Color) color.Color {
 		colorValue := float64(utils.ColorToGrayscaleComponent(i.NRGBAAt(xIndex, yIndex)))
 
 		if colorValue >= dtUpperThreshold {
@@ -291,7 +291,7 @@ func valueBetween(value, min, max float64) bool {
 // Helper function used to createa new image.NRGBA image initialize with 0xFFFFFFFF color
 func newWhiteNRGBA(r image.Rectangle) *image.NRGBA {
 	img := image.NewNRGBA(r)
-	pimit.ParallelColumnColorReadWrite(img, func(c color.Color) color.Color {
+	pimit.ParallelReadWrite(img, func(_, _ int, _ color.Color) color.Color {
 		return color.White
 	})
 
