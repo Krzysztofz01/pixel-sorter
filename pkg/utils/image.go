@@ -225,7 +225,7 @@ func InvertImage(i image.Image) (draw.Image, error) {
 		return nil, fmt.Errorf("image-utils: can not get the drawable image version: %w", err)
 	}
 
-	pimit.ParallelColumnColorReadWrite(drawableImage, func(c color.Color) color.Color {
+	pimit.ParallelReadWrite(drawableImage, func(_, _ int, c color.Color) color.Color {
 		currentColor := ColorToRgba(c)
 
 		return color.RGBA{
@@ -278,7 +278,7 @@ func TrimImageTransparentWorkspace(imageWithWorkspace draw.Image, imageOriginal 
 	}
 
 	tImg := image.NewRGBA(image.Rect(0, 0, xIndexLength, yIndexLength))
-	pimit.ParallelColumnReadWrite(tImg, func(xIndex, yIndex int, _ color.Color) color.Color {
+	pimit.ParallelReadWrite(tImg, func(xIndex, yIndex int, _ color.Color) color.Color {
 		xOffset := xIndex + xIndexStart
 		yOffset := yIndex + yIndexStart
 
@@ -335,9 +335,9 @@ func BlendImages(a, b image.Image, mode BlendingMode) (draw.Image, error) {
 	}
 
 	resultImage := image.NewRGBA(image.Rect(0, 0, aWidth, aHeight))
-	pimit.ParallelColumnReadWrite(resultImage, func(xIndex, yIndex int, _ color.Color) color.Color {
-		aColor := ColorToRgba(aRgba.At(xIndex, yIndex))
-		bColor := ColorToRgba(bRgba.At(xIndex, yIndex))
+	pimit.ParallelReadWrite(resultImage, func(x, y int, _ color.Color) color.Color {
+		aColor := ColorToRgba(aRgba.At(x, y))
+		bColor := ColorToRgba(bRgba.At(x, y))
 
 		return BlendRGBA(aColor, bColor, mode)
 	})
