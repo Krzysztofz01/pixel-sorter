@@ -37,7 +37,7 @@ func CreateImageMask(mImg image.Image, targetImageBounds image.Rectangle, transl
 		return nil, errors.New("sorter: mask image and target image sizes are not matching")
 	}
 
-	err := pimit.ParallelColumnColorReadE(mImg, func(c color.Color) error {
+	err := pimit.ParallelReadE(mImg, func(_, _ int, c color.Color) error {
 		_, s, l, _ := utils.ColorToHsla(c)
 
 		if s != 0.0 || (l != 0.0 && l != 1.0) {
