@@ -199,7 +199,8 @@ func SetImageRow(image draw.Image, row []color.Color, yIndex int) error {
 	return nil
 }
 
-// Create a NRGBA image copy of an image represented as a image.Image.
+// Convert a image represented by image.Image to a NRGBA image. If the underlying type is already NRGBA a reference to the
+// original input will be returned, otherwis a copy will be created.
 func ImageToNrgbaImage(i image.Image) *image.NRGBA {
 	switch i0 := i.(type) {
 	case *image.NRGBA:
@@ -214,7 +215,8 @@ func ImageToNrgbaImage(i image.Image) *image.NRGBA {
 	}
 }
 
-// Create a RGBA image copy of an image represented as a image.Image.
+// Convert a image represented by image.Image to a RGBA image. If the underlying type is already RGBA a reference to the
+// original input will be returned, otherwis a copy will be created.
 func ImageToRgbaImage(i image.Image) *image.RGBA {
 	switch i0 := i.(type) {
 	case *image.RGBA:
@@ -335,6 +337,10 @@ func RotateImage(i image.Image, angle int) draw.Image {
 
 // Rotate the NRGBA image counter-clockwise by a given angle.
 func RotateImageNrgba(i *image.NRGBA, angle int) *image.NRGBA {
+	if i == nil {
+		panic("image-utils: can not perform rotation on a nil image")
+	}
+
 	angleNorm := float64(angle) + math.Ceil(-float64(angle)/360.0)*360.0
 	if angleNorm == 0 {
 		return GetImageCopyNrgba(i)
@@ -362,6 +368,10 @@ func RotateImageWithRevertNrgba(i *image.NRGBA, angle int) (*image.NRGBA, func(*
 	}
 
 	revertFunc := func(revertImage *image.NRGBA) *image.NRGBA {
+		if revertImage == nil {
+			panic("image-utils: can not perform rotation revert on a nil image")
+		}
+
 		if revertImage.Bounds().Dx() != rotated.Bounds().Dx() || revertImage.Bounds().Dy() != rotated.Bounds().Dy() {
 			panic("image-utils: can not revert the image rotation due to invalid bounds")
 		}
@@ -419,10 +429,6 @@ func trimImageTransparentWorkspaceNrgba(withWorkspace *image.NRGBA, original ima
 		yIndexStart  int = (withWorkspace.Bounds().Dy() - yIndexLength) / 2
 	)
 
-	if xIndexStart == 0 && yIndexStart == 0 {
-		return GetImageCopyNrgba(withWorkspace)
-	}
-
 	img := image.NewNRGBA(image.Rect(0, 0, xIndexLength, yIndexLength))
 	pimit.ParallelNrgbaReadWrite(img, func(x, y int, _, _, _, _ uint8) (uint8, uint8, uint8, uint8) {
 		xOffset := x + xIndexStart
@@ -459,7 +465,7 @@ func ScaleImage(i image.Image, percentage float64) (draw.Image, error) {
 
 // Function used to scale a NRGBA image down according to given percentage parameter (Value from 0.0 to 1.0).
 func ScaleImageNrgba(i *image.NRGBA, percentage float64) (*image.NRGBA, error) {
-	if percentage < 0.0 || percentage > 1.0 {
+	if percentage <= 0.0 || percentage > 1.0 {
 		return nil, errors.New("image-utils: invalid downscale percentage specified")
 	}
 
