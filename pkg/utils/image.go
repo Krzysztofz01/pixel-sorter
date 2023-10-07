@@ -520,7 +520,6 @@ func BlendImages(a, b image.Image, mode BlendingMode) (draw.Image, error) {
 }
 
 // Blend two NRGBA images using a given blending mode into a new image.
-// TODO: Reimplement using NRGBA values and internal buffers of src params
 func BlendImagesNrgba(a, b *image.NRGBA, mode BlendingMode) (*image.NRGBA, error) {
 	if a == nil || b == nil {
 		panic("image-utils: can not perform blending if one of the images is nil")
@@ -535,11 +534,9 @@ func BlendImagesNrgba(a, b *image.NRGBA, mode BlendingMode) (*image.NRGBA, error
 	}
 
 	img := image.NewNRGBA(image.Rect(0, 0, a.Bounds().Dx(), a.Bounds().Dy()))
-	pimit.ParallelReadWrite(img, func(x, y int, c color.Color) color.Color {
-		aColor := ColorToRgba(a.NRGBAAt(x, y))
-		bColor := ColorToRgba(b.NRGBAAt(x, y))
-
-		return BlendRGBA(aColor, bColor, mode)
+	pimit.ParallelNrgbaReadWrite(img, func(x, y int, _, _, _, _ uint8) (uint8, uint8, uint8, uint8) {
+		color := BlendNrgba(a.NRGBAAt(x, y), b.NRGBAAt(x, y), mode)
+		return color.R, color.G, color.B, color.A
 	})
 
 	return img, nil
