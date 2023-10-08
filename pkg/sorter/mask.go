@@ -77,6 +77,21 @@ func CreateEmptyMask() *Mask {
 }
 
 // TODO: If the mask is empty the size is not validated.
+// Perform a mask lookup using one-dimentional index to check if the mask is masking at the given location. If the
+// mask is empty it will always return false.
+func (mask *Mask) IsMaskedByIndex(index int) (bool, error) {
+	width := mask.maskImage.Bounds().Dx()
+	if mask.isTranslated {
+		width = mask.maskImageTranslated.Bounds().Dx()
+	}
+
+	y := index % width
+	x := index - (y * width)
+
+	return mask.IsMasked(x, y)
+}
+
+// TODO: If the mask is empty the size is not validated.
 // Perform a mask lookup to check if the mask is masking at the given location. If the
 // mask is empty it will always return false.
 func (mask *Mask) IsMasked(xIndex, yIndex int) (bool, error) {
