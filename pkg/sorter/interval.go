@@ -14,11 +14,6 @@ const (
 	defaultIntervalCapacity = 75
 )
 
-// TODO: After the Sort() the internal items collection order is changed, and some sort algorithms are assuming that
-// the "current" order is the append order. We can either create a local copy of the items collection, restore the
-// internal collection after the sort or prohibit the interval to sort more than one time. Currently there is no case
-// of multiple sorts on a single interval.
-
 // Collection of image vertical or horizontal pixel neighbours with a propererty meeting some ceratin requirements
 type Interval interface {
 	// Add a RGBA color to the given interval
@@ -30,8 +25,13 @@ type Interval interface {
 	// Get a boolean value representing the presence of elements in the given interval
 	Any() bool
 
-	// Sort all interval colors by weight in the specified direction and return the interval as a slice of RGBA colors
-	Sort(direction SortDirection, painting IntervalPainting) []color.Color
+	// Sort all interval colors by weight in the specified direction and return the interval as a new slice of RGBA
+	// colors. The internal interval items collection will be cleared after the sort.
+	Sort(direction SortDirection, painting IntervalPainting) []color.RGBA
+
+	// Sort all interval colors by weight in the specified direction and return the interval by writing the RGBA
+	// colors to the provided buffer. The internal interval items collection will be cleared after the sort.
+	SortToBuffer(direction SortDirection, painting IntervalPainting, buffer *[]color.RGBA)
 }
 
 type genericInterval[T int | float64] struct {
@@ -80,14 +80,14 @@ func CreateInterval(sort SortDeterminant) Interval {
 	case SortByHue:
 		{
 			return CreateValueWeightInterval(func(c color.RGBA) int {
-				h, _, _, _ := utils.ColorToHsla(c)
+				h, _, _, _ := utils.RgbaToHsla(c)
 				return h
 			})
 		}
 	case SortBySaturation:
 		{
 			return CreateNormalizedWeightInterval(func(c color.RGBA) float64 {
-				_, s, _, _ := utils.ColorToHsla(c)
+				_, s, _, _ := utils.RgbaToHsla(c)
 				return s
 			})
 		}
@@ -138,25 +138,35 @@ func (interval *genericInterval[T]) Any() bool {
 	return len(interval.items) > 0
 }
 
-func (interval *genericInterval[T]) Sort(direction SortDirection, painting IntervalPainting) []color.Color {
+func (interval *genericInterval[T]) Sort(direction SortDirection, painting IntervalPainting) []color.RGBA {
+	buffer := make([]color.RGBA, 0, interval.Count())
+
+	interval.SortToBuffer(direction, painting, &buffer)
+
+	return buffer
+}
+
+func (interval *genericInterval[T]) SortToBuffer(direction SortDirection, painting IntervalPainting, buffer *[]color.RGBA) {
+	defer func() {
+		// TODO: The previous items are not garbage-collected after the "clear" operation and can lead to pseudo memory leaks.
+		interval.items = interval.items[:0]
+	}()
+
 	if interval.Count() <= 1 {
-		colors := make([]color.Color, interval.Count())
 		for i := 0; i < interval.Count(); i += 1 {
-			colors[i] = interval.items[i].color
+			*buffer = append(*buffer, interval.items[i].color)
 		}
 
-		return colors
+		return
 	}
 
 	switch painting {
 	case IntervalRepeat:
 		{
-			colors := make([]color.Color, interval.Count())
-			for i := 0; i < interval.Count(); i += 1 {
-				colors[i] = interval.items[0].color
+			for range interval.items {
+				*buffer = append(*buffer, interval.items[0].color)
 			}
-
-			return colors
+			return
 		}
 	case IntervalAverage:
 		{
@@ -175,12 +185,11 @@ func (interval *genericInterval[T]) Sort(direction SortDirection, painting Inter
 				A: uint8(sumA / interval.Count()),
 			}
 
-			colors := make([]color.Color, interval.Count())
-			for i := 0; i < interval.Count(); i += 1 {
-				colors[i] = avg
+			for range interval.items {
+				*buffer = append(*buffer, avg)
 			}
 
-			return colors
+			return
 		}
 	case IntervalFill:
 		{
@@ -218,12 +227,11 @@ func (interval *genericInterval[T]) Sort(direction SortDirection, painting Inter
 				panic("sorter: undefined sort direction specified")
 			}
 
-			colors := make([]color.Color, interval.Count())
 			for i := 0; i < interval.Count(); i += 1 {
-				colors[i] = interval.items[i].color
+				*buffer = append(*buffer, interval.items[i].color)
 			}
 
-			return colors
+			return
 		}
 	case IntervalGradient:
 		{
@@ -236,8 +244,6 @@ func (interval *genericInterval[T]) Sort(direction SortDirection, painting Inter
 					direction = SortDescending
 				}
 			}
-
-			colors := make([]color.Color, interval.Count())
 
 			switch direction {
 			case SortAscending, SortDescending:
@@ -280,10 +286,10 @@ func (interval *genericInterval[T]) Sort(direction SortDirection, painting Inter
 					for i := 0; i < interval.Count(); i += 1 {
 						t := float64(i) / float64(interval.Count()-1)
 
-						abColorLerp := utils.InterpolateColor(a.color, b.color, t)
-						bcColorLerp := utils.InterpolateColor(b.color, c.color, t)
+						abColorLerp := utils.InterpolateRgba(a.color, b.color, t)
+						bcColorLerp := utils.InterpolateRgba(b.color, c.color, t)
 
-						colors[i] = utils.InterpolateColor(abColorLerp, bcColorLerp, t)
+						*buffer = append(*buffer, utils.InterpolateRgba(abColorLerp, bcColorLerp, t))
 					}
 				}
 			case Shuffle:
@@ -300,17 +306,15 @@ func (interval *genericInterval[T]) Sort(direction SortDirection, painting Inter
 					for i := 0; i < interval.Count(); i += 1 {
 						t := float64(i) / float64(interval.Count()-1)
 
-						abColorLerp := utils.InterpolateColor(a, b, t)
-						bcColorLerp := utils.InterpolateColor(b, c, t)
+						abColorLerp := utils.InterpolateRgba(a, b, t)
+						bcColorLerp := utils.InterpolateRgba(b, c, t)
 
-						colors[i] = utils.InterpolateColor(abColorLerp, bcColorLerp, t)
+						*buffer = append(*buffer, utils.InterpolateRgba(abColorLerp, bcColorLerp, t))
 					}
 				}
 			default:
 				panic("sorter: undefined sort direction specified")
 			}
-
-			return colors
 		}
 	default:
 		panic("sorter: undefined interval painting specified")

@@ -151,11 +151,11 @@ func TestValueWeightIntervalShouldPaintRepeat(t *testing.T) {
 			{100, 100, 100, 255},
 		}
 
-		expectedResult := []color.Color{
-			color.RGBA{16, 16, 16, 255},
-			color.RGBA{16, 16, 16, 255},
-			color.RGBA{16, 16, 16, 255},
-			color.RGBA{16, 16, 16, 255},
+		expectedResult := []color.RGBA{
+			{16, 16, 16, 255},
+			{16, 16, 16, 255},
+			{16, 16, 16, 255},
+			{16, 16, 16, 255},
 		}
 
 		assert.False(t, interval.Any())
@@ -192,11 +192,11 @@ func TestValueWeightIntervalShouldPaintAverage(t *testing.T) {
 			{100, 100, 100, 255},
 		}
 
-		expectedResult := []color.Color{
-			color.RGBA{92, 92, 92, 255},
-			color.RGBA{92, 92, 92, 255},
-			color.RGBA{92, 92, 92, 255},
-			color.RGBA{92, 92, 92, 255},
+		expectedResult := []color.RGBA{
+			{92, 92, 92, 255},
+			{92, 92, 92, 255},
+			{92, 92, 92, 255},
+			{92, 92, 92, 255},
 		}
 
 		assert.False(t, interval.Any())
@@ -225,11 +225,11 @@ func TestValueWeightIntervalShouldSortAscendingPaintFill(t *testing.T) {
 		{100, 100, 100, 255},
 	}
 
-	expectedResult := []color.Color{
-		color.RGBA{0, 0, 0, 255},
-		color.RGBA{16, 16, 16, 255},
-		color.RGBA{100, 100, 100, 255},
-		color.RGBA{255, 255, 255, 255},
+	expectedResult := []color.RGBA{
+		{0, 0, 0, 255},
+		{16, 16, 16, 255},
+		{100, 100, 100, 255},
+		{255, 255, 255, 255},
 	}
 
 	assert.False(t, interval.Any())
@@ -257,11 +257,11 @@ func TestValueWeightIntervalShouldSortDescendingPaintFill(t *testing.T) {
 		{100, 100, 100, 255},
 	}
 
-	expectedResult := []color.Color{
-		color.RGBA{255, 255, 255, 255},
-		color.RGBA{100, 100, 100, 255},
-		color.RGBA{16, 16, 16, 255},
-		color.RGBA{0, 0, 0, 255},
+	expectedResult := []color.RGBA{
+		{255, 255, 255, 255},
+		{100, 100, 100, 255},
+		{16, 16, 16, 255},
+		{0, 0, 0, 255},
 	}
 
 	assert.False(t, interval.Any())
@@ -326,15 +326,15 @@ func TestValueWeightIntervalShouldSortRandomPaintFill(t *testing.T) {
 	sortedColors := interval.Sort(SortRandom, IntervalFill)
 
 	isSortedAscending := sort.SliceIsSorted(sortedColors, func(i, j int) bool {
-		left, _ := sortedColors[i].(color.RGBA)
-		right, _ := sortedColors[j].(color.RGBA)
+		left := sortedColors[i]
+		right := sortedColors[j]
 
 		return left.R < right.R
 	})
 
 	isSortedDescending := sort.SliceIsSorted(sortedColors, func(i, j int) bool {
-		left, _ := sortedColors[i].(color.RGBA)
-		right, _ := sortedColors[j].(color.RGBA)
+		left := sortedColors[i]
+		right := sortedColors[j]
 
 		return left.R > right.R
 	})
@@ -354,11 +354,11 @@ func TestValueWeightIntervalShouldSortAscendingPaintGradient(t *testing.T) {
 		{100, 100, 100, 255},
 	}
 
-	expectedResult := []color.Color{
-		color.RGBA{0, 0, 0, 255},
-		color.RGBA{72, 72, 72, 255},
-		color.RGBA{157, 157, 157, 255},
-		color.RGBA{255, 255, 255, 255},
+	expectedResult := []color.RGBA{
+		{0, 0, 0, 255},
+		{72, 72, 72, 255},
+		{157, 157, 157, 255},
+		{255, 255, 255, 255},
 	}
 
 	assert.False(t, interval.Any())
@@ -386,11 +386,11 @@ func TestValueWeightIntervalShouldSortDescendingPaintGradient(t *testing.T) {
 		{100, 100, 100, 255},
 	}
 
-	expectedResult := []color.Color{
-		color.RGBA{255, 255, 255, 255},
-		color.RGBA{157, 157, 157, 255},
-		color.RGBA{72, 72, 72, 255},
-		color.RGBA{0, 0, 0, 255},
+	expectedResult := []color.RGBA{
+		{255, 255, 255, 255},
+		{157, 157, 157, 255},
+		{72, 72, 72, 255},
+		{0, 0, 0, 255},
 	}
 
 	assert.False(t, interval.Any())
@@ -455,15 +455,15 @@ func TestValueWeightIntervalShouldSortRandomPaintGradient(t *testing.T) {
 	sortedColors := interval.Sort(SortRandom, IntervalGradient)
 
 	isSortedAscending := sort.SliceIsSorted(sortedColors, func(i, j int) bool {
-		left, _ := sortedColors[i].(color.RGBA)
-		right, _ := sortedColors[j].(color.RGBA)
+		left := sortedColors[i]
+		right := sortedColors[j]
 
 		return left.R < right.R
 	})
 
 	isSortedDescending := sort.SliceIsSorted(sortedColors, func(i, j int) bool {
-		left, _ := sortedColors[i].(color.RGBA)
-		right, _ := sortedColors[j].(color.RGBA)
+		left := sortedColors[i]
+		right := sortedColors[j]
 
 		return left.R > right.R
 	})
@@ -560,11 +560,11 @@ func TestNormalizedWeightIntervalShouldPaintRepeat(t *testing.T) {
 			{100, 100, 100, 255},
 		}
 
-		expectedResult := []color.Color{
-			color.RGBA{16, 16, 16, 255},
-			color.RGBA{16, 16, 16, 255},
-			color.RGBA{16, 16, 16, 255},
-			color.RGBA{16, 16, 16, 255},
+		expectedResult := []color.RGBA{
+			{16, 16, 16, 255},
+			{16, 16, 16, 255},
+			{16, 16, 16, 255},
+			{16, 16, 16, 255},
 		}
 
 		assert.False(t, interval.Any())
@@ -601,11 +601,11 @@ func TestNormalizedWeightIntervalShouldPaintAverage(t *testing.T) {
 			{100, 100, 100, 255},
 		}
 
-		expectedResult := []color.Color{
-			color.RGBA{92, 92, 92, 255},
-			color.RGBA{92, 92, 92, 255},
-			color.RGBA{92, 92, 92, 255},
-			color.RGBA{92, 92, 92, 255},
+		expectedResult := []color.RGBA{
+			{92, 92, 92, 255},
+			{92, 92, 92, 255},
+			{92, 92, 92, 255},
+			{92, 92, 92, 255},
 		}
 
 		assert.False(t, interval.Any())
@@ -634,11 +634,11 @@ func TestNormalizedWeightIntervalShouldSortAscendingPaintFill(t *testing.T) {
 		{100, 100, 100, 255},
 	}
 
-	expectedResult := []color.Color{
-		color.RGBA{0, 0, 0, 255},
-		color.RGBA{16, 16, 16, 255},
-		color.RGBA{100, 100, 100, 255},
-		color.RGBA{255, 255, 255, 255},
+	expectedResult := []color.RGBA{
+		{0, 0, 0, 255},
+		{16, 16, 16, 255},
+		{100, 100, 100, 255},
+		{255, 255, 255, 255},
 	}
 
 	assert.False(t, interval.Any())
@@ -666,11 +666,11 @@ func TestNormalizedWeightIntervalShouldSortDescendingPaintFill(t *testing.T) {
 		{100, 100, 100, 255},
 	}
 
-	expectedResult := []color.Color{
-		color.RGBA{255, 255, 255, 255},
-		color.RGBA{100, 100, 100, 255},
-		color.RGBA{16, 16, 16, 255},
-		color.RGBA{0, 0, 0, 255},
+	expectedResult := []color.RGBA{
+		{255, 255, 255, 255},
+		{100, 100, 100, 255},
+		{16, 16, 16, 255},
+		{0, 0, 0, 255},
 	}
 
 	assert.False(t, interval.Any())
@@ -735,15 +735,15 @@ func TestNormalizedWeightIntervalShouldSortRandomPaintFill(t *testing.T) {
 	sortedColors := interval.Sort(SortRandom, IntervalFill)
 
 	isSortedAscending := sort.SliceIsSorted(sortedColors, func(i, j int) bool {
-		left, _ := sortedColors[i].(color.RGBA)
-		right, _ := sortedColors[j].(color.RGBA)
+		left := sortedColors[i]
+		right := sortedColors[j]
 
 		return left.R < right.R
 	})
 
 	isSortedDescending := sort.SliceIsSorted(sortedColors, func(i, j int) bool {
-		left, _ := sortedColors[i].(color.RGBA)
-		right, _ := sortedColors[j].(color.RGBA)
+		left := sortedColors[i]
+		right := sortedColors[j]
 
 		return left.R > right.R
 	})
@@ -764,11 +764,11 @@ func TestNormalizedWeightIntervalShouldSortAscendingPaintGradient(t *testing.T) 
 		{100, 100, 100, 255},
 	}
 
-	expectedResult := []color.Color{
-		color.RGBA{0, 0, 0, 255},
-		color.RGBA{72, 72, 72, 255},
-		color.RGBA{157, 157, 157, 255},
-		color.RGBA{255, 255, 255, 255},
+	expectedResult := []color.RGBA{
+		{0, 0, 0, 255},
+		{72, 72, 72, 255},
+		{157, 157, 157, 255},
+		{255, 255, 255, 255},
 	}
 
 	assert.False(t, interval.Any())
@@ -797,11 +797,11 @@ func TestNormalizedWeightIntervalShouldSortDescendingPaintGradient(t *testing.T)
 		{100, 100, 100, 255},
 	}
 
-	expectedResult := []color.Color{
-		color.RGBA{255, 255, 255, 255},
-		color.RGBA{157, 157, 157, 255},
-		color.RGBA{72, 72, 72, 255},
-		color.RGBA{0, 0, 0, 255},
+	expectedResult := []color.RGBA{
+		{255, 255, 255, 255},
+		{157, 157, 157, 255},
+		{72, 72, 72, 255},
+		{0, 0, 0, 255},
 	}
 
 	assert.False(t, interval.Any())
@@ -867,15 +867,15 @@ func TestNormalizedWeightIntervalShouldSortRandomPaintGradient(t *testing.T) {
 	sortedColors := interval.Sort(SortRandom, IntervalGradient)
 
 	isSortedAscending := sort.SliceIsSorted(sortedColors, func(i, j int) bool {
-		left, _ := sortedColors[i].(color.RGBA)
-		right, _ := sortedColors[j].(color.RGBA)
+		left := sortedColors[i]
+		right := sortedColors[j]
 
 		return left.R < right.R
 	})
 
 	isSortedDescending := sort.SliceIsSorted(sortedColors, func(i, j int) bool {
-		left, _ := sortedColors[i].(color.RGBA)
-		right, _ := sortedColors[j].(color.RGBA)
+		left := sortedColors[i]
+		right := sortedColors[j]
 
 		return left.R > right.R
 	})
