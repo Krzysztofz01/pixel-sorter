@@ -84,6 +84,22 @@ func TestMaskShouldTellIfIsMasked(t *testing.T) {
 	assert.True(t, isMasked)
 }
 
+func TestMaskShouldTellIfIsMaskedByIndex(t *testing.T) {
+	image := mockTestBlackAndWhiteImage()
+	mask, err := CreateMask(image)
+
+	assert.Nil(t, err)
+	assert.NotNil(t, mask)
+
+	isMasked, err := mask.IsMaskedByIndex(0)
+	assert.Nil(t, err)
+	assert.False(t, isMasked)
+
+	isMasked, err = mask.IsMaskedByIndex(1)
+	assert.Nil(t, err)
+	assert.True(t, isMasked)
+}
+
 func TestMaskShouldNotTellIfIsMaskedWhenLookupIsOutOfBounds(t *testing.T) {
 	image := mockTestBlackAndWhiteImage()
 	mask, err := CreateMask(image)
@@ -92,6 +108,22 @@ func TestMaskShouldNotTellIfIsMaskedWhenLookupIsOutOfBounds(t *testing.T) {
 	assert.NotNil(t, mask)
 
 	_, err = mask.IsMasked(image.Bounds().Dx()+1, image.Bounds().Dy()+1)
+
+	assert.NotNil(t, err)
+}
+
+func TestMaskShouldNotTellIfIsMaskedByIndexWhenLookupIsOutOfBounds(t *testing.T) {
+	image := mockTestBlackAndWhiteImage()
+	mask, err := CreateMask(image)
+
+	assert.Nil(t, err)
+	assert.NotNil(t, mask)
+
+	_, err = mask.IsMaskedByIndex(image.Bounds().Dx()*image.Bounds().Dy() + 1)
+
+	assert.NotNil(t, err)
+
+	_, err = mask.IsMaskedByIndex(-1)
 
 	assert.NotNil(t, err)
 }
