@@ -176,6 +176,63 @@ func (sorter *defaultSorter) Sort() (image.Image, error) {
 	return drawableImage, nil
 }
 
+// Function used to iterate over image rows in parallel and invoking the image strip sorting on each row.
+func (sorter *defaultSorter) performParallelRowSorting(src, dst *image.RGBA) error {
+	width := src.Bounds().Dx()
+	height := src.Bounds().Dy()
+
+	wg := &sync.WaitGroup{}
+	errt := utils.NewErrorTrap()
+
+	for y := 0; y < height; y += 1 {
+		wg.Add(1)
+		go func(yIndex int) {
+			defer wg.Done()
+
+			if errt.IsSet() {
+				return
+			}
+
+			if err := sorter.performImageStripSort(src, dst, 4*yIndex*height, 4*1, width); err != nil {
+				errt.Set(fmt.Errorf("sorter: failed to perform image strip sorting for row %d: %w", yIndex, err))
+				return
+			}
+		}(y)
+	}
+
+	wg.Wait()
+	return errt.Err()
+}
+
+// Function used to iterate over image columns in paralle and ivoking the image strip sorting on each column
+func (sorter *defaultSorter) performParallelColumnSorting(src, dst *image.RGBA) error {
+	width := src.Bounds().Dx()
+	height := src.Bounds().Dy()
+
+	wg := &sync.WaitGroup{}
+	errt := utils.NewErrorTrap()
+
+	for x := 0; x < width; x += 1 {
+		wg.Add(1)
+		go func(xIndex int) {
+			defer wg.Done()
+
+			if errt.IsSet() {
+				return
+			}
+
+			if err := sorter.performImageStripSort(src, dst, 4*xIndex, 4*width, height); err != nil {
+				errt.Set(fmt.Errorf("sorter: failed to perform image strip sorting for column %d: %w", xIndex, err))
+				return
+			}
+		}(x)
+	}
+
+	wg.Wait()
+	return errt.Err()
+}
+
+// Deprecated: performParallelRowSorting
 func (sorter *defaultSorter) performParallelHorizontalSort(drawableImage draw.Image) error {
 	yLength := drawableImage.Bounds().Dy()
 	wg := sync.WaitGroup{}
@@ -185,7 +242,7 @@ func (sorter *defaultSorter) performParallelHorizontalSort(drawableImage draw.Im
 	iterationErrors := make(chan error, yLength)
 
 	for y := 0; y < yLength; y += 1 {
-		go func(yIndex int, errCh chan error) {
+		/*go*/ func(yIndex int, errCh chan error) {
 			defer wg.Done()
 
 			mu.RLock()
@@ -231,6 +288,7 @@ func (sorter *defaultSorter) performParallelHorizontalSort(drawableImage draw.Im
 	return err
 }
 
+// Deprecated: performParallelColumnSorting
 func (sorter *defaultSorter) performParallelVerticalSort(drawableImage draw.Image) error {
 	xLength := drawableImage.Bounds().Dx()
 	wg := sync.WaitGroup{}
@@ -240,7 +298,7 @@ func (sorter *defaultSorter) performParallelVerticalSort(drawableImage draw.Imag
 	iterationErrors := make(chan error, xLength)
 
 	for x := 0; x < xLength; x += 1 {
-		go func(xIndex int, errCh chan error) {
+		/*go*/ func(xIndex int, errCh chan error) {
 			defer wg.Done()
 
 			mu.RLock()
@@ -291,6 +349,7 @@ func (sorter *defaultSorter) performParallelVerticalSort(drawableImage draw.Imag
 // used to retrieve information if a given pixel should be masked. We are using a external func for this in order to specify what coordinates should be
 // looked up, beacuse this function has no access to the information which specific pixels from the image are processed now. Thanks to this approach, we
 // can use a single function for both vertical and horizontal operations and just share a semi-fixed coordintes set.
+// Deprecated: performImageStripSort
 func (sorter *defaultSorter) performSortOnImageStrip(imageStrip []color.Color, maskCoordinateFunc func(iteratedCoordinate int) (int, int)) ([]color.Color, error) {
 	stripLength := len(imageStrip)
 	sortedImageStrip := make([]color.Color, 0, stripLength)
@@ -316,7 +375,10 @@ func (sorter *defaultSorter) performSortOnImageStrip(imageStrip []color.Color, m
 		} else {
 			if interval.Any() {
 				sortedIntervalItems := interval.Sort(sorter.options.SortDirection, sorter.options.IntervalPainting)
-				sortedImageStrip = append(sortedImageStrip, sortedIntervalItems...)
+				// [ Changed interval API ] sortedImageStrip = append(sortedImageStrip, sortedIntervalItems...)
+				for _, c := range sortedIntervalItems {
+					sortedImageStrip = append(sortedImageStrip, c)
+				}
 
 				interval = CreateInterval(sorter.options.SortDeterminant)
 				intervalMaxLength = sorter.calculateMaxIntervalLength()
@@ -328,12 +390,139 @@ func (sorter *defaultSorter) performSortOnImageStrip(imageStrip []color.Color, m
 
 	if interval.Any() {
 		sortedIntervalItems := interval.Sort(sorter.options.SortDirection, sorter.options.IntervalPainting)
-		sortedImageStrip = append(sortedImageStrip, sortedIntervalItems...)
+		// [ Changed interval API ] sortedImageStrip = append(sortedImageStrip, sortedIntervalItems...)
+		for _, c := range sortedIntervalItems {
+			sortedImageStrip = append(sortedImageStrip, c)
+		}
 	}
 
 	return sortedImageStrip, nil
 }
 
+// Function used to sort a strip of pixels which can be a column or a row. The function accepts the source and destination image pointers. Due to the fact
+// that the iteration is one-dimensional, we accept the start index and the iteration step size. The number of iteration steps is defined by the count. The
+// function iterates over the strip and checks whether the interval requirements are met. If yes, they are appended to the interval, if not, they are
+// written straight to the destination image. The intervals are also sorted and drawn into the image under some specific conditions.
+func (sorter *defaultSorter) performImageStripSort(src, dst *image.RGBA, start, step, count int) error {
+	var (
+		buffer            []color.RGBA = make([]color.RGBA, 0, count)
+		interval          Interval     = CreateInterval(sorter.options.SortDeterminant)
+		intervalMaxLength int          = sorter.calculateMaxIntervalLength()
+	)
+
+	var (
+		currentColor   color.RGBA
+		isMasked       bool
+		lowerThreshold float64
+		upperThreshold float64
+		err            error
+	)
+
+	for i, index := 0, start; i < count; i, index = i+1, index+step {
+		currentColor.R = src.Pix[index+0]
+		currentColor.G = src.Pix[index+1]
+		currentColor.B = src.Pix[index+2]
+		currentColor.A = src.Pix[index+3]
+
+		// NOTE: Dont pass to interval if the pixel has any transparency
+		if currentColor.A < 255 {
+			goto sortAndResetInterval
+		}
+
+		// NOTE: Dont pass to interval if the interval max length has been reached (Solved using K-Map)
+		if intervalMaxLength != 0 && interval.Count() >= intervalMaxLength {
+			goto sortAndResetInterval
+		}
+
+		isMasked, err = sorter.mask.IsMaskedByIndex(index / 4)
+		if err != nil {
+			return fmt.Errorf("sorter: failed to perform a lookup to the mask image: %w", err)
+		}
+
+		// NOTE: Dont pass to interval if the mask is used and the pixel is masked (Solved using K-Map)
+		if sorter.options.UseMask && isMasked {
+			goto sortAndResetInterval
+		}
+
+		lowerThreshold = sorter.options.IntervalDeterminantLowerThreshold
+		upperThreshold = sorter.options.IntervalDeterminantUpperThreshold
+
+		// NOTE: Dont pass to interval if the interval determinant requirements are not meet
+		if sorter.isMeetingIntervalDeterminant(currentColor, lowerThreshold, upperThreshold, isMasked) {
+			goto sortAndResetInterval
+		}
+
+		if err := interval.Append(currentColor); err != nil {
+			return fmt.Errorf("sorter: failed to append the current color to the interval: %w", err)
+		}
+
+		continue
+
+	sortAndResetInterval:
+		if interval.Any() {
+			interval.SortToBuffer(sorter.options.SortDirection, sorter.options.IntervalPainting, &buffer)
+			intervalMaxLength = sorter.calculateMaxIntervalLength()
+
+			drawBufferIntoImage(dst, append(buffer, currentColor), index, step)
+		} else {
+			dst.Pix[index+0] = currentColor.R
+			dst.Pix[index+1] = currentColor.G
+			dst.Pix[index+2] = currentColor.B
+			dst.Pix[index+3] = currentColor.A
+		}
+	}
+
+	return nil
+}
+
+// Function used to check if the the given color is meeting the current interval determinant requirements taking the thresholds under account
+func (sorter *defaultSorter) isMeetingIntervalDeterminant(c color.RGBA, lowerThreshold, upperThreshold float64, isMasked bool) bool {
+	switch sorter.options.IntervalDeterminant {
+	case SplitByBrightness:
+		{
+			lThreshold := sorter.options.IntervalDeterminantLowerThreshold
+			uThreshold := sorter.options.IntervalDeterminantUpperThreshold
+
+			brightness := utils.CalculatePerceivedBrightness(c)
+			return brightness >= lThreshold && brightness <= uThreshold
+		}
+	case SplitByHue:
+		{
+			lThreshold := sorter.options.IntervalDeterminantLowerThreshold
+			uThreshold := sorter.options.IntervalDeterminantUpperThreshold
+
+			h, _, _, _ := utils.RgbaToHsla(c)
+			hNorm := float64(h) / 360.0
+
+			return hNorm >= lThreshold && hNorm <= uThreshold
+		}
+	case SplitBySaturation:
+		{
+			lThreshold := sorter.options.IntervalDeterminantLowerThreshold
+			uThreshold := sorter.options.IntervalDeterminantUpperThreshold
+
+			_, s, _, _ := utils.RgbaToHsla(c)
+			return s >= lThreshold && s <= uThreshold
+		}
+	case SplitByMask, SplitByEdgeDetection:
+		{
+			return !isMasked
+		}
+	case SplitByAbsoluteColor:
+		{
+			lThreshold := sorter.options.IntervalDeterminantLowerThreshold
+			uThreshold := sorter.options.IntervalDeterminantUpperThreshold
+
+			abs := float64(int(c.R)*int(c.G)*int(c.B)) / 16581375.0
+
+			return abs >= lThreshold && abs < uThreshold
+		}
+	default:
+		panic("sorter: invalid sorter state due to a corrupted interval determinant value")
+	}
+}
+
+// Deprecated: isMeetingIntervalDeterminant
 func (sorter *defaultSorter) isMeetingIntervalRequirements(color color.RGBA, isMasked bool, maxLength int, interval Interval) bool {
 	// NOTE: interval length and options dependecy solved using a quick K-Map
 	if !(maxLength == 0) && (maxLength <= interval.Count()) {
@@ -385,7 +574,7 @@ func (sorter *defaultSorter) isMeetingIntervalRequirements(color color.RGBA, isM
 	}
 }
 
-// This function determines the max interval length taking into account the randomness factor
+// Function used to calculate the max interval length by taking the options and randomness factor under account
 func (sorter *defaultSorter) calculateMaxIntervalLength() int {
 	if sorter.options.IntervalLength == 0 || sorter.options.IntervalLengthRandomFactor == 0 {
 		return sorter.options.IntervalLength
@@ -399,5 +588,23 @@ func (sorter *defaultSorter) calculateMaxIntervalLength() int {
 		return 1
 	} else {
 		return length
+	}
+}
+
+// Function used to draw a color buffer to the destination image. The target position is determined by the iteration index and step value.
+//
+//lint:ignore U1000 Ignore unused false-positive caused by function call in label block
+func drawBufferIntoImage(dst *image.RGBA, buffer []color.RGBA, index, step int) {
+	var (
+		color color.RGBA
+	)
+
+	for dstIndex, bufferIndex := index, len(buffer)-1; bufferIndex >= 0; dstIndex, bufferIndex = dstIndex-step, bufferIndex-1 {
+		color = buffer[bufferIndex]
+
+		dst.Pix[dstIndex+0] = color.R
+		dst.Pix[dstIndex+1] = color.G
+		dst.Pix[dstIndex+2] = color.B
+		dst.Pix[dstIndex+3] = color.A
 	}
 }
