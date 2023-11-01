@@ -38,7 +38,8 @@ func CreateImageMask(mImg image.Image, targetImageBounds image.Rectangle, transl
 	}
 
 	err := pimit.ParallelColumnColorReadE(mImg, func(c color.Color) error {
-		_, s, l, _ := utils.ColorToHsla(c)
+		// TODO: Refactor to use color.NRGBA
+		_, s, l, _ := utils.RgbaToHsla(utils.ColorToRgba(c))
 
 		if s != 0.0 || (l != 0.0 && l != 1.0) {
 			return errors.New("sorter: the mask contains a invalid color")
@@ -56,7 +57,8 @@ func CreateImageMask(mImg image.Image, targetImageBounds image.Rectangle, transl
 	mask.isEmpty = false
 
 	if translateAngle != 0 {
-		mask.maskImageTranslated = utils.RotateImage(mImg, translateAngle)
+		// TODO: Refactor to use image.NRGBA
+		mask.maskImageTranslated = utils.RotateImageNrgba(utils.ImageToNrgbaImage(mImg), translateAngle)
 		mask.isTranslated = true
 	} else {
 		mask.maskImageTranslated = nil
@@ -126,7 +128,8 @@ func (mask *Mask) IsMasked(xIndex, yIndex int) (bool, error) {
 		color = utils.ColorToRgba(mask.maskImage.At(xIndex, yIndex))
 	}
 
-	_, _, l, _ := utils.ColorToHsla(color)
+	// TODO: Refactor to use color.NRGBA
+	_, _, l, _ := utils.RgbaToHsla(utils.ColorToRgba(color))
 
 	if l == 0.0 {
 		return true, nil
