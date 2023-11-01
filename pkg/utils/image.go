@@ -367,12 +367,17 @@ func RotateImageWithRevertNrgba(i *image.NRGBA, angle int) (*image.NRGBA, func(*
 		rotated = imaging.Rotate(i, angleNorm, color.Transparent)
 	}
 
+	var (
+		originalImageBounds image.Rectangle = i.Bounds()
+		rotatedImageBounds  image.Rectangle = rotated.Bounds()
+	)
+
 	revertFunc := func(revertImage *image.NRGBA) *image.NRGBA {
 		if revertImage == nil {
 			panic("image-utils: can not perform rotation revert on a nil image")
 		}
 
-		if revertImage.Bounds().Dx() != rotated.Bounds().Dx() || revertImage.Bounds().Dy() != rotated.Bounds().Dy() {
+		if revertImage.Bounds().Dx() != rotatedImageBounds.Dx() || revertImage.Bounds().Dy() != rotatedImageBounds.Dy() {
 			panic("image-utils: can not revert the image rotation due to invalid bounds")
 		}
 
@@ -380,8 +385,8 @@ func RotateImageWithRevertNrgba(i *image.NRGBA, angle int) (*image.NRGBA, func(*
 			return GetImageCopyNrgba(revertImage)
 		}
 
-		r := imaging.Rotate(i, -angleNorm, color.Transparent)
-		return trimImageTransparentWorkspaceNrgba(r, i.Bounds())
+		r := imaging.Rotate(revertImage, -angleNorm, color.Transparent)
+		return trimImageTransparentWorkspaceNrgba(r, originalImageBounds)
 	}
 
 	return rotated, revertFunc
@@ -423,19 +428,19 @@ func TrimImageTransparentWorkspace(imageWithWorkspace draw.Image, imageOriginal 
 
 func trimImageTransparentWorkspaceNrgba(withWorkspace *image.NRGBA, original image.Rectangle) *image.NRGBA {
 	var (
-		xIndexLength int = original.Dx()
-		yIndexLength int = original.Dy()
-		xIndexStart  int = (withWorkspace.Bounds().Dx() - xIndexLength) / 2
-		yIndexStart  int = (withWorkspace.Bounds().Dy() - yIndexLength) / 2
+		originalWidth   int = original.Dx()
+		originalHeight  int = original.Dy()
+		workspaceWidth  int = withWorkspace.Bounds().Dx()
+		workspaceHeight int = withWorkspace.Bounds().Dy()
+		xIndexStart     int = (workspaceWidth - originalWidth) / 2
+		yIndexStart     int = (workspaceHeight - originalHeight) / 2
 	)
 
-	img := image.NewNRGBA(image.Rect(0, 0, xIndexLength, yIndexLength))
+	img := image.NewNRGBA(image.Rect(0, 0, originalWidth, originalHeight))
 	pimit.ParallelNrgbaReadWrite(img, func(x, y int, _, _, _, _ uint8) (uint8, uint8, uint8, uint8) {
-		xOffset := x + xIndexStart
-		yOffset := y + yIndexStart
-		index := 4 * (yOffset*xIndexLength + xOffset)
+		offset := 4 * (workspaceWidth*(yIndexStart+y) + xIndexStart + x)
 
-		return withWorkspace.Pix[index+0], withWorkspace.Pix[index+1], withWorkspace.Pix[index+2], withWorkspace.Pix[index+3]
+		return withWorkspace.Pix[offset+0], withWorkspace.Pix[offset+1], withWorkspace.Pix[offset+2], withWorkspace.Pix[offset+3]
 	})
 
 	return img
