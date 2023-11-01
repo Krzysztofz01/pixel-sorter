@@ -151,6 +151,10 @@ func (sorter *defaultSorter) Sort() (image.Image, error) {
 				}
 			}
 		}
+
+		if sorter.options.Cycles > 1 {
+			copy(srcImage.Pix, dstImage.Pix)
+		}
 	}
 
 	dstImageNrgba := utils.RgbaToNrgbaImage(dstImage)
@@ -198,7 +202,7 @@ func (sorter *defaultSorter) performParallelRowSorting(src, dst *image.RGBA) err
 				return
 			}
 
-			if err := sorter.performImageStripSort(src, dst, 4*yIndex*height, 4*1, width); err != nil {
+			if err := sorter.performImageStripSort(src, dst, 4*yIndex*width, 4*1, width); err != nil {
 				errt.Set(fmt.Errorf("sorter: failed to perform image strip sorting for row %d: %w", yIndex, err))
 				return
 			}
