@@ -20,16 +20,6 @@ func NrgbaToGrayscaleComponent(c color.NRGBA) int {
 	return int(math.Max(0, math.Min(255, y)))
 }
 
-// Convert the color.Color interface instance to the Y grayscale component represented as a integer in range from 0 to 255
-//
-// Deprecated: NrgbaToGrayscaleComponent
-func ColorToGrayscaleComponent(c color.Color) int {
-	rgba := ColorToRgba(c)
-
-	y := (float64(rgba.R) * 0.299) + (float64(rgba.G) * 0.587) + (float64(rgba.B) * 0.114)
-	return int(math.Max(0, math.Min(255, y)))
-}
-
 // Convert the color.RGBA struct tu individual RGB components represented as floating point numbers in range from 0.0 to 1.0
 func RgbaToNormalizedComponents(c color.RGBA) (float64, float64, float64) {
 	rNorm := float64(c.R) / 255.0
@@ -39,19 +29,10 @@ func RgbaToNormalizedComponents(c color.RGBA) (float64, float64, float64) {
 	return rNorm, gNorm, bNorm
 }
 
-// Return a boolean value indicating if the given color.Color interface implementation has the alpha channel <255
-//
-// Deprecated
-func HasAnyTransparency(c color.Color) bool {
-	_, _, _, a32 := c.RGBA()
-
-	return int(a32>>8) < 255
-}
-
 // Convert a color represented as color.Color interface to color.RGBA struct. If the underlying color is a color.RGBA the original struct
 // will be returned, otherwise a new color.RGBA instance will be created
 //
-// Deprecated
+// Deprecated: This function is used by the mask feature which is still using the old color.Color API. This function can be removed after the mask feature refactor.
 func ColorToRgba(c color.Color) color.RGBA {
 	if rgba, ok := c.(color.RGBA); ok {
 		return rgba
@@ -111,81 +92,6 @@ func RgbaToHsla(c color.RGBA) (int, float64, float64, float64) {
 	return hue, saturation, lightness, alpha
 }
 
-// Convert a color represented as color.Color interface implementation to HSL+Alpha components where Hue is expressed in degress (0-360) and the
-// saturation, lightnes and alpha in percentage (0.0-1.0)
-//
-// Deprecated: RgbaToHsla
-func ColorToHsla(c color.Color) (int, float64, float64, float64) {
-	rgba := ColorToRgba(c)
-	rNorm, gNorm, bNorm := RgbaToNormalizedComponents(rgba)
-
-	alpha := float64(rgba.A) / 255.0
-
-	min := math.Min(rNorm, math.Min(gNorm, bNorm))
-	max := math.Max(rNorm, math.Max(gNorm, bNorm))
-	delta := max - min
-
-	lightness := (max + min) / 2.0
-	saturation := 0.0
-	hue := 0
-
-	if delta != 0.0 {
-		if lightness <= 0.5 {
-			saturation = delta / (max + min)
-		} else {
-			saturation = delta / (2.0 - max - min)
-		}
-
-		hueNorm := 0.0
-		if max == rNorm {
-			hueNorm = ((gNorm - bNorm) / 6.0) / delta
-		} else if max == gNorm {
-			hueNorm = (1.0 / 3.0) + ((bNorm-rNorm)/6.0)/delta
-		} else {
-			hueNorm = (2.0 / 3.0) + ((rNorm-gNorm)/6.0)/delta
-		}
-
-		if hueNorm < 0.0 {
-			hueNorm += 1.0
-		}
-
-		if hueNorm > 1.0 {
-			hueNorm -= 1.0
-		}
-
-		hue = int(math.Round(hueNorm * 360))
-	}
-
-	return hue, saturation, lightness, alpha
-}
-
-// Perform blending of two colors according to a given blending mode
-// TODO: Currently the alpha channel of the output color has a 0xff fixed value
-//
-// Deprecated: BlendNrgba
-func BlendRGBA(a, b color.RGBA, mode BlendingMode) color.RGBA {
-	switch mode {
-	case LightenOnly:
-		{
-			r := uint8(math.Max(float64(a.R), float64(b.R)))
-			g := uint8(math.Max(float64(a.G), float64(b.G)))
-			b := uint8(math.Max(float64(a.B), float64(b.B)))
-
-			return color.RGBA{r, g, b, 0xff}
-		}
-	case DarkenOnly:
-		{
-			r := uint8(math.Min(float64(a.R), float64(b.R)))
-			g := uint8(math.Min(float64(a.G), float64(b.G)))
-			b := uint8(math.Min(float64(a.B), float64(b.B)))
-
-			return color.RGBA{r, g, b, 0xff}
-		}
-	default:
-		panic("color-utils: undefined blending mode provided")
-	}
-}
-
 // Perform blending of two color.NRGBA colors according to a given blending mode
 // TODO: Currently the alpha channel of the output color has a fixed 0xff value
 func BlendNrgba(a, b color.NRGBA, mode BlendingMode) color.NRGBA {
@@ -208,26 +114,6 @@ func BlendNrgba(a, b color.NRGBA, mode BlendingMode) color.NRGBA {
 		}
 	default:
 		panic("color-utils: undefined blending mode provided")
-	}
-}
-
-// Perform a RGBA-based linear interpolation between two colors and return the interpolated color.RGBA for the specified point
-//
-// Deprecated: InterpolateRgba
-func InterpolateColor(a, b color.Color, t float64) color.RGBA {
-	aRgba := ColorToRgba(a)
-	bRgba := ColorToRgba(b)
-
-	rLerp := Lerp(float64(aRgba.R), float64(bRgba.R), t)
-	gLerp := Lerp(float64(aRgba.G), float64(bRgba.G), t)
-	bLerp := Lerp(float64(aRgba.B), float64(bRgba.B), t)
-	aLerp := Lerp(float64(aRgba.A), float64(bRgba.A), t)
-
-	return color.RGBA{
-		R: uint8(rLerp),
-		G: uint8(gLerp),
-		B: uint8(bLerp),
-		A: uint8(aLerp),
 	}
 }
 
