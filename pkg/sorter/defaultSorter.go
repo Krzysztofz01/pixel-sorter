@@ -135,6 +135,8 @@ func (sorter *defaultSorter) Sort() (image.Image, error) {
 					return nil, fmt.Errorf("sorter: failed to perform the vertical column sort: %w", err)
 				}
 
+				copy(srcImage.Pix, dstImage.Pix)
+
 				if err = sorter.performParallelRowSorting(srcImage, dstImage); err != nil {
 					return nil, fmt.Errorf("sorter: failed to perform the horizontal row sort: %w", err)
 				}
@@ -144,6 +146,8 @@ func (sorter *defaultSorter) Sort() (image.Image, error) {
 				if err = sorter.performParallelRowSorting(srcImage, dstImage); err != nil {
 					return nil, fmt.Errorf("sorter: failed to perform the horizontal row sort: %w", err)
 				}
+
+				copy(srcImage.Pix, dstImage.Pix)
 
 				if err = sorter.performParallelColumnSorting(srcImage, dstImage); err != nil {
 					return nil, fmt.Errorf("sorter: failed to perform the vertical column sort: %w", err)
