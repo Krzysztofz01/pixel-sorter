@@ -112,7 +112,6 @@ func (sorter *defaultSorter) Sort() (image.Image, error) {
 		srcImage = utils.NrgbaToRgbaImage(sorter.image)
 	}
 
-	// TODO: Research if the image copy is better than a blank image
 	dstImage := utils.GetImageCopyRgba(srcImage)
 
 	for c := 0; c < sorter.options.Cycles; c += 1 {
@@ -321,6 +320,8 @@ func (sorter *defaultSorter) performImageStripSort(src, dst *image.RGBA, start, 
 
 	// TODO: Incorporate this statement into the sortAndresetInterval label procedure
 	if interval.Any() {
+		buffer = buffer[:0]
+
 		interval.SortToBuffer(sorter.options.SortDirection, sorter.options.IntervalPainting, &buffer)
 
 		drawBufferIntoImage(dst, buffer, start+step*(count-1), step)
