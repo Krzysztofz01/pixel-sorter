@@ -23,11 +23,19 @@ type defaultSorter struct {
 // Create a new image sorter instance by providing the image to be sorted and optional parameters such as mask image
 // logger instance and custom sorter options. This function will return a new sorter instance or a error.
 func CreateSorter(image image.Image, mask image.Image, logger SorterLogger, options *SorterOptions) (Sorter, error) {
+	if image == nil {
+		return nil, fmt.Errorf("sorter: can not create a sorter with the provided nil image")
+	}
+
 	sorter := new(defaultSorter)
 	sorter.image = utils.ImageToNrgbaImage(image)
 
 	if mask != nil {
 		sorter.maskImage = utils.ImageToNrgbaImage(mask)
+
+		if image.Bounds() != mask.Bounds() {
+			return nil, fmt.Errorf("sorter: can not create a sorter for a image and mask with bounds that are not matching")
+		}
 	}
 
 	if logger == nil {
@@ -52,11 +60,14 @@ func CreateSorter(image image.Image, mask image.Image, logger SorterLogger, opti
 	}
 
 	if sorter.options.Scale != 1.0 {
+		scalingExecTime := time.Now()
+
 		var err error = nil
-		sorter.image, err = utils.ScaleImageNrgba(sorter.image, sorter.options.Scale)
-		if err != nil {
+		if sorter.image, err = utils.ScaleImageNrgba(sorter.image, sorter.options.Scale); err != nil {
 			return nil, fmt.Errorf("sorter: failed to scale the target image: %w", err)
 		}
+
+		sorter.logger.Debugf("Image scaling took: %s", time.Since(scalingExecTime))
 	}
 
 	return sorter, nil
