@@ -8,56 +8,43 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestMaskShouldCreateForValidMaskImage(t *testing.T) {
-	image := mockTestBlackAndWhiteImage()
-	mask, err := CreateMask(image)
+func TestMaskShouldCreateForValidRgbaMaskImage(t *testing.T) {
+	mask, err := CreateMaskFromRgba(mockMaskTestImageRgba(whiteRgba, blackRgba))
 
 	assert.Nil(t, err)
 	assert.NotNil(t, mask)
 }
 
-func TestMaskShouldNotCreateForNilMaskImage(t *testing.T) {
-	mask, err := CreateMask(nil)
+func TestMaskShouldNotCreateForInvalidRgbaMaskImage(t *testing.T) {
+	mask, err := CreateMaskFromRgba(mockMaskTestImageRgba(whiteRgba, redRgba))
 
 	assert.NotNil(t, err)
 	assert.Nil(t, mask)
 }
 
-func TestMaskShouldNotCreateForInvalidMaskImage(t *testing.T) {
-	image := mockTestBlackAndRedImage()
-	mask, err := CreateMask(image)
+func TestMaskShouldNotCreateForNilRgbaMaskImage(t *testing.T) {
+	mask, err := CreateMaskFromRgba(nil)
 
 	assert.NotNil(t, err)
 	assert.Nil(t, mask)
 }
 
-func TestMaskShouldCreateForValidMaskImageWithBounds(t *testing.T) {
-	image := mockTestBlackAndWhiteImage()
-	mask, err := CreateImageMask(image, image.Bounds(), 0)
+func TestMaskShouldCreateForValidNrgbaMaskImage(t *testing.T) {
+	mask, err := CreateMaskFromNrgba(mockMaskTestImageNrgba(whiteNrgba, blackNrgba))
 
 	assert.Nil(t, err)
 	assert.NotNil(t, mask)
 }
 
-func TestMaskShouldNotCreateForNilImageWithBounds(t *testing.T) {
-	image := mockTestBlackAndWhiteImage()
-	mask, err := CreateImageMask(nil, image.Bounds(), 0)
+func TestMaskShouldNotCreateForInvalidNrgbaMaskImage(t *testing.T) {
+	mask, err := CreateMaskFromNrgba(mockMaskTestImageNrgba(whiteNrgba, redNrgba))
 
 	assert.NotNil(t, err)
 	assert.Nil(t, mask)
 }
 
-func TestMaskShouldNotCreateForInvalidBoundsWithBounds(t *testing.T) {
-	img := mockTestBlackAndWhiteImage()
-	mask, err := CreateImageMask(img, image.Rect(0, 0, 1, 1), 0)
-
-	assert.NotNil(t, err)
-	assert.Nil(t, mask)
-}
-
-func TestMaskShouldNotCreateForInvalidMaskImageWithBounds(t *testing.T) {
-	image := mockTestBlackAndRedImage()
-	mask, err := CreateImageMask(image, image.Bounds(), 0)
+func TestMaskShouldNotCreateForNilNrgbaMaskImage(t *testing.T) {
+	mask, err := CreateMaskFromNrgba(nil)
 
 	assert.NotNil(t, err)
 	assert.Nil(t, mask)
@@ -68,154 +55,121 @@ func TestMaskShouldCreateEmpty(t *testing.T) {
 	assert.NotNil(t, mask)
 }
 
-func TestMaskShouldTellIfIsMasked(t *testing.T) {
-	image := mockTestBlackAndWhiteImage()
-	mask, err := CreateMask(image)
+func TestMaskShouldCorrectlyReturnAt(t *testing.T) {
+	image := mockMaskTestImageNrgba(whiteNrgba, blackNrgba)
+	mask, err := CreateMaskFromNrgba(image)
 
 	assert.Nil(t, err)
 	assert.NotNil(t, mask)
 
-	isMasked, err := mask.IsMasked(0, 0)
+	at, err := mask.At(0, 0)
 	assert.Nil(t, err)
-	assert.False(t, isMasked)
+	assert.Equal(t, uint8(0x00), at)
 
-	isMasked, err = mask.IsMasked(1, 0)
+	at, err = mask.At(1, 0)
 	assert.Nil(t, err)
-	assert.True(t, isMasked)
+	assert.Equal(t, uint8(0xff), at)
+
+	atb, err := mask.AtB(0, 0)
+	assert.Nil(t, err)
+	assert.Equal(t, true, atb)
+
+	atb, err = mask.AtB(1, 0)
+	assert.Nil(t, err)
+	assert.Equal(t, false, atb)
+
+	at, err = mask.AtByIndex(0)
+	assert.Nil(t, err)
+	assert.Equal(t, uint8(0x00), at)
+
+	at, err = mask.AtByIndex(1)
+	assert.Nil(t, err)
+	assert.Equal(t, uint8(0xff), at)
+
+	atb, err = mask.AtByIndexB(0)
+	assert.Nil(t, err)
+	assert.Equal(t, true, atb)
+
+	atb, err = mask.AtByIndexB(1)
+	assert.Nil(t, err)
+	assert.Equal(t, false, atb)
 }
 
-func TestMaskShouldTellIfIsMaskedByIndex(t *testing.T) {
-	image := mockTestBlackAndWhiteImage()
-	mask, err := CreateMask(image)
+func TestMaskShouldReturnErrorOnInvalidAt(t *testing.T) {
+	image := mockMaskTestImageNrgba(whiteNrgba, blackNrgba)
+	mask, err := CreateMaskFromNrgba(image)
 
 	assert.Nil(t, err)
 	assert.NotNil(t, mask)
 
-	isMasked, err := mask.IsMaskedByIndex(0)
-	assert.Nil(t, err)
-	assert.False(t, isMasked)
+	_, err = mask.At(-1, -1)
+	assert.NotNil(t, err)
 
-	isMasked, err = mask.IsMaskedByIndex(1)
-	assert.Nil(t, err)
-	assert.True(t, isMasked)
-}
+	_, err = mask.At(testMaskImageWidth, testMaskImageHeight)
+	assert.NotNil(t, err)
 
-func TestMaskShouldNotTellIfIsMaskedWhenLookupIsOutOfBounds(t *testing.T) {
-	image := mockTestBlackAndWhiteImage()
-	mask, err := CreateMask(image)
+	_, err = mask.AtB(-1, -1)
+	assert.NotNil(t, err)
 
-	assert.Nil(t, err)
-	assert.NotNil(t, mask)
+	_, err = mask.AtB(testMaskImageWidth, testMaskImageHeight)
+	assert.NotNil(t, err)
 
-	_, err = mask.IsMasked(image.Bounds().Dx()+1, image.Bounds().Dy()+1)
+	_, err = mask.AtByIndex(-1)
+	assert.NotNil(t, err)
 
+	_, err = mask.AtByIndex(testMaskImageWidth * testMaskImageHeight)
+	assert.NotNil(t, err)
+
+	_, err = mask.AtByIndexB(-1)
+	assert.NotNil(t, err)
+
+	_, err = mask.AtByIndexB(testMaskImageWidth * testMaskImageHeight)
 	assert.NotNil(t, err)
 }
 
-func TestMaskShouldNotTellIfIsMaskedByIndexWhenLookupIsOutOfBounds(t *testing.T) {
-	image := mockTestBlackAndWhiteImage()
-	mask, err := CreateMask(image)
+const (
+	testMaskImageHeight int = 10
+	testMaskImageWidth  int = 10
+)
 
-	assert.Nil(t, err)
-	assert.NotNil(t, mask)
-
-	_, err = mask.IsMaskedByIndex(image.Bounds().Dx()*image.Bounds().Dy() + 1)
-
-	assert.NotNil(t, err)
-
-	_, err = mask.IsMaskedByIndex(-1)
-
-	assert.NotNil(t, err)
-}
-
-func TestMaskShouldTellIfIsMaskedWhenTranslated(t *testing.T) {
-	image := mockTestBlackAndWhiteImage()
-	mask, err := CreateImageMask(image, image.Bounds(), 90)
-
-	assert.Nil(t, err)
-	assert.NotNil(t, mask)
-
-	isMasked, err := mask.IsMasked(0, 0)
-	assert.Nil(t, err)
-	assert.True(t, isMasked)
-
-	isMasked, err = mask.IsMasked(0, 1)
-	assert.Nil(t, err)
-	assert.False(t, isMasked)
-}
-
-func TestMaskShouldNotTellIfIsMaskedWhenLookupIsOutOfBoundsWhenTranslated(t *testing.T) {
-	image := mockTestBlackAndWhiteImage()
-	mask, err := CreateImageMask(image, image.Bounds(), 90)
-
-	assert.Nil(t, err)
-	assert.NotNil(t, mask)
-
-	_, err = mask.IsMasked(image.Bounds().Dx()+1, image.Bounds().Dy()+1)
-
-	assert.NotNil(t, err)
-}
-
-func TestMaskShouldTellIfIsMaskedForEmptyMask(t *testing.T) {
-	mask := CreateEmptyMask()
-	assert.NotNil(t, mask)
-
-	// NOTE: Currently there is no index validation for empty mask, whatever value will return "False"
-	isMasked, err := mask.IsMasked(0, 0)
-	assert.Nil(t, err)
-	assert.False(t, isMasked)
-}
+var (
+	whiteRgba  color.RGBA  = color.RGBA{0xff, 0xff, 0xff, 0xff}
+	blackRgba  color.RGBA  = color.RGBA{0x00, 0x00, 0x00, 0xff}
+	redRgba    color.RGBA  = color.RGBA{0x0ff, 0x00, 0x00, 0x0ff}
+	whiteNrgba color.NRGBA = color.NRGBA{0xff, 0xff, 0xff, 0xff}
+	blackNrgba color.NRGBA = color.NRGBA{0x00, 0x00, 0x00, 0xff}
+	redNrgba   color.NRGBA = color.NRGBA{0x0ff, 0x00, 0x00, 0x0ff}
+)
 
 // Create a test image which consists of valid mask colors (black and white)
-func mockTestBlackAndWhiteImage() image.Image {
-	const (
-		height = 10
-		width  = 10
-	)
+func mockMaskTestImageRgba(a, b color.RGBA) *image.RGBA {
+	img := image.NewRGBA(image.Rect(0, 0, testMaskImageWidth, testMaskImageHeight))
 
-	p1 := image.Point{0, 0}
-	p2 := image.Point{width, height}
-	image := image.NewRGBA(image.Rectangle{p1, p2})
-
-	cBlack := color.RGBA{0, 0, 0, 0xff}
-	cWhite := color.RGBA{255, 255, 255, 0xff}
-
-	for xIndex := 0; xIndex < width; xIndex += 1 {
-		for yIndex := 0; yIndex < height; yIndex += 1 {
+	for xIndex := 0; xIndex < testMaskImageWidth; xIndex += 1 {
+		for yIndex := 0; yIndex < testMaskImageHeight; yIndex += 1 {
 			if xIndex%2 != 0 {
-				image.Set(xIndex, yIndex, cBlack)
+				img.SetRGBA(xIndex, yIndex, a)
 			} else {
-				image.Set(xIndex, yIndex, cWhite)
+				img.SetRGBA(xIndex, yIndex, b)
 			}
 		}
 	}
 
-	return image
+	return img
 }
 
-// Create a test image which consists a invalid mask color (red)
-func mockTestBlackAndRedImage() image.Image {
-	const (
-		height = 10
-		width  = 10
-	)
+func mockMaskTestImageNrgba(a, b color.NRGBA) *image.NRGBA {
+	img := image.NewNRGBA(image.Rect(0, 0, testMaskImageWidth, testMaskImageHeight))
 
-	p1 := image.Point{0, 0}
-	p2 := image.Point{width, height}
-	image := image.NewRGBA(image.Rectangle{p1, p2})
-
-	cBlack := color.RGBA{0, 0, 0, 0xff}
-	cRed := color.RGBA{255, 0, 0, 0xff}
-
-	for xIndex := 0; xIndex < width; xIndex += 1 {
-		for yIndex := 0; yIndex < height; yIndex += 1 {
+	for xIndex := 0; xIndex < testMaskImageWidth; xIndex += 1 {
+		for yIndex := 0; yIndex < testMaskImageHeight; yIndex += 1 {
 			if xIndex%2 != 0 {
-				image.Set(xIndex, yIndex, cBlack)
+				img.SetNRGBA(xIndex, yIndex, a)
 			} else {
-				image.Set(xIndex, yIndex, cRed)
+				img.SetNRGBA(xIndex, yIndex, b)
 			}
 		}
 	}
 
-	return image
+	return img
 }
