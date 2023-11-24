@@ -13,10 +13,11 @@ import (
 )
 
 type defaultSorter struct {
-	image   *image.NRGBA
-	mask    *Mask
-	logger  SorterLogger
-	options *SorterOptions
+	image     *image.NRGBA
+	maskImage *image.NRGBA
+	mask      Mask
+	logger    SorterLogger
+	options   *SorterOptions
 }
 
 // Create a new image sorter instance by providing the image to be sorted and optional parameters such as mask image
@@ -24,6 +25,10 @@ type defaultSorter struct {
 func CreateSorter(image image.Image, mask image.Image, logger SorterLogger, options *SorterOptions) (Sorter, error) {
 	sorter := new(defaultSorter)
 	sorter.image = utils.ImageToNrgbaImage(image)
+
+	if mask != nil {
+		sorter.maskImage = utils.ImageToNrgbaImage(mask)
+	}
 
 	if logger == nil {
 		sorter.logger = getDiscardLogger()
@@ -54,112 +59,95 @@ func CreateSorter(image image.Image, mask image.Image, logger SorterLogger, opti
 		}
 	}
 
-	if sorter.options.IntervalDeterminant == SplitByEdgeDetection {
-		edgeDetectionExecTime := time.Now()
-		imageEdges, err := img.PerformEdgeDetection(sorter.image, false)
-		if err != nil {
-			return nil, fmt.Errorf("sorter: failed to perform the edge detection on the provided image: %w", err)
-		}
-
-		// TODO: Edge detection return type must be changed to image.NRGBA
-		invertedEdges := utils.InvertImageNrgba(utils.ImageToNrgbaImage(imageEdges))
-
-		mask = invertedEdges
-		sorter.logger.Debugf("Edge detection took: %s.", time.Since(edgeDetectionExecTime))
-	}
-
-	if mask != nil {
-		maskExecTime := time.Now()
-
-		// NOTE: We are preventing the scaling when the IntervalDeterminant is set to edge detection, because the edge
-		// detection based mask is already scaled, because it was performed on the scaled version of the  original image
-		if sorter.options.Scale != 1.0 && sorter.options.IntervalDeterminant != SplitByEdgeDetection {
-			scaledMask, err := utils.ScaleImageNrgba(utils.ImageToNrgbaImage(mask), sorter.options.Scale)
-			if err != nil {
-				return nil, fmt.Errorf("sorter: failed to scale the target mask image: %w", err)
-			}
-
-			mask = scaledMask
-		}
-
-		m, err := CreateImageMask(mask, sorter.image.Bounds(), sorter.options.Angle)
-		if err != nil {
-			return nil, fmt.Errorf("sorter: failed to create a new mask instance: %w", err)
-		}
-
-		sorter.logger.Debugf("Mask parsing took: %s.", time.Since(maskExecTime))
-		sorter.mask = m
-	} else {
-		sorter.mask = CreateEmptyMask()
-	}
-
 	return sorter, nil
 }
 
 func (sorter *defaultSorter) Sort() (image.Image, error) {
 	var (
-		srcImage        *image.RGBA
-		srcImageRotated *image.NRGBA
+		srcImageNrgba   *image.NRGBA
+		srcImageRgba    *image.RGBA
+		maskImage       *image.NRGBA = sorter.maskImage
 		revertRotation  func(*image.NRGBA) *image.NRGBA
 		sortingExecTime time.Time = time.Now()
 		err             error     = nil
 	)
 
 	if sorter.options.Angle != 0 {
-		srcImageRotated, revertRotation = utils.RotateImageWithRevertNrgba(sorter.image, sorter.options.Angle)
-		srcImage = utils.NrgbaToRgbaImage(srcImageRotated)
+		srcImageNrgba, revertRotation = utils.RotateImageWithRevertNrgba(sorter.image, sorter.options.Angle)
 	} else {
-		srcImage = utils.NrgbaToRgbaImage(sorter.image)
+		srcImageNrgba = sorter.image
 	}
 
-	dstImage := utils.GetImageCopyRgba(srcImage)
+	if sorter.options.IntervalDeterminant == SplitByEdgeDetection {
+		edgeDetectionExecTime := time.Now()
+		maskImage, err = img.PerformEdgeDetection(srcImageNrgba, false)
+		if err != nil {
+			return nil, fmt.Errorf("sorter: failed to perform the edge detection on the provided image: %w", err)
+		}
+
+		sorter.logger.Debugf("Edge detection took: %s.", time.Since(edgeDetectionExecTime))
+	}
+
+	if maskImage != nil {
+		maskExecTime := time.Now()
+		if sorter.mask, err = CreateMaskFromNrgba(maskImage); err != nil {
+			return nil, fmt.Errorf("sorter: failed to create a new mask instance: %w", err)
+		}
+
+		sorter.logger.Debugf("Mask parsing took: %s.", time.Since(maskExecTime))
+	} else {
+		sorter.mask = CreateEmptyMask()
+	}
+
+	srcImageRgba = utils.NrgbaToRgbaImage(srcImageNrgba)
+	dstImageRgba := utils.GetImageCopyRgba(srcImageRgba)
 
 	for c := 0; c < sorter.options.Cycles; c += 1 {
 		switch sorter.options.SortOrder {
 		case SortVertical:
 			{
-				if err = sorter.performParallelColumnSorting(srcImage, dstImage); err != nil {
+				if err = sorter.performParallelColumnSorting(srcImageRgba, dstImageRgba); err != nil {
 					return nil, fmt.Errorf("sorter: failed to perform the vertical column sort: %w", err)
 				}
 			}
 		case SortHorizontal:
 			{
-				if err = sorter.performParallelRowSorting(srcImage, dstImage); err != nil {
+				if err = sorter.performParallelRowSorting(srcImageRgba, dstImageRgba); err != nil {
 					return nil, fmt.Errorf("sorter: failed to perform the horizontal row sort: %w", err)
 				}
 			}
 		case SortVerticalAndHorizontal:
 			{
-				if err = sorter.performParallelColumnSorting(srcImage, dstImage); err != nil {
+				if err = sorter.performParallelColumnSorting(srcImageRgba, dstImageRgba); err != nil {
 					return nil, fmt.Errorf("sorter: failed to perform the vertical column sort: %w", err)
 				}
 
-				copy(srcImage.Pix, dstImage.Pix)
+				copy(srcImageRgba.Pix, dstImageRgba.Pix)
 
-				if err = sorter.performParallelRowSorting(srcImage, dstImage); err != nil {
+				if err = sorter.performParallelRowSorting(srcImageRgba, dstImageRgba); err != nil {
 					return nil, fmt.Errorf("sorter: failed to perform the horizontal row sort: %w", err)
 				}
 			}
 		case SortHorizontalAndVertical:
 			{
-				if err = sorter.performParallelRowSorting(srcImage, dstImage); err != nil {
+				if err = sorter.performParallelRowSorting(srcImageRgba, dstImageRgba); err != nil {
 					return nil, fmt.Errorf("sorter: failed to perform the horizontal row sort: %w", err)
 				}
 
-				copy(srcImage.Pix, dstImage.Pix)
+				copy(srcImageRgba.Pix, dstImageRgba.Pix)
 
-				if err = sorter.performParallelColumnSorting(srcImage, dstImage); err != nil {
+				if err = sorter.performParallelColumnSorting(srcImageRgba, dstImageRgba); err != nil {
 					return nil, fmt.Errorf("sorter: failed to perform the vertical column sort: %w", err)
 				}
 			}
 		}
 
 		if sorter.options.Cycles > 1 {
-			copy(srcImage.Pix, dstImage.Pix)
+			copy(srcImageRgba.Pix, dstImageRgba.Pix)
 		}
 	}
 
-	dstImageNrgba := utils.RgbaToNrgbaImage(dstImage)
+	dstImageNrgba := utils.RgbaToNrgbaImage(dstImageRgba)
 	if sorter.options.Angle != 0 {
 		dstImageNrgba = revertRotation(dstImageNrgba)
 	}
@@ -278,7 +266,7 @@ func (sorter *defaultSorter) performImageStripSort(src, dst *image.RGBA, start, 
 			goto sortAndResetInterval
 		}
 
-		isMasked, err = sorter.mask.IsMaskedByIndex(index / 4)
+		isMasked, err = sorter.mask.AtByIndexB(index / 4)
 		if err != nil {
 			return fmt.Errorf("sorter: failed to perform a lookup to the mask image: %w", err)
 		}
