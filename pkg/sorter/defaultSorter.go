@@ -85,7 +85,10 @@ func (sorter *defaultSorter) Sort() (image.Image, error) {
 
 	if sorter.options.Angle != 0 {
 		srcImageNrgba, revertRotation = utils.RotateImageWithRevertNrgba(sorter.image, sorter.options.Angle)
-		maskImage = utils.RotateImageNrgba(sorter.maskImage, sorter.options.Angle)
+
+		if sorter.maskImage != nil {
+			maskImage = utils.RotateImageNrgba(sorter.maskImage, sorter.options.Angle)
+		}
 	} else {
 		srcImageNrgba = sorter.image
 		maskImage = sorter.maskImage
