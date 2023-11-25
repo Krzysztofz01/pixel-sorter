@@ -77,7 +77,7 @@ func (sorter *defaultSorter) Sort() (image.Image, error) {
 	var (
 		srcImageNrgba   *image.NRGBA
 		srcImageRgba    *image.RGBA
-		maskImage       *image.NRGBA = sorter.maskImage
+		maskImage       *image.NRGBA
 		revertRotation  func(*image.NRGBA) *image.NRGBA
 		sortingExecTime time.Time = time.Now()
 		err             error     = nil
@@ -85,13 +85,15 @@ func (sorter *defaultSorter) Sort() (image.Image, error) {
 
 	if sorter.options.Angle != 0 {
 		srcImageNrgba, revertRotation = utils.RotateImageWithRevertNrgba(sorter.image, sorter.options.Angle)
+		maskImage = utils.RotateImageNrgba(sorter.maskImage, sorter.options.Angle)
 	} else {
 		srcImageNrgba = sorter.image
+		maskImage = sorter.maskImage
 	}
 
 	if sorter.options.IntervalDeterminant == SplitByEdgeDetection {
 		edgeDetectionExecTime := time.Now()
-		maskImage, err = img.PerformEdgeDetection(srcImageNrgba, false)
+		maskImage, err = img.PerformEdgeDetection(srcImageNrgba, false, true)
 		if err != nil {
 			return nil, fmt.Errorf("sorter: failed to perform the edge detection on the provided image: %w", err)
 		}

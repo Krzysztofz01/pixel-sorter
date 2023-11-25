@@ -49,7 +49,7 @@ type gradientPoint struct {
 }
 
 // Generate a edge detection image based on the given input image using the Canny edge detection algorithm
-func PerformEdgeDetection(i image.Image, performNonMaxSupression bool) (*image.NRGBA, error) {
+func PerformEdgeDetection(i image.Image, performNonMaxSupression, invertColors bool) (*image.NRGBA, error) {
 	imgGrayscale := imaging.Grayscale(i)
 
 	imgSmoothed := imaging.Blur(imgGrayscale, blurSigmaParam)
@@ -77,8 +77,11 @@ func PerformEdgeDetection(i image.Image, performNonMaxSupression bool) (*image.N
 	}
 
 	imgHysteresis := performHysteresis(imgGradient)
-
-	return imgHysteresis, nil
+	if invertColors {
+		return utils.InvertImageNrgba(imgHysteresis), nil
+	} else {
+		return imgHysteresis, nil
+	}
 }
 
 // Helper function used to create a gradient point matrix by calculating the sobel vertical and horizontal derivatives
