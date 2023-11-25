@@ -144,4 +144,15 @@ func GetDefaultSorterOptions() *SorterOptions {
 type Sorter interface {
 	// Perform the sorting operation and return the sorted version of the image
 	Sort() (image.Image, error)
+
+	// Cancel the currently running sorting operation and return a boolean value indicating if the sorting was cancelled
+	CancelSort() bool
+}
+
+// Error indicating that the sorting has been cancelled using the sorters CancelSort() function.
+type SortingCancellationError struct {
+}
+
+func (err *SortingCancellationError) Error() string {
+	return "sorter: sorting operation has been cancelled"
 }
