@@ -2,125 +2,128 @@ package sorter
 
 import (
 	"errors"
+	"fmt"
 	"image"
-	"image/color"
 
 	"github.com/Krzysztofz01/pimit"
 	"github.com/Krzysztofz01/pixel-sorter/pkg/utils"
 )
 
-// A structure representing a wrapper over a image that works as a mask
-type Mask struct {
-	maskImage           image.Image
-	maskImageTranslated image.Image
-	isEmpty             bool
-	isTranslated        bool
+type Mask interface {
+	// Return a byte value representing the mask grayscale value at the given position represented by the x and y position.
+	At(x, y int) (uint8, error)
+
+	// Return a boolean value representing if the mask is masking at the given position represented by the x and y postition (value < 127 is masked).
+	AtB(x, y int) (bool, error)
+
+	// Return a byte value representing the mask grayscale value at the given position represented by the i index.
+	AtByIndex(i int) (uint8, error)
+
+	// Return a boolean value representing if the mask is masking at the given position represented by the i index (value < 127 is masked).
+	AtByIndexB(i int) (bool, error)
 }
 
-// Crate a new mask instance from a given image without target image restrictions
-func CreateMask(mImg image.Image) (*Mask, error) {
-	if mImg == nil {
-		return nil, errors.New("sorter: the provided mask image reference is nil")
-	}
-
-	return CreateImageMask(mImg, mImg.Bounds(), 0)
+type mask struct {
+	maskBuffer []uint8
+	width      int
+	isEmpty    bool
 }
 
-// Create a new mask instance from a given image and bounds of the image to be masked. The trnslateAngle parameter
-// indicates whether the lookup mask should be interpreted from a given angle.
-func CreateImageMask(mImg image.Image, targetImageBounds image.Rectangle, translateAngle int) (*Mask, error) {
-	if mImg == nil {
-		return nil, errors.New("sorter: the provided mask image reference is nil")
+func CreateMaskFromNrgba(i *image.NRGBA) (Mask, error) {
+	if i == nil {
+		return nil, errors.New("mask: the provided mask image reference is nil")
 	}
 
-	if mImg.Bounds().Dx() != targetImageBounds.Dx() || mImg.Bounds().Dy() != targetImageBounds.Dy() {
-		return nil, errors.New("sorter: mask image and target image sizes are not matching")
+	mask := &mask{
+		maskBuffer: make([]uint8, i.Bounds().Dx()*i.Bounds().Dy()),
+		width:      i.Bounds().Dx(),
+		isEmpty:    false,
 	}
 
-	err := pimit.ParallelColumnColorReadE(mImg, func(c color.Color) error {
-		_, s, l, _ := utils.ColorToHsla(c)
-
-		if s != 0.0 || (l != 0.0 && l != 1.0) {
-			return errors.New("sorter: the mask contains a invalid color")
+	errt := utils.NewErrorTrap()
+	pimit.ParallelNrgbaRead(i, func(x, y int, r, g, b, a uint8) {
+		if r != g || r != b || g != b {
+			errt.Set(fmt.Errorf("mask: the mask image contains a invalid color at x=%d y=%d", x, y))
+			return
 		}
 
-		return nil
+		index := y*i.Bounds().Dx() + x
+		mask.maskBuffer[index] = r
 	})
 
-	if err != nil {
-		return nil, err
-	}
-
-	mask := new(Mask)
-	mask.maskImage = mImg
-	mask.isEmpty = false
-
-	if translateAngle != 0 {
-		mask.maskImageTranslated = utils.RotateImage(mImg, translateAngle)
-		mask.isTranslated = true
-	} else {
-		mask.maskImageTranslated = nil
-		mask.isTranslated = false
+	if errt.IsSet() {
+		return nil, errt.Err()
 	}
 
 	return mask, nil
 }
 
-// Create a new mask instance representing a empty mask
-func CreateEmptyMask() *Mask {
-	mask := new(Mask)
-	mask.maskImage = nil
-	mask.maskImageTranslated = nil
-	mask.isEmpty = true
-	mask.isTranslated = false
-	return mask
+func CreateMaskFromRgba(i *image.RGBA) (Mask, error) {
+	if i == nil {
+		return nil, errors.New("mask: the provided mask image reference is nil")
+	}
+
+	mask := &mask{
+		maskBuffer: make([]uint8, i.Bounds().Dx()*i.Bounds().Dy()),
+		width:      i.Bounds().Dx(),
+		isEmpty:    false,
+	}
+
+	errt := utils.NewErrorTrap()
+	pimit.ParallelRgbaRead(i, func(x, y int, r, g, b, a uint8) {
+		if r != g || r != b || g != b {
+			errt.Set(fmt.Errorf("mask: the mask image contains a invalid color at x=%d y=%d", x, y))
+			return
+		}
+
+		index := y*i.Bounds().Dx() + x
+		mask.maskBuffer[index] = r
+	})
+
+	if errt.IsSet() {
+		return nil, errt.Err()
+	}
+
+	return mask, nil
 }
 
-// TODO: If the mask is empty the size is not validated.
-// Perform a mask lookup to check if the mask is masking at the given location. If the
-// mask is empty it will always return false.
-func (mask *Mask) IsMasked(xIndex, yIndex int) (bool, error) {
-	if mask.isEmpty {
-		return false, nil
+func CreateEmptyMask() Mask {
+	return &mask{
+		maskBuffer: nil,
+		width:      0,
+		isEmpty:    true,
+	}
+}
+
+func (m *mask) At(x, y int) (uint8, error) {
+	return m.AtByIndex(y*m.width + x)
+}
+
+func (m *mask) AtB(x, y int) (bool, error) {
+	return m.AtByIndexB(y*m.width + x)
+}
+
+func (m *mask) AtByIndex(i int) (uint8, error) {
+	if m.isEmpty {
+		return 0xff, nil
 	}
 
-	var color color.Color
-	if mask.isTranslated {
-		xLength := mask.maskImageTranslated.Bounds().Dx()
-		yLength := mask.maskImageTranslated.Bounds().Dy()
-		if xIndex >= xLength || yIndex >= yLength {
-			return false, errors.New("sorter: the mask lookup is out of the translated mask bounds")
-		}
-
-		color = utils.ColorToRgba(mask.maskImageTranslated.At(xIndex, yIndex))
-	} else {
-		xLength := mask.maskImage.Bounds().Dx()
-		yLength := mask.maskImage.Bounds().Dy()
-		if xIndex >= xLength || yIndex >= yLength {
-			return false, errors.New("sorter: the mask lookup is out of the mask bounds")
-		}
-
-		color = utils.ColorToRgba(mask.maskImage.At(xIndex, yIndex))
+	if i < 0 || i >= len(m.maskBuffer) {
+		return 0x00, errors.New("mask: the specified index is out of the mask range")
 	}
 
-	_, _, l, _ := utils.ColorToHsla(color)
+	return m.maskBuffer[i], nil
+}
 
-	if l == 0.0 {
+func (m *mask) AtByIndexB(i int) (bool, error) {
+	at, err := m.AtByIndex(i)
+	if err != nil {
+		return false, err
+	}
+
+	if at < 127 {
 		return true, nil
-	} else if l == 1.0 {
-		return false, nil
 	} else {
-		// TODO: The functioning of masks here is quite limited, we mask on a zero-one basis. During
-		// interpolation, values creep in that do not correspond to this approach. Because of this,
-		// we do a hack here, which is that we mask based on which value is closer to zero or one.
-		if mask.isTranslated {
-			if l < 0.5 {
-				return true, nil
-			} else {
-				return false, nil
-			}
-		}
-
-		return false, errors.New("sorter: the mask lookup found a invalid value and may be corrupted")
+		return false, nil
 	}
 }
