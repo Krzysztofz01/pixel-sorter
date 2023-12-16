@@ -29,24 +29,6 @@ func RgbaToNormalizedComponents(c color.RGBA) (float64, float64, float64) {
 	return rNorm, gNorm, bNorm
 }
 
-// Convert a color represented as color.Color interface to color.RGBA struct. If the underlying color is a color.RGBA the original struct
-// will be returned, otherwise a new color.RGBA instance will be created
-//
-// Deprecated: This function is used by the mask feature which is still using the old color.Color API. This function can be removed after the mask feature refactor.
-func ColorToRgba(c color.Color) color.RGBA {
-	if rgba, ok := c.(color.RGBA); ok {
-		return rgba
-	}
-
-	r32, g32, b32, a32 := c.RGBA()
-	return color.RGBA{
-		R: uint8(r32 >> 8),
-		G: uint8(g32 >> 8),
-		B: uint8(b32 >> 8),
-		A: uint8(a32 >> 8),
-	}
-}
-
 // Convert a color.RGBA color to HSL+Alpha components where Hue is expressed in degress (0-360) and the saturation, lightnes and alpha\
 // in percentage (0.0-1.0)
 func RgbaToHsla(c color.RGBA) (int, float64, float64, float64) {
