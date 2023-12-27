@@ -104,7 +104,9 @@ func (sorter *defaultSorter) Sort() (image.Image, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer sorter.CancelSort()
 
+	sorter.cancelMutex.Lock()
 	sorter.cancel = cancel
+	sorter.cancelMutex.Unlock()
 
 	if sorter.options.Angle != 0 {
 		srcImageNrgba, revertRotation = utils.RotateImageWithRevertNrgba(sorter.image, sorter.options.Angle)
