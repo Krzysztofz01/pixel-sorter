@@ -22,6 +22,7 @@ var (
 	FlagSortDirection              string
 	FlagSortOrder                  string
 	FlagIntervalDeterminant        string
+	FlagIntervalPainting           string
 	FlagIntervalLowerThreshold     float64
 	FlagIntervalUpperThreshold     float64
 	FlagAngle                      int
@@ -35,8 +36,9 @@ var (
 )
 
 var (
-	Logger      *logrus.Logger
-	LocalLogger *logrus.Entry
+	Logger       *logrus.Logger
+	LocalLogger  *logrus.Entry
+	SorterLogger sorter.SorterLogger
 )
 
 var Version string
@@ -50,6 +52,7 @@ var rootCmd = &cobra.Command{
 func init() {
 	Logger = CreateLogger()
 	LocalLogger = CreateLocalLogger(Logger)
+	SorterLogger = CreateSorterLogger(Logger)
 
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 
@@ -63,13 +66,15 @@ func init() {
 
 	rootCmd.PersistentFlags().StringVar(&FlagMaskImageFilePath, "mask-image-path", "", "The path of the mask image file used to process the input media.")
 
-	rootCmd.PersistentFlags().StringVarP(&FlagSortDeterminant, "sort-determinant", "e", "brightness", "Parameter used as the argument for the sorting algorithm. Options: [brightness, hue, saturation].")
+	rootCmd.PersistentFlags().StringVarP(&FlagSortDeterminant, "sort-determinant", "e", "brightness", "Parameter used as the argument for the sorting algorithm. Options: [brightness, hue, saturation, absolute, red, green, blue ].")
 
 	rootCmd.PersistentFlags().StringVarP(&FlagSortDirection, "direction", "d", "ascending", "Pixel sorting direction in intervals. Options: [ascending, descending, shuffle, random].")
 
 	rootCmd.PersistentFlags().StringVarP(&FlagSortOrder, "order", "o", "horizontal-vertical", "Order of the graphic sorting stages. Options: [horizontal, vertical, horizontal-vertical, vertical-horizontal].")
 
 	rootCmd.PersistentFlags().StringVarP(&FlagIntervalDeterminant, "interval-determinant", "i", "brightness", "Parameter used to determine intervals. Options: [brightness, hue, saturation, mask, absolute, edge].")
+
+	rootCmd.PersistentFlags().StringVarP(&FlagIntervalPainting, "interval-painting", "p", "fill", "Parameter used to specify the interval color painting behaviour. Options: [fill, gradient, repeat, average].")
 
 	rootCmd.PersistentFlags().Float64VarP(&FlagIntervalLowerThreshold, "interval-lower-threshold", "l", 0.1, "The lower threshold of the interval determination process. Options: [0.0 - 1.0].")
 
@@ -97,6 +102,7 @@ func parseCommonOptions() (*sorter.SorterOptions, error) {
 		Logger.SetReportCaller(true)
 
 		LocalLogger = CreateLocalLogger(Logger)
+		SorterLogger = CreateSorterLogger(Logger)
 	}
 
 	if len(FlagInputMediaFilePath) == 0 {
@@ -116,6 +122,14 @@ func parseCommonOptions() (*sorter.SorterOptions, error) {
 		options.SortDeterminant = sorter.SortByHue
 	case "saturation":
 		options.SortDeterminant = sorter.SortBySaturation
+	case "absolute":
+		options.SortDeterminant = sorter.SortByAbsoluteColor
+	case "red":
+		options.SortDeterminant = sorter.SortByRedChannel
+	case "green":
+		options.SortDeterminant = sorter.SortByGreenChannel
+	case "blue":
+		options.SortDeterminant = sorter.SortByBlueChannel
 	default:
 		return nil, fmt.Errorf("cmd: invalid sort determinant specified (%s)", FlagSortDeterminant)
 	}
@@ -167,6 +181,19 @@ func parseCommonOptions() (*sorter.SorterOptions, error) {
 		options.IntervalDeterminant = sorter.SplitByEdgeDetection
 	default:
 		return nil, fmt.Errorf("cmd: invalid interval determinant specified (%s)", FlagIntervalDeterminant)
+	}
+
+	switch strings.ToLower(FlagIntervalPainting) {
+	case "fill":
+		options.IntervalPainting = sorter.IntervalFill
+	case "gradient":
+		options.IntervalPainting = sorter.IntervalGradient
+	case "repeat":
+		options.IntervalPainting = sorter.IntervalRepeat
+	case "average":
+		options.IntervalPainting = sorter.IntervalAverage
+	default:
+		return nil, fmt.Errorf("cmd: invalid interval painting specified (%s)", FlagIntervalPainting)
 	}
 
 	switch FlagBlendingMode {
@@ -280,4 +307,47 @@ func CreateLogger() *logrus.Logger {
 // Create a new prefixed logger entry instance
 func CreateLocalLogger(logger *logrus.Logger) *logrus.Entry {
 	return logger.WithField("prefix", "pixel-sorter-cli")
+}
+
+// Create a new prefixed sorter logger instance
+func CreateSorterLogger(logger *logrus.Logger) sorter.SorterLogger {
+	return &sorterLogger{
+		logger: logger.WithField("prefix", "pixel-sorter"),
+	}
+}
+
+type sorterLogger struct {
+	logger *logrus.Entry
+}
+
+func (sl *sorterLogger) Debugf(format string, args ...interface{}) {
+	if len(args) == 0 {
+		sl.logger.Debugln(format)
+	} else {
+		sl.logger.Debugf(format, args...)
+	}
+}
+
+func (sl *sorterLogger) Infof(format string, args ...interface{}) {
+	if len(args) == 0 {
+		sl.logger.Infoln(format)
+	} else {
+		sl.logger.Infof(format, args...)
+	}
+}
+
+func (sl *sorterLogger) Warnf(format string, args ...interface{}) {
+	if len(args) == 0 {
+		sl.logger.Warningln(format)
+	} else {
+		sl.logger.Warningf(format, args...)
+	}
+}
+
+func (sl *sorterLogger) Errorf(format string, args ...interface{}) {
+	if len(args) == 0 {
+		sl.logger.Errorln(format)
+	} else {
+		sl.logger.Errorf(format, args...)
+	}
 }

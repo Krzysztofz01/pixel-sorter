@@ -3,7 +3,6 @@ package sorter
 import (
 	"image"
 	"image/color"
-	"image/draw"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -11,6 +10,32 @@ import (
 )
 
 // TODO: Currently the test are verifying that no errors occure but the resulting image is not verified
+
+func TestDefaultSorterSortingCancellationShouldBreakTheSorting(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
+	options := GetDefaultSorterOptions()
+	sorter, err := CreateSorter(mockHugeTestBlackAndWhiteStripesImage(), nil, nil, options)
+
+	assert.NotNil(t, sorter)
+	assert.Nil(t, err)
+
+	sortingGoroutine := func() {
+		result, err := sorter.Sort()
+
+		assert.Nil(t, result)
+		assert.ErrorIs(t, err, ErrSortingCancellation)
+	}
+
+	cancellationGoroutine := func() {
+		assert.True(t, sorter.CancelSort())
+
+		assert.False(t, sorter.CancelSort())
+	}
+
+	go sortingGoroutine()
+	go cancellationGoroutine()
+}
 
 func TestDefaultOptionsAndSortDeterminantBrightness(t *testing.T) {
 	defer goleak.VerifyNone(t)
@@ -51,6 +76,74 @@ func TestDefaultOptionsAndSortDeterminantSaturation(t *testing.T) {
 
 	options := GetDefaultSorterOptions()
 	options.SortDeterminant = SortBySaturation
+
+	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), nil, nil, options)
+
+	assert.NotNil(t, sorter)
+	assert.Nil(t, err)
+
+	result, err := sorter.Sort()
+
+	assert.NotNil(t, result)
+	assert.Nil(t, err)
+}
+
+func TestDefaultOptionsAndSortDeterminantAbsoluteColor(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
+	options := GetDefaultSorterOptions()
+	options.SortDeterminant = SortByAbsoluteColor
+
+	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), nil, nil, options)
+
+	assert.NotNil(t, sorter)
+	assert.Nil(t, err)
+
+	result, err := sorter.Sort()
+
+	assert.NotNil(t, result)
+	assert.Nil(t, err)
+}
+
+func TestDefaultOptionsAndSortDeterminantRedChannel(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
+	options := GetDefaultSorterOptions()
+	options.SortDeterminant = SortByRedChannel
+
+	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), nil, nil, options)
+
+	assert.NotNil(t, sorter)
+	assert.Nil(t, err)
+
+	result, err := sorter.Sort()
+
+	assert.NotNil(t, result)
+	assert.Nil(t, err)
+}
+
+func TestDefaultOptionsAndSortDeterminantGreenChannel(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
+	options := GetDefaultSorterOptions()
+	options.SortDeterminant = SortByGreenChannel
+
+	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), nil, nil, options)
+
+	assert.NotNil(t, sorter)
+	assert.Nil(t, err)
+
+	result, err := sorter.Sort()
+
+	assert.NotNil(t, result)
+	assert.Nil(t, err)
+}
+
+func TestDefaultOptionsAndSortDeterminantBlueChannel(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
+	options := GetDefaultSorterOptions()
+	options.SortDeterminant = SortByBlueChannel
 
 	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), nil, nil, options)
 
@@ -473,22 +566,90 @@ func TestDefaultOptionsAndBlendingModeDarken(t *testing.T) {
 	assert.Nil(t, err)
 }
 
+func TestDefaultOptionsAndIntervalPaintingFill(t *testing.T) {
+	options := GetDefaultSorterOptions()
+	options.IntervalPainting = IntervalFill
+
+	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), nil, nil, options)
+
+	assert.NotNil(t, sorter)
+	assert.Nil(t, err)
+
+	result, err := sorter.Sort()
+
+	assert.NotNil(t, result)
+	assert.Nil(t, err)
+}
+
+func TestDefaultOptionsAndIntervalPaintingGradient(t *testing.T) {
+	options := GetDefaultSorterOptions()
+	options.IntervalPainting = IntervalGradient
+
+	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), nil, nil, options)
+
+	assert.NotNil(t, sorter)
+	assert.Nil(t, err)
+
+	result, err := sorter.Sort()
+
+	assert.NotNil(t, result)
+	assert.Nil(t, err)
+}
+
+func TestDefaultOptionsAndIntervalPaintingRepeat(t *testing.T) {
+	options := GetDefaultSorterOptions()
+	options.IntervalPainting = IntervalRepeat
+
+	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), nil, nil, options)
+
+	assert.NotNil(t, sorter)
+	assert.Nil(t, err)
+
+	result, err := sorter.Sort()
+
+	assert.NotNil(t, result)
+	assert.Nil(t, err)
+}
+
+func TestDefaultOptionsAndIntervalPaintingAverage(t *testing.T) {
+	options := GetDefaultSorterOptions()
+	options.IntervalPainting = IntervalAverage
+
+	sorter, err := CreateSorter(mockTestBlackAndWhiteStripesImage(), nil, nil, options)
+
+	assert.NotNil(t, sorter)
+	assert.Nil(t, err)
+
+	result, err := sorter.Sort()
+
+	assert.NotNil(t, result)
+	assert.Nil(t, err)
+}
+
 const (
 	mock_image_width  = 5
 	mock_image_height = 5
 )
 
 // Create a test image which consists of black and white 1px wide columns of the size specified by the mock_image prefixed constants
-func mockTestBlackAndWhiteStripesImage() draw.Image {
+func mockTestBlackAndWhiteStripesImage() image.Image {
+	return createMockTestBlackAndWhiteStripesImage(mock_image_width, mock_image_height)
+}
+
+func mockHugeTestBlackAndWhiteStripesImage() image.Image {
+	return createMockTestBlackAndWhiteStripesImage(6000, 6000)
+}
+
+func createMockTestBlackAndWhiteStripesImage(width, height int) image.Image {
 	p1 := image.Point{0, 0}
-	p2 := image.Point{mock_image_width, mock_image_height}
+	p2 := image.Point{width, height}
 	image := image.NewRGBA(image.Rectangle{p1, p2})
 
 	cBlack := color.RGBA{0, 0, 0, 0xff}
 	cWhite := color.RGBA{255, 255, 255, 0xff}
 
-	for xIndex := 0; xIndex < mock_image_width; xIndex += 1 {
-		for yIndex := 0; yIndex < mock_image_height; yIndex += 1 {
+	for xIndex := 0; xIndex < width; xIndex += 1 {
+		for yIndex := 0; yIndex < height; yIndex += 1 {
 			if xIndex%2 != 0 {
 				image.Set(xIndex, yIndex, cBlack)
 			} else {

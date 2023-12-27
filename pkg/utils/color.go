@@ -13,11 +13,10 @@ const (
 	DarkenOnly
 )
 
-// Convert the color.Color interface instance to the Y grayscale component represented as a integer in range from 0 to 255
-func ColorToGrayscaleComponent(c color.Color) int {
-	rgba := ColorToRgba(c)
-
-	y := (float64(rgba.R) * 0.299) + (float64(rgba.G) * 0.587) + (float64(rgba.B) * 0.114)
+// Convert the color.NRGBA color to the Y grayscale component represented as a integer in range from 0 to 255.
+// Note that the alpha channel is not taken under account and the result is non-alpha-premultiplied.
+func NrgbaToGrayscaleComponent(c color.NRGBA) int {
+	y := (float64(c.R) * 0.299) + (float64(c.G) * 0.587) + (float64(c.B) * 0.114)
 	return int(math.Max(0, math.Min(255, y)))
 }
 
@@ -30,36 +29,12 @@ func RgbaToNormalizedComponents(c color.RGBA) (float64, float64, float64) {
 	return rNorm, gNorm, bNorm
 }
 
-// Return a boolean value indicating if the given color.Color interface implementation has the alpha channel <255
-func HasAnyTransparency(c color.Color) bool {
-	_, _, _, a32 := c.RGBA()
+// Convert a color.RGBA color to HSL+Alpha components where Hue is expressed in degress (0-360) and the saturation, lightnes and alpha\
+// in percentage (0.0-1.0)
+func RgbaToHsla(c color.RGBA) (int, float64, float64, float64) {
+	rNorm, gNorm, bNorm := RgbaToNormalizedComponents(c)
 
-	return int(a32>>8) < 255
-}
-
-// Convert a color represented as color.Color interface to color.RGBA struct. If the underlying color is a color.RGBA the original struct
-// will be returned, otherwise a new color.RGBA instance will be created
-func ColorToRgba(c color.Color) color.RGBA {
-	if rgba, ok := c.(color.RGBA); ok {
-		return rgba
-	}
-
-	r32, g32, b32, a32 := c.RGBA()
-	return color.RGBA{
-		R: uint8(r32 >> 8),
-		G: uint8(g32 >> 8),
-		B: uint8(b32 >> 8),
-		A: uint8(a32 >> 8),
-	}
-}
-
-// Convert a color represented as color.Color interface implementation to HSL+Alpha components where Hue is expressed in degress (0-360) and the
-// saturation, lightnes and alpha in percentage (0.0-1.0)
-func ColorToHsla(c color.Color) (int, float64, float64, float64) {
-	rgba := ColorToRgba(c)
-	rNorm, gNorm, bNorm := RgbaToNormalizedComponents(rgba)
-
-	alpha := float64(rgba.A) / 255.0
+	alpha := float64(c.A) / 255.0
 
 	min := math.Min(rNorm, math.Min(gNorm, bNorm))
 	max := math.Max(rNorm, math.Max(gNorm, bNorm))
@@ -99,9 +74,9 @@ func ColorToHsla(c color.Color) (int, float64, float64, float64) {
 	return hue, saturation, lightness, alpha
 }
 
-// Perform blending of two colors according to a given blending mode
-// TODO: Currently the alpha channel of the output color has a 0xff fixed value
-func BlendRGBA(a, b color.RGBA, mode BlendingMode) color.RGBA {
+// Perform blending of two color.NRGBA colors according to a given blending mode
+// TODO: Currently the alpha channel of the output color has a fixed 0xff value
+func BlendNrgba(a, b color.NRGBA, mode BlendingMode) color.NRGBA {
 	switch mode {
 	case LightenOnly:
 		{
@@ -109,7 +84,7 @@ func BlendRGBA(a, b color.RGBA, mode BlendingMode) color.RGBA {
 			g := uint8(math.Max(float64(a.G), float64(b.G)))
 			b := uint8(math.Max(float64(a.B), float64(b.B)))
 
-			return color.RGBA{r, g, b, 0xff}
+			return color.NRGBA{r, g, b, 0xff}
 		}
 	case DarkenOnly:
 		{
@@ -117,9 +92,24 @@ func BlendRGBA(a, b color.RGBA, mode BlendingMode) color.RGBA {
 			g := uint8(math.Min(float64(a.G), float64(b.G)))
 			b := uint8(math.Min(float64(a.B), float64(b.B)))
 
-			return color.RGBA{r, g, b, 0xff}
+			return color.NRGBA{r, g, b, 0xff}
 		}
 	default:
 		panic("color-utils: undefined blending mode provided")
+	}
+}
+
+// Performa a linear interpolation between two color.RGBA colors and return the interpolated color for the given t point
+func InterpolateRgba(a, b color.RGBA, t float64) color.RGBA {
+	rLerp := Lerp(float64(a.R), float64(b.R), t)
+	gLerp := Lerp(float64(a.G), float64(b.G), t)
+	bLerp := Lerp(float64(a.B), float64(b.B), t)
+	aLerp := Lerp(float64(a.A), float64(b.A), t)
+
+	return color.RGBA{
+		R: uint8(rLerp),
+		G: uint8(gLerp),
+		B: uint8(bLerp),
+		A: uint8(aLerp),
 	}
 }
