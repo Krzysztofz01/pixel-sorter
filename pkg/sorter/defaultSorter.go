@@ -1,6 +1,7 @@
 package sorter
 
 import (
+	"context"
 	"fmt"
 	"image"
 	"image/color"
@@ -13,11 +14,13 @@ import (
 )
 
 type defaultSorter struct {
-	image     *image.NRGBA
-	maskImage *image.NRGBA
-	mask      Mask
-	logger    SorterLogger
-	options   *SorterOptions
+	image       *image.NRGBA
+	maskImage   *image.NRGBA
+	mask        Mask
+	logger      SorterLogger
+	options     *SorterOptions
+	cancel      func()
+	cancelMutex sync.Mutex
 }
 
 // Create a new image sorter instance by providing the image to be sorted and optional parameters such as mask image
@@ -28,6 +31,8 @@ func CreateSorter(image image.Image, mask image.Image, logger SorterLogger, opti
 	}
 
 	sorter := new(defaultSorter)
+	sorter.cancel = nil
+	sorter.cancelMutex = sync.Mutex{}
 	sorter.image = utils.ImageToNrgbaImage(image)
 
 	if mask != nil {
@@ -73,6 +78,19 @@ func CreateSorter(image image.Image, mask image.Image, logger SorterLogger, opti
 	return sorter, nil
 }
 
+func (sorter *defaultSorter) CancelSort() bool {
+	sorter.cancelMutex.Lock()
+	defer sorter.cancelMutex.Unlock()
+
+	if sorter.cancel == nil {
+		return false
+	}
+
+	sorter.cancel()
+	sorter.cancel = nil
+	return true
+}
+
 func (sorter *defaultSorter) Sort() (image.Image, error) {
 	var (
 		srcImageNrgba   *image.NRGBA
@@ -82,6 +100,13 @@ func (sorter *defaultSorter) Sort() (image.Image, error) {
 		sortingExecTime time.Time = time.Now()
 		err             error     = nil
 	)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer sorter.CancelSort()
+
+	sorter.cancelMutex.Lock()
+	sorter.cancel = cancel
+	sorter.cancelMutex.Unlock()
 
 	if sorter.options.Angle != 0 {
 		srcImageNrgba, revertRotation = utils.RotateImageWithRevertNrgba(sorter.image, sorter.options.Angle)
@@ -122,37 +147,37 @@ func (sorter *defaultSorter) Sort() (image.Image, error) {
 		switch sorter.options.SortOrder {
 		case SortVertical:
 			{
-				if err = sorter.performParallelColumnSorting(srcImageRgba, dstImageRgba); err != nil {
+				if err = sorter.performParallelColumnSorting(srcImageRgba, dstImageRgba, ctx); err != nil {
 					return nil, fmt.Errorf("sorter: failed to perform the vertical column sort: %w", err)
 				}
 			}
 		case SortHorizontal:
 			{
-				if err = sorter.performParallelRowSorting(srcImageRgba, dstImageRgba); err != nil {
+				if err = sorter.performParallelRowSorting(srcImageRgba, dstImageRgba, ctx); err != nil {
 					return nil, fmt.Errorf("sorter: failed to perform the horizontal row sort: %w", err)
 				}
 			}
 		case SortVerticalAndHorizontal:
 			{
-				if err = sorter.performParallelColumnSorting(srcImageRgba, dstImageRgba); err != nil {
+				if err = sorter.performParallelColumnSorting(srcImageRgba, dstImageRgba, ctx); err != nil {
 					return nil, fmt.Errorf("sorter: failed to perform the vertical column sort: %w", err)
 				}
 
 				copy(srcImageRgba.Pix, dstImageRgba.Pix)
 
-				if err = sorter.performParallelRowSorting(srcImageRgba, dstImageRgba); err != nil {
+				if err = sorter.performParallelRowSorting(srcImageRgba, dstImageRgba, ctx); err != nil {
 					return nil, fmt.Errorf("sorter: failed to perform the horizontal row sort: %w", err)
 				}
 			}
 		case SortHorizontalAndVertical:
 			{
-				if err = sorter.performParallelRowSorting(srcImageRgba, dstImageRgba); err != nil {
+				if err = sorter.performParallelRowSorting(srcImageRgba, dstImageRgba, ctx); err != nil {
 					return nil, fmt.Errorf("sorter: failed to perform the horizontal row sort: %w", err)
 				}
 
 				copy(srcImageRgba.Pix, dstImageRgba.Pix)
 
-				if err = sorter.performParallelColumnSorting(srcImageRgba, dstImageRgba); err != nil {
+				if err = sorter.performParallelColumnSorting(srcImageRgba, dstImageRgba, ctx); err != nil {
 					return nil, fmt.Errorf("sorter: failed to perform the vertical column sort: %w", err)
 				}
 			}
@@ -192,7 +217,7 @@ func (sorter *defaultSorter) Sort() (image.Image, error) {
 }
 
 // Function used to iterate over image rows in parallel and invoking the image strip sorting on each row.
-func (sorter *defaultSorter) performParallelRowSorting(src, dst *image.RGBA) error {
+func (sorter *defaultSorter) performParallelRowSorting(src, dst *image.RGBA, ctx context.Context) error {
 	width := src.Bounds().Dx()
 	height := src.Bounds().Dy()
 
@@ -208,8 +233,9 @@ func (sorter *defaultSorter) performParallelRowSorting(src, dst *image.RGBA) err
 				return
 			}
 
-			if err := sorter.performImageStripSort(src, dst, 4*yIndex*width, 4*1, width); err != nil {
+			if err := sorter.performImageStripSort(src, dst, 4*yIndex*width, 4*1, width, ctx); err != nil {
 				errt.Set(fmt.Errorf("sorter: failed to perform image strip sorting for row %d: %w", yIndex, err))
+				ctx.Done()
 				return
 			}
 		}(y)
@@ -220,7 +246,7 @@ func (sorter *defaultSorter) performParallelRowSorting(src, dst *image.RGBA) err
 }
 
 // Function used to iterate over image columns in paralle and ivoking the image strip sorting on each column
-func (sorter *defaultSorter) performParallelColumnSorting(src, dst *image.RGBA) error {
+func (sorter *defaultSorter) performParallelColumnSorting(src, dst *image.RGBA, ctx context.Context) error {
 	width := src.Bounds().Dx()
 	height := src.Bounds().Dy()
 
@@ -236,8 +262,9 @@ func (sorter *defaultSorter) performParallelColumnSorting(src, dst *image.RGBA) 
 				return
 			}
 
-			if err := sorter.performImageStripSort(src, dst, 4*xIndex, 4*width, height); err != nil {
+			if err := sorter.performImageStripSort(src, dst, 4*xIndex, 4*width, height, ctx); err != nil {
 				errt.Set(fmt.Errorf("sorter: failed to perform image strip sorting for column %d: %w", xIndex, err))
+				ctx.Done()
 				return
 			}
 		}(x)
@@ -251,7 +278,7 @@ func (sorter *defaultSorter) performParallelColumnSorting(src, dst *image.RGBA) 
 // that the iteration is one-dimensional, we accept the start index and the iteration step size. The number of iteration steps is defined by the count. The
 // function iterates over the strip and checks whether the interval requirements are met. If yes, they are appended to the interval, if not, they are
 // written straight to the destination image. The intervals are also sorted and drawn into the image under some specific conditions.
-func (sorter *defaultSorter) performImageStripSort(src, dst *image.RGBA, start, step, count int) error {
+func (sorter *defaultSorter) performImageStripSort(src, dst *image.RGBA, start, step, count int, ctx context.Context) error {
 	var (
 		buffer            []color.RGBA = make([]color.RGBA, 0, count)
 		interval          Interval     = CreateInterval(sorter.options.SortDeterminant)
@@ -267,6 +294,12 @@ func (sorter *defaultSorter) performImageStripSort(src, dst *image.RGBA, start, 
 	)
 
 	for i, index := 0, start; i < count; i, index = i+1, index+step {
+		select {
+		case <-ctx.Done():
+			return ErrSortingCancellation
+		default:
+		}
+
 		currentColor.R = src.Pix[index+0]
 		currentColor.G = src.Pix[index+1]
 		currentColor.B = src.Pix[index+2]

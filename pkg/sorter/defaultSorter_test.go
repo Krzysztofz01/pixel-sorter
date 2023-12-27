@@ -3,7 +3,6 @@ package sorter
 import (
 	"image"
 	"image/color"
-	"image/draw"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -11,6 +10,32 @@ import (
 )
 
 // TODO: Currently the test are verifying that no errors occure but the resulting image is not verified
+
+func TestDefaultSorterSortingCancellationShouldBreakTheSorting(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
+	options := GetDefaultSorterOptions()
+	sorter, err := CreateSorter(mockHugeTestBlackAndWhiteStripesImage(), nil, nil, options)
+
+	assert.NotNil(t, sorter)
+	assert.Nil(t, err)
+
+	sortingGoroutine := func() {
+		result, err := sorter.Sort()
+
+		assert.Nil(t, result)
+		assert.ErrorIs(t, err, ErrSortingCancellation)
+	}
+
+	cancellationGoroutine := func() {
+		assert.True(t, sorter.CancelSort())
+
+		assert.False(t, sorter.CancelSort())
+	}
+
+	go sortingGoroutine()
+	go cancellationGoroutine()
+}
 
 func TestDefaultOptionsAndSortDeterminantBrightness(t *testing.T) {
 	defer goleak.VerifyNone(t)
@@ -607,16 +632,24 @@ const (
 )
 
 // Create a test image which consists of black and white 1px wide columns of the size specified by the mock_image prefixed constants
-func mockTestBlackAndWhiteStripesImage() draw.Image {
+func mockTestBlackAndWhiteStripesImage() image.Image {
+	return createMockTestBlackAndWhiteStripesImage(mock_image_width, mock_image_height)
+}
+
+func mockHugeTestBlackAndWhiteStripesImage() image.Image {
+	return createMockTestBlackAndWhiteStripesImage(6000, 6000)
+}
+
+func createMockTestBlackAndWhiteStripesImage(width, height int) image.Image {
 	p1 := image.Point{0, 0}
-	p2 := image.Point{mock_image_width, mock_image_height}
+	p2 := image.Point{width, height}
 	image := image.NewRGBA(image.Rectangle{p1, p2})
 
 	cBlack := color.RGBA{0, 0, 0, 0xff}
 	cWhite := color.RGBA{255, 255, 255, 0xff}
 
-	for xIndex := 0; xIndex < mock_image_width; xIndex += 1 {
-		for yIndex := 0; yIndex < mock_image_height; yIndex += 1 {
+	for xIndex := 0; xIndex < width; xIndex += 1 {
+		for yIndex := 0; yIndex < height; yIndex += 1 {
 			if xIndex%2 != 0 {
 				image.Set(xIndex, yIndex, cBlack)
 			} else {
