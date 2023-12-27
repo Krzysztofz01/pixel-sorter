@@ -1,6 +1,7 @@
 package sorter
 
 import (
+	"errors"
 	"image"
 )
 
@@ -150,9 +151,4 @@ type Sorter interface {
 }
 
 // Error indicating that the sorting has been cancelled using the sorters CancelSort() function.
-type SortingCancellationError struct {
-}
-
-func (err *SortingCancellationError) Error() string {
-	return "sorter: sorting operation has been cancelled"
-}
+var ErrSortingCancellation = errors.New("sorter: sorting operation has been cancelled")

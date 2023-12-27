@@ -7,7 +7,6 @@ import (
 	"image/color"
 	"math/rand"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/Krzysztofz01/pixel-sorter/pkg/img"
@@ -15,13 +14,13 @@ import (
 )
 
 type defaultSorter struct {
-	image     *image.NRGBA
-	maskImage *image.NRGBA
-	mask      Mask
-	logger    SorterLogger
-	options   *SorterOptions
-	active    atomic.Bool
-	cancel    func()
+	image       *image.NRGBA
+	maskImage   *image.NRGBA
+	mask        Mask
+	logger      SorterLogger
+	options     *SorterOptions
+	cancel      func()
+	cancelMutex sync.Mutex
 }
 
 // Create a new image sorter instance by providing the image to be sorted and optional parameters such as mask image
@@ -32,8 +31,8 @@ func CreateSorter(image image.Image, mask image.Image, logger SorterLogger, opti
 	}
 
 	sorter := new(defaultSorter)
-	sorter.active.Store(false)
 	sorter.cancel = nil
+	sorter.cancelMutex = sync.Mutex{}
 	sorter.image = utils.ImageToNrgbaImage(image)
 
 	if mask != nil {
@@ -80,11 +79,13 @@ func CreateSorter(image image.Image, mask image.Image, logger SorterLogger, opti
 }
 
 func (sorter *defaultSorter) CancelSort() bool {
-	if !sorter.active.Load() || sorter.cancel == nil {
+	sorter.cancelMutex.Lock()
+	defer sorter.cancelMutex.Unlock()
+
+	if sorter.cancel == nil {
 		return false
 	}
 
-	sorter.active.Store(false)
 	sorter.cancel()
 	sorter.cancel = nil
 	return true
@@ -101,11 +102,7 @@ func (sorter *defaultSorter) Sort() (image.Image, error) {
 	)
 
 	ctx, cancel := context.WithCancel(context.Background())
-	defer func() {
-		sorter.active.Store(false)
-		sorter.cancel()
-		sorter.cancel = nil
-	}()
+	defer sorter.CancelSort()
 
 	sorter.cancel = cancel
 
@@ -297,7 +294,7 @@ func (sorter *defaultSorter) performImageStripSort(src, dst *image.RGBA, start, 
 	for i, index := 0, start; i < count; i, index = i+1, index+step {
 		select {
 		case <-ctx.Done():
-			return &SortingCancellationError{}
+			return ErrSortingCancellation
 		default:
 		}
 
