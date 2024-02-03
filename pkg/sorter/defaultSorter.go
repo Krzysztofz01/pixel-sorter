@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"image"
 	"image/color"
-	"math/rand"
 	"sync"
 	"time"
 
@@ -420,8 +419,7 @@ func (sorter *defaultSorter) calculateMaxIntervalLength() int {
 		return sorter.options.IntervalLength
 	}
 
-	random := rand.New(rand.NewSource(time.Now().UnixNano()))
-	factor := random.Intn(2*sorter.options.IntervalLengthRandomFactor) - sorter.options.IntervalLengthRandomFactor
+	factor := utils.CIntn(2*sorter.options.IntervalLengthRandomFactor) - sorter.options.IntervalLengthRandomFactor
 
 	length := sorter.options.IntervalLength + factor
 	if length < 1 {
@@ -432,8 +430,6 @@ func (sorter *defaultSorter) calculateMaxIntervalLength() int {
 }
 
 // Function used to draw a color buffer to the destination image. The target position is determined by the iteration index and step value.
-//
-//lint:ignore U1000 Ignore unused false-positive caused by function call in label block
 func drawBufferIntoImage(dst *image.RGBA, buffer []color.RGBA, index, step int) {
 	var (
 		color color.RGBA

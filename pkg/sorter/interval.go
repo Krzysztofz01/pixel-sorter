@@ -194,9 +194,7 @@ func (interval *genericInterval[T]) SortToBuffer(direction SortDirection, painti
 	case IntervalFill:
 		{
 			if direction == SortRandom {
-				random := rand.New(rand.NewSource(time.Now().UnixNano()))
-
-				if random.Intn(2) == 1 {
+				if utils.CIntn(2) == 1 {
 					direction = SortAscending
 				} else {
 					direction = SortDescending
@@ -218,6 +216,7 @@ func (interval *genericInterval[T]) SortToBuffer(direction SortDirection, painti
 				}
 			case Shuffle:
 				{
+					// TODO: Implement a math/rand independent shuffle
 					random := rand.New(rand.NewSource(time.Now().UnixNano()))
 					random.Shuffle(len(interval.items), func(i, j int) {
 						interval.items[i], interval.items[j] = interval.items[j], interval.items[i]
@@ -236,9 +235,7 @@ func (interval *genericInterval[T]) SortToBuffer(direction SortDirection, painti
 	case IntervalGradient:
 		{
 			if direction == SortRandom {
-				random := rand.New(rand.NewSource(time.Now().UnixNano()))
-
-				if random.Intn(2) == 1 {
+				if utils.CIntn(2) == 1 {
 					direction = SortAscending
 				} else {
 					direction = SortDescending
@@ -294,6 +291,7 @@ func (interval *genericInterval[T]) SortToBuffer(direction SortDirection, painti
 				}
 			case Shuffle:
 				{
+					// TODO: Implement a meth/rand independent shuffle
 					random := rand.New(rand.NewSource(time.Now().UnixNano()))
 					random.Shuffle(len(interval.items), func(i, j int) {
 						interval.items[i], interval.items[j] = interval.items[j], interval.items[i]
