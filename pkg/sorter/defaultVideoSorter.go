@@ -1,9 +1,11 @@
 package sorter
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"image"
+	"sync"
 	"time"
 
 	vidio "github.com/AlexEidt/Vidio"
@@ -16,6 +18,8 @@ type defaultVideoSorter struct {
 	maskImage       image.Image
 	logger          *logrus.Entry
 	options         *SorterOptions
+	cancel          func()
+	cancelMutex     sync.Mutex
 }
 
 func CreateVideoSorter(inputVideoPath string, outputVideoPath string, mask image.Image, logger *logrus.Logger, options *SorterOptions) (VideoSorter, error) {
@@ -24,6 +28,8 @@ func CreateVideoSorter(inputVideoPath string, outputVideoPath string, mask image
 	// Due to the fact thath the mask is stored here as a image and not as a parsed mask struct, it is very
 	// inefficient. The mask parsing is called for all viedo frames.
 	sorter.maskImage = mask
+	sorter.cancel = nil
+	sorter.cancelMutex = sync.Mutex{}
 
 	if logger == nil {
 		return nil, errors.New("sorter: invalid logger reference provided")
@@ -62,6 +68,14 @@ func CreateVideoSorter(inputVideoPath string, outputVideoPath string, mask image
 
 func (sorter *defaultVideoSorter) Sort() error {
 	sortingExecTime := time.Now()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer sorter.CancelSort()
+
+	sorter.cancelMutex.Lock()
+	sorter.cancel = cancel
+	sorter.cancelMutex.Unlock()
+
 	inputVideo, err := vidio.NewVideo(sorter.videoInputPath)
 	if err != nil {
 		return fmt.Errorf("sorter: failed to access the input video file: %w", err)
@@ -92,6 +106,12 @@ func (sorter *defaultVideoSorter) Sort() error {
 	frameNumber := 1
 	frameCount := inputVideo.Frames()
 	for inputVideo.Read() {
+		select {
+		case <-ctx.Done():
+			return ErrSortingCancellation
+		default:
+		}
+
 		sorter.logger.Debugf("Frame %d/%d starting the processing step", frameNumber, frameCount)
 		frameSortingExecTime := time.Now()
 
@@ -121,4 +141,17 @@ func (sorter *defaultVideoSorter) Sort() error {
 
 	sorter.logger.Debugf("Video pixel sorting took: %s", time.Since(sortingExecTime))
 	return nil
+}
+
+func (sorter *defaultVideoSorter) CancelSort() bool {
+	sorter.cancelMutex.Lock()
+	defer sorter.cancelMutex.Unlock()
+
+	if sorter.cancel == nil {
+		return false
+	}
+
+	sorter.cancel()
+	sorter.cancel = nil
+	return true
 }

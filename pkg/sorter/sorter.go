@@ -154,6 +154,9 @@ type Sorter interface {
 type VideoSorter interface {
 	// Perform the sorting operation and store the sorted version in the sorter specified path
 	Sort() error
+
+	// Cancel the currently running sorting operation and return a boolean value indicating if the sorting was cancelled
+	CancelSort() bool
 }
 
 // Error indicating that the sorting has been cancelled using the sorters CancelSort() function.
