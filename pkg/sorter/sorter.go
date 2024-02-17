@@ -150,5 +150,11 @@ type Sorter interface {
 	CancelSort() bool
 }
 
+// Utility used to create a pixel sorted version of a given video
+type VideoSorter interface {
+	// Perform the sorting operation and store the sorted version in the sorter specified path
+	Sort() error
+}
+
 // Error indicating that the sorting has been cancelled using the sorters CancelSort() function.
 var ErrSortingCancellation = errors.New("sorter: sorting operation has been cancelled")
