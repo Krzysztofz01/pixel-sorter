@@ -9,20 +9,19 @@ import (
 	"time"
 
 	vidio "github.com/AlexEidt/Vidio"
-	"github.com/sirupsen/logrus"
 )
 
 type defaultVideoSorter struct {
 	videoInputPath  string
 	videoOutputPath string
 	maskImage       image.Image
-	logger          *logrus.Entry
+	logger          SorterLogger
 	options         *SorterOptions
 	cancel          func()
 	cancelMutex     sync.Mutex
 }
 
-func CreateVideoSorter(inputVideoPath string, outputVideoPath string, mask image.Image, logger *logrus.Logger, options *SorterOptions) (VideoSorter, error) {
+func CreateVideoSorter(inputVideoPath string, outputVideoPath string, mask image.Image, logger SorterLogger, options *SorterOptions) (VideoSorter, error) {
 	sorter := new(defaultVideoSorter)
 	// TODO: Currently there is not mask validation here. All the validation is happening for single frames.
 	// Due to the fact thath the mask is stored here as a image and not as a parsed mask struct, it is very
@@ -35,10 +34,14 @@ func CreateVideoSorter(inputVideoPath string, outputVideoPath string, mask image
 		return nil, errors.New("sorter: invalid logger reference provided")
 	}
 
-	sorter.logger = logger.WithField("prefix", "pixel-sorter")
+	if logger == nil {
+		sorter.logger = getDiscardLogger()
+	} else {
+		sorter.logger = logger
+	}
 
 	if options != nil {
-		sorter.logger.Debugln("Running the video sorter with specified sorter options.")
+		sorter.logger.Debugf("Running the video sorter with specified sorter options.")
 
 		if valid, msg := options.AreValid(); !valid {
 			sorter.logger.Debugf("Sorter options validation failed. Sorter options: %+v", *options)
@@ -48,7 +51,7 @@ func CreateVideoSorter(inputVideoPath string, outputVideoPath string, mask image
 		sorter.logger.Debugf("Sorter options validation passed. Sorter options: %+v", *options)
 		sorter.options = options
 	} else {
-		sorter.logger.Debugln("Running the video sorter with default sorter options.")
+		sorter.logger.Debugf("Running the video sorter with default sorter options.")
 		sorter.options = GetDefaultSorterOptions()
 	}
 

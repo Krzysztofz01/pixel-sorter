@@ -32,7 +32,7 @@ var videoCmd = &cobra.Command{
 			}
 		}
 
-		sorter, err := sorter.CreateVideoSorter(FlagInputMediaFilePath, FlagOutputMediaFilePath, mask, Logger, options)
+		sorter, err := sorter.CreateVideoSorter(FlagInputMediaFilePath, FlagOutputMediaFilePath, mask, SorterLogger, options)
 		if err != nil {
 			return err
 		}
