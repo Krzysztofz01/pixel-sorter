@@ -9,6 +9,7 @@ import (
 	"time"
 
 	vidio "github.com/AlexEidt/Vidio"
+	"github.com/Krzysztofz01/pixel-sorter/pkg/utils"
 )
 
 type defaultVideoSorter struct {
@@ -128,11 +129,7 @@ func (sorter *defaultVideoSorter) Sort() error {
 			return fmt.Errorf("sorter: failed to perform the sorting of the frame %d/%d: %w", frameNumber, frameCount, err)
 		}
 
-		// TODO: Some better and safer? way to cast the image
-		sortedFrameRGBA, ok := sortedFrame.(*image.RGBA)
-		if !ok {
-			return fmt.Errorf("sorter: failed to perform the sorted frame buffer access cast for the frame %d/%d", frameNumber, frameCount)
-		}
+		sortedFrameRGBA := utils.ImageToRgbaImage(sortedFrame)
 
 		if err := outputVideo.Write(sortedFrameRGBA.Pix); err != nil {
 			return fmt.Errorf("sorter: failed to perform output video frame write for the frame %d/%d: %w", frameNumber, frameCount, err)
