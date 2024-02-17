@@ -40,19 +40,28 @@ task build
 - *cycles* (-c) - The count of sorting cycles that should be performed on the image.
 - *sort-determinant* (-e) - Parameter used as the argument for the sorting algorithm. 
     - *brightness* - Use the perceived brightness as the sorting argument
-    - *hue* - use the HSL color space hue value as the sorting argument
-    - *saturation* - use the HSL color space saturation value as the sorting argument
+    - *hue* - Use the HSL color space hue value as the sorting argument
+    - *saturation* - Use the HSL color space saturation value as the sorting argument
+    - *absolute* - Use the product of all RGB components as the sorting argument (imprecise but classic approach)
+    - *red* - Use the RGB color space red channel as the sorting argument
+    - *green* - Use the RGB color space green channel as the sorting argument
+    - *blue* - Use the RGB color space blue channel as the sorting argument
 - *direction* (-d) - Pixel sorting direction in intervals.
     - *ascending* - Sort ascending according to the sorting determinant
     - *descending* - Sort descending according to the sorting determinant
     - *shuffle* - Shuffle by the sorting determinant
     - *random* - Randomly sort ascending or descending according to the sorting determinant
+- *interval-painting* (-p) - Parameter used to specify the interval color painting behaviour
+    - *fill* - The pixels are sorted according to the sort direction and painted on the image.
+    - *gradient* - The pixels are sorted according to the sort direction and a calculated gradient of the sorted colors is painted on the image.
+    - *repeat* - The first color appended to the interval is repeated throughout the whole interval length and is painted on the image.
+    - *average* - The mean of all colors appended to the interval is calculated, then the color is repeated throughout the whole interval length and is painted on the image.
 - *interval-determinant* (-i) - Parameter used to determine intervals.
     - *brightness* - Use the perceived brightness to determine intervals
     - *hue* - Use the HSL color space hue value to determine intervals
     - *saturation* - Use the HSL color space saturation value to determine intervals
     - *mask* - Use the external mask image to determine intervals
-    - *absolute* - Use the color absolute value (old imprecise approach, but classic)
+    - *absolute* - Use the product of all RGB components to determine intervals (imprecise but classic approach)
     - *edge* - Use a Canny edge detection algorithm to determine intervals
 - *interval-lower-threshold* (-l) - The lower threshold of the interval determination process.
 - *interval-upper-threshold* (-u) - The upper threshold of the interval determination process.
@@ -77,7 +86,7 @@ Pixel sorting image editing utility implemented in Go.
 Usage:
   pixel-sorter [command]
 
-Available Commands:     
+Available Commands:
   help        Help about any command
   image       Perform a pixel sorting operation on the specified image file.
 
@@ -92,13 +101,14 @@ Flags:
   -l, --interval-lower-threshold float          The lower threshold of the interval determination process. Options: [0.0 - 1.0]. (default 0.1)
   -k, --interval-max-length int                 The max length of the interval. Zero means no length limits.
   -r, --interval-max-length-random-factor int   The value representing the range of values that can be randomly subtracted or added to the max interval length. Options: [>= 0]
+  -p, --interval-painting string                Parameter used to specify the interval color painting behaviour. Options: [fill, gradient, repeat, average]. (default "fill")
   -u, --interval-upper-threshold float          The upper threshold of the interval determination process. Options: [0.0 - 1.0]. (default 0.9)
   -m, --mask                                    Exclude the sorting effect from masked out ares of the image.
       --mask-image-path string                  The path of the mask image file used to process the input media.
   -o, --order string                            Order of the graphic sorting stages. Options: [horizontal, vertical, horizontal-vertical, vertical-horizontal]. (default "horizontal-vertical")
       --output-media-path string                The path of the output media file to be saved. The path should end with one of the supported extensions. [jpg, png]
   -s, --scale float                             Image downscaling percentage factor. Options: [0.0 - 1.0]. (default 1)
-  -e, --sort-determinant string                 Parameter used as the argument for the sorting algorithm. Options: [brightness, hue, saturation]. (default "brightness")
+  -e, --sort-determinant string                 Parameter used as the argument for the sorting algorithm. Options: [brightness, hue, saturation, absolute, red, green, blue ]. (default "brightness")
   -v, --verbose                                 Enable verbose logging mode.
 
 Use "pixel-sorter [command] --help" for more information about a command.

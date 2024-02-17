@@ -1,6 +1,7 @@
 package sorter
 
 import (
+	"errors"
 	"image"
 )
 
@@ -11,6 +12,10 @@ const (
 	SortByBrightness SortDeterminant = iota
 	SortByHue
 	SortBySaturation
+	SortByAbsoluteColor
+	SortByRedChannel
+	SortByGreenChannel
+	SortByBlueChannel
 )
 
 // Flag representing the order in which should be the image sorted
@@ -53,12 +58,23 @@ const (
 	BlendingDarken
 )
 
+// Flag representing the behaviour of interval painting process
+type IntervalPainting int
+
+const (
+	IntervalFill IntervalPainting = iota
+	IntervalGradient
+	IntervalRepeat
+	IntervalAverage
+)
+
 // Structure representing all the parameters for the sorter
 type SorterOptions struct {
 	SortDeterminant                   SortDeterminant
 	SortDirection                     SortDirection
 	SortOrder                         SortOrder
 	IntervalDeterminant               IntervalDeterminant
+	IntervalPainting                  IntervalPainting
 	IntervalDeterminantLowerThreshold float64
 	IntervalDeterminantUpperThreshold float64
 	IntervalLength                    int
@@ -112,6 +128,7 @@ func GetDefaultSorterOptions() *SorterOptions {
 	options.SortDirection = SortAscending
 	options.SortOrder = SortHorizontalAndVertical
 	options.IntervalDeterminant = SplitByBrightness
+	options.IntervalPainting = IntervalFill
 	options.IntervalDeterminantLowerThreshold = 0.0
 	options.IntervalDeterminantUpperThreshold = 1.0
 	options.UseMask = false
@@ -128,6 +145,9 @@ func GetDefaultSorterOptions() *SorterOptions {
 type Sorter interface {
 	// Perform the sorting operation and return the sorted version of the image
 	Sort() (image.Image, error)
+
+	// Cancel the currently running sorting operation and return a boolean value indicating if the sorting was cancelled
+	CancelSort() bool
 }
 
 // Utility used to create a pixel sorted version of a given video
@@ -135,3 +155,6 @@ type VideoSorter interface {
 	// Perform the sorting operation and store the sorted version in the sorter specified path
 	Sort() error
 }
+
+// Error indicating that the sorting has been cancelled using the sorters CancelSort() function.
+var ErrSortingCancellation = errors.New("sorter: sorting operation has been cancelled")

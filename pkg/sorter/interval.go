@@ -1,11 +1,13 @@
 package sorter
 
 import (
-	"fmt"
 	"image/color"
+	"math"
 	"math/rand"
 	"sort"
 	"time"
+
+	"github.com/Krzysztofz01/pixel-sorter/pkg/utils"
 )
 
 const (
@@ -23,49 +25,104 @@ type Interval interface {
 	// Get a boolean value representing the presence of elements in the given interval
 	Any() bool
 
-	// Sort all interval colors by weight in the specified direction and return the interval as a slice of RGBA colors
-	Sort(direction SortDirection) []color.Color
+	// Sort all interval colors by weight in the specified direction and return the interval as a new slice of RGBA
+	// colors. The internal interval items collection will be cleared after the sort.
+	Sort(direction SortDirection, painting IntervalPainting) []color.RGBA
+
+	// Sort all interval colors by weight in the specified direction and return the interval by writing the RGBA
+	// colors to the provided buffer. The internal interval items collection will be cleared after the sort.
+	SortToBuffer(direction SortDirection, painting IntervalPainting, buffer *[]color.RGBA)
 }
 
-// A interval interface implementation using a integer value for storing the interval element weight
-type ValueWeightInterval struct {
-	items                 []valueWeightIntervalItem
-	weightDeterminantFunc func(color.RGBA) (int, error)
+type genericInterval[T int | float64] struct {
+	items                 []genericIntervalItem[T]
+	weightDeterminantFunc func(color.RGBA) T
 }
 
-// Structure representing a single item in the value weight interval
-type valueWeightIntervalItem struct {
+type genericIntervalItem[T int | float64] struct {
 	color  color.RGBA
-	weight int
+	weight T
 }
 
-// A interval interface implementation using a floating point number value for storing the interval element weight
-type NormalizedWeightInterval struct {
-	items                 []normalizedWeightIntervalItem
-	weightDeterminantFunc func(color.RGBA) (float64, error)
-}
-
-// Structure representing a single item in the normalized weight interval
-type normalizedWeightIntervalItem struct {
-	color  color.RGBA
-	weight float64
-}
-
-func CreateValueWeightInterval(weightDeterminantFunc func(color.RGBA) (int, error)) Interval {
-	interval := new(ValueWeightInterval)
-	interval.items = make([]valueWeightIntervalItem, 0, defaultIntervalCapacity)
-	interval.weightDeterminantFunc = weightDeterminantFunc
-
-	return interval
-}
-
-func (interval *ValueWeightInterval) Append(color color.RGBA) error {
-	weight, err := interval.weightDeterminantFunc(color)
-	if err != nil {
-		return fmt.Errorf("sorter: calculation of the color value weight failed: %w", err)
+// Create a new interval instance with the item weights represented as a integer values
+func CreateValueWeightInterval(weightDeterminantFunc func(color.RGBA) int) Interval {
+	if weightDeterminantFunc == nil {
+		panic("sorter: the provided weight determinant function is nil")
 	}
 
-	interval.items = append(interval.items, valueWeightIntervalItem{
+	return &genericInterval[int]{
+		items:                 make([]genericIntervalItem[int], 0, defaultIntervalCapacity),
+		weightDeterminantFunc: weightDeterminantFunc,
+	}
+}
+
+// Create a new interval instance with the item weights represented as normalzied values
+func CreateNormalizedWeightInterval(weightDeterminantFunc func(color.RGBA) float64) Interval {
+	if weightDeterminantFunc == nil {
+		panic("sorter: the provided weight determinant function is nil")
+	}
+
+	return &genericInterval[float64]{
+		items:                 make([]genericIntervalItem[float64], 0, defaultIntervalCapacity),
+		weightDeterminantFunc: weightDeterminantFunc,
+	}
+}
+
+// Create a new interval instance based on the specifications required by the provided sort determinant
+func CreateInterval(sort SortDeterminant) Interval {
+	switch sort {
+	case SortByBrightness:
+		{
+			return CreateNormalizedWeightInterval(func(c color.RGBA) float64 {
+				return utils.CalculatePerceivedBrightness(c)
+			})
+		}
+	case SortByHue:
+		{
+			return CreateValueWeightInterval(func(c color.RGBA) int {
+				h, _, _, _ := utils.RgbaToHsla(c)
+				return h
+			})
+		}
+	case SortBySaturation:
+		{
+			return CreateNormalizedWeightInterval(func(c color.RGBA) float64 {
+				_, s, _, _ := utils.RgbaToHsla(c)
+				return s
+			})
+		}
+	case SortByAbsoluteColor:
+		{
+			return CreateValueWeightInterval(func(c color.RGBA) int {
+				return int(c.R) * int(c.G) * int(c.B)
+			})
+		}
+	case SortByRedChannel:
+		{
+			return CreateValueWeightInterval(func(c color.RGBA) int {
+				return int(c.R)
+			})
+		}
+	case SortByGreenChannel:
+		{
+			return CreateValueWeightInterval(func(c color.RGBA) int {
+				return int(c.G)
+			})
+		}
+	case SortByBlueChannel:
+		{
+			return CreateValueWeightInterval(func(c color.RGBA) int {
+				return int(c.B)
+			})
+		}
+	default:
+		panic("sorter: invalid sorter state due to a corrupted sorter weight determinant function value")
+	}
+}
+
+func (interval *genericInterval[T]) Append(color color.RGBA) error {
+	weight := interval.weightDeterminantFunc(color)
+	interval.items = append(interval.items, genericIntervalItem[T]{
 		color:  color,
 		weight: weight,
 	})
@@ -73,154 +130,191 @@ func (interval *ValueWeightInterval) Append(color color.RGBA) error {
 	return nil
 }
 
-func (interval *ValueWeightInterval) Count() int {
+func (interval *genericInterval[T]) Count() int {
 	return len(interval.items)
 }
 
-func (interval *ValueWeightInterval) Any() bool {
-	return interval.Count() > 0
+func (interval *genericInterval[T]) Any() bool {
+	return len(interval.items) > 0
 }
 
-func (interval *ValueWeightInterval) Sort(direction SortDirection) []color.Color {
-	if len(interval.items) > 1 {
-		if direction == SortRandom {
-			random := rand.New(rand.NewSource(time.Now().UnixNano()))
+func (interval *genericInterval[T]) Sort(direction SortDirection, painting IntervalPainting) []color.RGBA {
+	buffer := make([]color.RGBA, 0, interval.Count())
 
-			if random.Intn(2) == 1 {
-				direction = SortAscending
-			} else {
-				direction = SortDescending
-			}
+	interval.SortToBuffer(direction, painting, &buffer)
+
+	return buffer
+}
+
+func (interval *genericInterval[T]) SortToBuffer(direction SortDirection, painting IntervalPainting, buffer *[]color.RGBA) {
+	defer func() {
+		// TODO: The previous items are not garbage-collected after the "clear" operation and can lead to pseudo memory leaks.
+		interval.items = interval.items[:0]
+	}()
+
+	if interval.Count() <= 1 {
+		for i := 0; i < interval.Count(); i += 1 {
+			*buffer = append(*buffer, interval.items[i].color)
 		}
 
-		switch direction {
-		case SortAscending, SortDescending:
-			{
-				var sortDeterminantFunc func(i, j int) bool = nil
+		return
+	}
 
-				if direction == SortAscending {
-					sortDeterminantFunc = func(i, j int) bool {
+	switch painting {
+	case IntervalRepeat:
+		{
+			for range interval.items {
+				*buffer = append(*buffer, interval.items[0].color)
+			}
+			return
+		}
+	case IntervalAverage:
+		{
+			sumR, sumG, sumB, sumA := 0, 0, 0, 0
+			for _, item := range interval.items {
+				sumR += int(item.color.R)
+				sumG += int(item.color.G)
+				sumB += int(item.color.B)
+				sumA += int(item.color.A)
+			}
+
+			avg := color.RGBA{
+				R: uint8(sumR / interval.Count()),
+				G: uint8(sumG / interval.Count()),
+				B: uint8(sumB / interval.Count()),
+				A: uint8(sumA / interval.Count()),
+			}
+
+			for range interval.items {
+				*buffer = append(*buffer, avg)
+			}
+
+			return
+		}
+	case IntervalFill:
+		{
+			if direction == SortRandom {
+				if utils.CIntn(2) == 1 {
+					direction = SortAscending
+				} else {
+					direction = SortDescending
+				}
+			}
+
+			switch direction {
+			case SortAscending:
+				{
+					sort.Slice(interval.items, func(i, j int) bool {
 						return interval.items[i].weight < interval.items[j].weight
-					}
+					})
 				}
-
-				if direction == SortDescending {
-					sortDeterminantFunc = func(i, j int) bool {
+			case SortDescending:
+				{
+					sort.Slice(interval.items, func(i, j int) bool {
 						return interval.items[i].weight > interval.items[j].weight
+					})
+				}
+			case Shuffle:
+				{
+					// TODO: Implement a math/rand independent shuffle
+					random := rand.New(rand.NewSource(time.Now().UnixNano()))
+					random.Shuffle(len(interval.items), func(i, j int) {
+						interval.items[i], interval.items[j] = interval.items[j], interval.items[i]
+					})
+				}
+			default:
+				panic("sorter: undefined sort direction specified")
+			}
+
+			for i := 0; i < interval.Count(); i += 1 {
+				*buffer = append(*buffer, interval.items[i].color)
+			}
+
+			return
+		}
+	case IntervalGradient:
+		{
+			if direction == SortRandom {
+				if utils.CIntn(2) == 1 {
+					direction = SortAscending
+				} else {
+					direction = SortDescending
+				}
+			}
+
+			switch direction {
+			case SortAscending, SortDescending:
+				{
+					a := interval.items[0]
+					c := interval.items[0]
+					for _, item := range interval.items {
+						// NOTE: According to the case statement values, assuming that the direction is not ascending it must be descending
+						if direction == SortAscending {
+							if item.weight < a.weight {
+								a = item
+							}
+
+							if item.weight > c.weight {
+								c = item
+							}
+						} else {
+							if item.weight > a.weight {
+								a = item
+							}
+
+							if item.weight < c.weight {
+								c = item
+							}
+						}
+					}
+
+					b := interval.items[0]
+					bLerp := utils.Lerp(float64(a.weight), float64(c.weight), 0.5)
+					bDelta := math.Inf(1)
+
+					for _, item := range interval.items {
+						delta := math.Abs(float64(item.weight) - bLerp)
+						if delta < bDelta {
+							bDelta = delta
+							b = item
+						}
+					}
+
+					for i := 0; i < interval.Count(); i += 1 {
+						t := float64(i) / float64(interval.Count()-1)
+
+						abColorLerp := utils.InterpolateRgba(a.color, b.color, t)
+						bcColorLerp := utils.InterpolateRgba(b.color, c.color, t)
+
+						*buffer = append(*buffer, utils.InterpolateRgba(abColorLerp, bcColorLerp, t))
 					}
 				}
+			case Shuffle:
+				{
+					// TODO: Implement a meth/rand independent shuffle
+					random := rand.New(rand.NewSource(time.Now().UnixNano()))
+					random.Shuffle(len(interval.items), func(i, j int) {
+						interval.items[i], interval.items[j] = interval.items[j], interval.items[i]
+					})
 
-				if sortDeterminantFunc == nil {
-					panic("sorter: undefined sort direction specified")
-				}
+					a := interval.items[0].color
+					b := interval.items[(interval.Count()-1)/2].color
+					c := interval.items[interval.Count()-1].color
 
-				sort.Slice(interval.items, sortDeterminantFunc)
-			}
-		case Shuffle:
-			{
-				random := rand.New(rand.NewSource(time.Now().UnixNano()))
-				random.Shuffle(len(interval.items), func(i, j int) {
-					interval.items[i], interval.items[j] = interval.items[j], interval.items[i]
-				})
-			}
-		default:
-			panic("sorter: undefined sort direction specified")
-		}
-	}
+					for i := 0; i < interval.Count(); i += 1 {
+						t := float64(i) / float64(interval.Count()-1)
 
-	intervalLength := len(interval.items)
-	colors := make([]color.Color, intervalLength)
+						abColorLerp := utils.InterpolateRgba(a, b, t)
+						bcColorLerp := utils.InterpolateRgba(b, c, t)
 
-	for i := 0; i < intervalLength; i += 1 {
-		colors[i] = interval.items[i].color
-	}
-
-	return colors
-}
-
-func CreateNormalizedWeightInterval(weightDeterminantFunc func(color.RGBA) (float64, error)) Interval {
-	interval := new(NormalizedWeightInterval)
-	interval.items = make([]normalizedWeightIntervalItem, 0, defaultIntervalCapacity)
-	interval.weightDeterminantFunc = weightDeterminantFunc
-
-	return interval
-}
-
-func (interval *NormalizedWeightInterval) Append(color color.RGBA) error {
-	weight, err := interval.weightDeterminantFunc(color)
-	if err != nil {
-		return fmt.Errorf("sorter: calculation of the color normalized value weight failed: %w", err)
-	}
-
-	interval.items = append(interval.items, normalizedWeightIntervalItem{
-		color:  color,
-		weight: weight,
-	})
-
-	return nil
-}
-
-func (interval *NormalizedWeightInterval) Count() int {
-	return len(interval.items)
-}
-
-func (interval *NormalizedWeightInterval) Any() bool {
-	return interval.Count() > 0
-}
-
-func (interval *NormalizedWeightInterval) Sort(direction SortDirection) []color.Color {
-	if len(interval.items) > 1 {
-		if direction == SortRandom {
-			random := rand.New(rand.NewSource(time.Now().UnixNano()))
-
-			if random.Intn(2) == 1 {
-				direction = SortAscending
-			} else {
-				direction = SortDescending
-			}
-		}
-
-		switch direction {
-		case SortAscending, SortDescending:
-			{
-				var sortDeterminantFunc func(i, j int) bool = nil
-
-				if direction == SortAscending {
-					sortDeterminantFunc = func(i, j int) bool {
-						return interval.items[i].weight < interval.items[j].weight
+						*buffer = append(*buffer, utils.InterpolateRgba(abColorLerp, bcColorLerp, t))
 					}
 				}
-
-				if direction == SortDescending {
-					sortDeterminantFunc = func(i, j int) bool {
-						return interval.items[i].weight > interval.items[j].weight
-					}
-				}
-
-				if sortDeterminantFunc == nil {
-					panic("sorter: undefined sort direction specified")
-				}
-
-				sort.Slice(interval.items, sortDeterminantFunc)
+			default:
+				panic("sorter: undefined sort direction specified")
 			}
-		case Shuffle:
-			{
-				random := rand.New(rand.NewSource(time.Now().UnixNano()))
-				random.Shuffle(len(interval.items), func(i, j int) {
-					interval.items[i], interval.items[j] = interval.items[j], interval.items[i]
-				})
-			}
-		default:
-			panic("sorter: undefined sort direction specified")
 		}
+	default:
+		panic("sorter: undefined interval painting specified")
 	}
-
-	intervalLength := len(interval.items)
-	colors := make([]color.Color, intervalLength)
-
-	for i := 0; i < intervalLength; i += 1 {
-		colors[i] = interval.items[i].color
-	}
-
-	return colors
 }

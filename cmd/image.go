@@ -43,7 +43,7 @@ var imageCmd = &cobra.Command{
 			}
 		}
 
-		sorter, err := sorter.CreateSorter(img, mask, Logger, options)
+		sorter, err := sorter.CreateSorter(img, mask, SorterLogger, options)
 		if err != nil {
 			return err
 		}

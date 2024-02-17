@@ -1,47 +1,55 @@
 package sorter
 
 import (
-	"bytes"
+	"context"
 	"fmt"
 	"image"
 	"image/color"
-	"image/draw"
-	"math/rand"
 	"sync"
 	"time"
 
 	"github.com/Krzysztofz01/pixel-sorter/pkg/img"
 	"github.com/Krzysztofz01/pixel-sorter/pkg/utils"
-	"github.com/sirupsen/logrus"
 )
 
 type defaultSorter struct {
-	image   image.Image
-	mask    *Mask
-	logger  *logrus.Entry
-	options *SorterOptions
+	image       *image.NRGBA
+	maskImage   *image.NRGBA
+	mask        Mask
+	logger      SorterLogger
+	options     *SorterOptions
+	cancel      func()
+	cancelMutex sync.Mutex
 }
 
 // Create a new image sorter instance by providing the image to be sorted and optional parameters such as mask image
 // logger instance and custom sorter options. This function will return a new sorter instance or a error.
-func CreateSorter(image image.Image, mask image.Image, logger *logrus.Logger, options *SorterOptions) (Sorter, error) {
+func CreateSorter(image image.Image, mask image.Image, logger SorterLogger, options *SorterOptions) (Sorter, error) {
+	if image == nil {
+		return nil, fmt.Errorf("sorter: can not create a sorter with the provided nil image")
+	}
+
 	sorter := new(defaultSorter)
-	sorter.image = image
+	sorter.cancel = nil
+	sorter.cancelMutex = sync.Mutex{}
+	sorter.image = utils.ImageToNrgbaImage(image)
+
+	if mask != nil {
+		sorter.maskImage = utils.ImageToNrgbaImage(mask)
+
+		if image.Bounds() != mask.Bounds() {
+			return nil, fmt.Errorf("sorter: can not create a sorter for a image and mask with bounds that are not matching")
+		}
+	}
 
 	if logger == nil {
-		loggerBuffer := bytes.Buffer{}
-		defaultLogger := &logrus.Logger{
-			Out:       &loggerBuffer,
-			Formatter: &logrus.TextFormatter{},
-		}
-
-		sorter.logger = defaultLogger.WithField("prefix", "pixel-sorter")
+		sorter.logger = getDiscardLogger()
 	} else {
-		sorter.logger = logger.WithField("prefix", "pixel-sorter")
+		sorter.logger = logger
 	}
 
 	if options != nil {
-		sorter.logger.Debugln("Running the sorter with specified sorter options.")
+		sorter.logger.Debugf("Running the sorter with specified sorter options.")
 
 		if valid, msg := options.AreValid(); !valid {
 			sorter.logger.Debugf("Sorter options validation failed. Sorter options: %+v", *options)
@@ -51,125 +59,150 @@ func CreateSorter(image image.Image, mask image.Image, logger *logrus.Logger, op
 		sorter.logger.Debugf("Sorter options validation passed. Sorter options: %+v", *options)
 		sorter.options = options
 	} else {
-		sorter.logger.Debugln("Running the sorter with default sorter options.")
+		sorter.logger.Debugf("Running the sorter with default sorter options.")
 		sorter.options = GetDefaultSorterOptions()
 	}
 
 	if sorter.options.Scale != 1.0 {
-		imageScaled, err := utils.ScaleImage(sorter.image, sorter.options.Scale)
-		if err != nil {
+		scalingExecTime := time.Now()
+
+		var err error = nil
+		if sorter.image, err = utils.ScaleImageNrgba(sorter.image, sorter.options.Scale); err != nil {
 			return nil, fmt.Errorf("sorter: failed to scale the target image: %w", err)
 		}
 
-		sorter.image = imageScaled
-	}
-
-	if sorter.options.IntervalDeterminant == SplitByEdgeDetection {
-		edgeDetectionExecTime := time.Now()
-		imageEdges, err := img.PerformEdgeDetection(sorter.image, false)
-		if err != nil {
-			return nil, fmt.Errorf("sorter: failed to perform the edge detection on the provided image: %w", err)
-		}
-
-		invertedEdges, err := utils.InvertImage(imageEdges)
-		if err != nil {
-			return nil, fmt.Errorf("sorter: failed to perform color inversion on the edge detection image: %w", err)
-		}
-
-		mask = invertedEdges
-		sorter.logger.Debugf("Edge detection took: %s.", time.Since(edgeDetectionExecTime))
-	}
-
-	if mask != nil {
-		maskExecTime := time.Now()
-
-		if sorter.options.Scale != 1.0 {
-			scaledMask, err := utils.ScaleImage(mask, sorter.options.Scale)
-			if err != nil {
-				return nil, fmt.Errorf("sorter: failed to scale the target image mask: %w", err)
-			}
-
-			mask = scaledMask
-		}
-
-		m, err := CreateImageMask(mask, sorter.image.Bounds(), sorter.options.Angle)
-		if err != nil {
-			return nil, fmt.Errorf("sorter: failed to create a new mask instance: %w", err)
-		}
-
-		sorter.logger.Debugf("Mask parsing took: %s.", time.Since(maskExecTime))
-		sorter.mask = m
-	} else {
-		sorter.mask = CreateEmptyMask()
+		sorter.logger.Debugf("Image scaling took: %s", time.Since(scalingExecTime))
 	}
 
 	return sorter, nil
 }
 
-func (sorter *defaultSorter) Sort() (image.Image, error) {
-	sortingExecTime := time.Now()
-	drawableImage, err := utils.GetDrawableImage(sorter.image)
-	if err != nil {
-		return nil, fmt.Errorf("sorter: the provided image is not drawable: %w", err)
+func (sorter *defaultSorter) CancelSort() bool {
+	sorter.cancelMutex.Lock()
+	defer sorter.cancelMutex.Unlock()
+
+	if sorter.cancel == nil {
+		return false
 	}
 
+	sorter.cancel()
+	sorter.cancel = nil
+	return true
+}
+
+func (sorter *defaultSorter) Sort() (image.Image, error) {
+	var (
+		srcImageNrgba   *image.NRGBA
+		srcImageRgba    *image.RGBA
+		maskImage       *image.NRGBA
+		revertRotation  func(*image.NRGBA) *image.NRGBA
+		sortingExecTime time.Time = time.Now()
+		err             error     = nil
+	)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer sorter.CancelSort()
+
+	sorter.cancelMutex.Lock()
+	sorter.cancel = cancel
+	sorter.cancelMutex.Unlock()
+
 	if sorter.options.Angle != 0 {
-		drawableImage = utils.RotateImage(drawableImage, sorter.options.Angle)
+		srcImageNrgba, revertRotation = utils.RotateImageWithRevertNrgba(sorter.image, sorter.options.Angle)
+
+		if sorter.maskImage != nil {
+			maskImage = utils.RotateImageNrgba(sorter.maskImage, sorter.options.Angle)
+		}
+	} else {
+		srcImageNrgba = sorter.image
+		maskImage = sorter.maskImage
 	}
+
+	if sorter.options.IntervalDeterminant == SplitByEdgeDetection {
+		edgeDetectionExecTime := time.Now()
+		maskImage, err = img.PerformEdgeDetection(srcImageNrgba, false, true)
+		if err != nil {
+			return nil, fmt.Errorf("sorter: failed to perform the edge detection on the provided image: %w", err)
+		}
+
+		sorter.logger.Debugf("Edge detection took: %s.", time.Since(edgeDetectionExecTime))
+	}
+
+	if maskImage != nil {
+		maskExecTime := time.Now()
+		if sorter.mask, err = CreateMaskFromNrgba(maskImage); err != nil {
+			return nil, fmt.Errorf("sorter: failed to create a new mask instance: %w", err)
+		}
+
+		sorter.logger.Debugf("Mask parsing took: %s.", time.Since(maskExecTime))
+	} else {
+		sorter.mask = CreateEmptyMask()
+	}
+
+	srcImageRgba = utils.NrgbaToRgbaImage(srcImageNrgba)
+	dstImageRgba := utils.GetImageCopyRgba(srcImageRgba)
 
 	for c := 0; c < sorter.options.Cycles; c += 1 {
 		switch sorter.options.SortOrder {
 		case SortVertical:
 			{
-				if err := sorter.performParallelVerticalSort(drawableImage); err != nil {
-					return nil, fmt.Errorf("sorter: failed to perform the vertical sort: %w", err)
+				if err = sorter.performParallelColumnSorting(srcImageRgba, dstImageRgba, ctx); err != nil {
+					return nil, fmt.Errorf("sorter: failed to perform the vertical column sort: %w", err)
 				}
 			}
 		case SortHorizontal:
 			{
-				if err := sorter.performParallelHorizontalSort(drawableImage); err != nil {
-					return nil, fmt.Errorf("sorter: failed to perform the horizontal sort: %w", err)
+				if err = sorter.performParallelRowSorting(srcImageRgba, dstImageRgba, ctx); err != nil {
+					return nil, fmt.Errorf("sorter: failed to perform the horizontal row sort: %w", err)
 				}
 			}
 		case SortVerticalAndHorizontal:
 			{
-				if err := sorter.performParallelVerticalSort(drawableImage); err != nil {
-					return nil, fmt.Errorf("sorter: failed to perform the vertical sort: %w", err)
+				if err = sorter.performParallelColumnSorting(srcImageRgba, dstImageRgba, ctx); err != nil {
+					return nil, fmt.Errorf("sorter: failed to perform the vertical column sort: %w", err)
 				}
 
-				if err := sorter.performParallelHorizontalSort(drawableImage); err != nil {
-					return nil, fmt.Errorf("sorter: failed to perform the horizontal sort: %w", err)
+				copy(srcImageRgba.Pix, dstImageRgba.Pix)
+
+				if err = sorter.performParallelRowSorting(srcImageRgba, dstImageRgba, ctx); err != nil {
+					return nil, fmt.Errorf("sorter: failed to perform the horizontal row sort: %w", err)
 				}
 			}
 		case SortHorizontalAndVertical:
 			{
-				if err := sorter.performParallelHorizontalSort(drawableImage); err != nil {
-					return nil, fmt.Errorf("sorter: failed to perform the horizontal sort: %w", err)
+				if err = sorter.performParallelRowSorting(srcImageRgba, dstImageRgba, ctx); err != nil {
+					return nil, fmt.Errorf("sorter: failed to perform the horizontal row sort: %w", err)
 				}
 
-				if err := sorter.performParallelVerticalSort(drawableImage); err != nil {
-					return nil, fmt.Errorf("sorter: failed to perform the vertical sort: %w", err)
+				copy(srcImageRgba.Pix, dstImageRgba.Pix)
+
+				if err = sorter.performParallelColumnSorting(srcImageRgba, dstImageRgba, ctx); err != nil {
+					return nil, fmt.Errorf("sorter: failed to perform the vertical column sort: %w", err)
 				}
 			}
 		}
+
+		if sorter.options.Cycles > 1 {
+			copy(srcImageRgba.Pix, dstImageRgba.Pix)
+		}
 	}
 
+	dstImageNrgba := utils.RgbaToNrgbaImage(dstImageRgba)
 	if sorter.options.Angle != 0 {
-		drawableImage = utils.RotateImage(drawableImage, -sorter.options.Angle)
-		drawableImage = utils.TrimImageTransparentWorkspace(drawableImage, sorter.image)
+		dstImageNrgba = revertRotation(dstImageNrgba)
 	}
 
 	switch sorter.options.Blending {
 	case BlendingLighten:
 		{
-			if drawableImage, err = utils.BlendImages(sorter.image, drawableImage, utils.LightenOnly); err != nil {
-				return nil, fmt.Errorf("sorter: failed to perform the image blending: %w", err)
+			if dstImageNrgba, err = utils.BlendImagesNrgba(sorter.image, dstImageNrgba, utils.LightenOnly); err != nil {
+				return nil, fmt.Errorf("sorter: failed to perform the image lighten blending: %w", err)
 			}
 		}
 	case BlendingDarken:
 		{
-			if drawableImage, err = utils.BlendImages(sorter.image, drawableImage, utils.DarkenOnly); err != nil {
-				return nil, fmt.Errorf("sorter: failed to perform the image blending: %w", err)
+			if dstImageNrgba, err = utils.BlendImagesNrgba(sorter.image, dstImageNrgba, utils.DarkenOnly); err != nil {
+				return nil, fmt.Errorf("sorter: failed to perform the image darken blending: %w", err)
 			}
 		}
 	case BlendingNone:
@@ -179,180 +212,169 @@ func (sorter *defaultSorter) Sort() (image.Image, error) {
 	}
 
 	sorter.logger.Debugf("Pixel sorting took: %s.", time.Since(sortingExecTime))
-	return drawableImage, nil
+	return dstImageNrgba, nil
 }
 
-func (sorter *defaultSorter) performParallelHorizontalSort(drawableImage draw.Image) error {
-	yLength := drawableImage.Bounds().Dy()
-	wg := sync.WaitGroup{}
-	wg.Add(yLength)
+// Function used to iterate over image rows in parallel and invoking the image strip sorting on each row.
+func (sorter *defaultSorter) performParallelRowSorting(src, dst *image.RGBA, ctx context.Context) error {
+	width := src.Bounds().Dx()
+	height := src.Bounds().Dy()
 
-	mu := sync.RWMutex{}
-	iterationErrors := make(chan error, yLength)
+	wg := &sync.WaitGroup{}
+	errt := utils.NewErrorTrap()
 
-	for y := 0; y < yLength; y += 1 {
-		go func(yIndex int, errCh chan error) {
+	for y := 0; y < height; y += 1 {
+		wg.Add(1)
+		go func(yIndex int) {
 			defer wg.Done()
 
-			mu.RLock()
-
-			row, err := utils.GetImageRow(drawableImage, yIndex)
-			if err != nil {
-				errCh <- fmt.Errorf("sorter: failed to retrieve the image pixel row for a given index: %w", err)
-				mu.RUnlock()
+			if errt.IsSet() {
 				return
 			}
 
-			mu.RUnlock()
-
-			sortedRow, err := sorter.performSortOnImageStrip(row, func(iteratedCoordinate int) (int, int) {
-				return iteratedCoordinate, yIndex
-			})
-
-			if err != nil {
-				errCh <- fmt.Errorf("sorter: failed to perform the horizontal sorting: %w", err)
+			if err := sorter.performImageStripSort(src, dst, 4*yIndex*width, 4*1, width, ctx); err != nil {
+				errt.Set(fmt.Errorf("sorter: failed to perform image strip sorting for row %d: %w", yIndex, err))
+				ctx.Done()
 				return
 			}
-
-			mu.Lock()
-
-			if err := utils.SetImageRow(drawableImage, sortedRow, yIndex); err != nil {
-				errCh <- fmt.Errorf("sorter: failed to perform the insertion of the sorted row into the image: %w", err)
-				mu.Unlock()
-				return
-			}
-
-			mu.Unlock()
-		}(y, iterationErrors)
+		}(y)
 	}
 
 	wg.Wait()
-
-	var err error = nil
-	if len(iterationErrors) > 0 {
-		err = <-iterationErrors
-	}
-
-	close(iterationErrors)
-	return err
+	return errt.Err()
 }
 
-func (sorter *defaultSorter) performParallelVerticalSort(drawableImage draw.Image) error {
-	xLength := drawableImage.Bounds().Dx()
-	wg := sync.WaitGroup{}
-	wg.Add(xLength)
+// Function used to iterate over image columns in paralle and ivoking the image strip sorting on each column
+func (sorter *defaultSorter) performParallelColumnSorting(src, dst *image.RGBA, ctx context.Context) error {
+	width := src.Bounds().Dx()
+	height := src.Bounds().Dy()
 
-	mu := sync.RWMutex{}
-	iterationErrors := make(chan error, xLength)
+	wg := &sync.WaitGroup{}
+	errt := utils.NewErrorTrap()
 
-	for x := 0; x < xLength; x += 1 {
-		go func(xIndex int, errCh chan error) {
+	for x := 0; x < width; x += 1 {
+		wg.Add(1)
+		go func(xIndex int) {
 			defer wg.Done()
 
-			mu.RLock()
-
-			column, err := utils.GetImageColumn(drawableImage, xIndex)
-			if err != nil {
-				errCh <- fmt.Errorf("sorter: failed to retrieve the image pixel column for a given index: %w", err)
-				mu.RUnlock()
+			if errt.IsSet() {
 				return
 			}
 
-			mu.RUnlock()
-
-			sortedColumn, err := sorter.performSortOnImageStrip(column, func(iteratedCoordinate int) (int, int) {
-				return xIndex, iteratedCoordinate
-			})
-
-			if err != nil {
-				errCh <- fmt.Errorf("sorter: failed to perform the vertical sorting: %w", err)
+			if err := sorter.performImageStripSort(src, dst, 4*xIndex, 4*width, height, ctx); err != nil {
+				errt.Set(fmt.Errorf("sorter: failed to perform image strip sorting for column %d: %w", xIndex, err))
+				ctx.Done()
 				return
 			}
-
-			mu.Lock()
-
-			if err := utils.SetImageColumn(drawableImage, sortedColumn, xIndex); err != nil {
-				errCh <- fmt.Errorf("sorter: failed to perform the insertion of the sorted column into the image: %w", err)
-				mu.Unlock()
-				return
-			}
-
-			mu.Unlock()
-		}(x, iterationErrors)
+		}(x)
 	}
 
 	wg.Wait()
-
-	var err error = nil
-	if len(iterationErrors) > 0 {
-		err = <-iterationErrors
-	}
-
-	close(iterationErrors)
-	return err
+	return errt.Err()
 }
 
-// This is a helper function which performs the sorting of a given image strip by spliting it into intervals and sorting it by a given argument. This
-// function is using the sorter preferences to determine how to perform the sort. There is also a maskedCoordinateFunc parameter which is a delegate
-// used to retrieve information if a given pixel should be masked. We are using a external func for this in order to specify what coordinates should be
-// looked up, beacuse this function has no access to the information which specific pixels from the image are processed now. Thanks to this approach, we
-// can use a single function for both vertical and horizontal operations and just share a semi-fixed coordintes set.
-func (sorter *defaultSorter) performSortOnImageStrip(imageStrip []color.Color, maskCoordinateFunc func(iteratedCoordinate int) (int, int)) ([]color.Color, error) {
-	stripLength := len(imageStrip)
-	sortedImageStrip := make([]color.Color, 0, stripLength)
+// Function used to sort a strip of pixels which can be a column or a row. The function accepts the source and destination image pointers. Due to the fact
+// that the iteration is one-dimensional, we accept the start index and the iteration step size. The number of iteration steps is defined by the count. The
+// function iterates over the strip and checks whether the interval requirements are met. If yes, they are appended to the interval, if not, they are
+// written straight to the destination image. The intervals are also sorted and drawn into the image under some specific conditions.
+func (sorter *defaultSorter) performImageStripSort(src, dst *image.RGBA, start, step, count int, ctx context.Context) error {
+	var (
+		buffer            []color.RGBA = make([]color.RGBA, 0, count)
+		interval          Interval     = CreateInterval(sorter.options.SortDeterminant)
+		intervalMaxLength int          = sorter.calculateMaxIntervalLength()
+	)
 
-	interval := sorter.CreateInterval()
-	intervalMaxLength := sorter.calculateMaxIntervalLength()
+	var (
+		currentColor   color.RGBA
+		isMasked       bool
+		lowerThreshold float64
+		upperThreshold float64
+		err            error
+	)
 
-	for x := 0; x < stripLength; x += 1 {
-		currentColor := utils.ColorToRgba(imageStrip[x])
+	for i, index := 0, start; i < count; i, index = i+1, index+step {
+		select {
+		case <-ctx.Done():
+			return ErrSortingCancellation
+		default:
+		}
 
-		isMasked, err := sorter.mask.IsMasked(maskCoordinateFunc(x))
+		currentColor.R = src.Pix[index+0]
+		currentColor.G = src.Pix[index+1]
+		currentColor.B = src.Pix[index+2]
+		currentColor.A = src.Pix[index+3]
+
+		// NOTE: Dont pass to interval if the pixel has any transparency
+		if currentColor.A < 255 {
+			goto sortAndResetInterval
+		}
+
+		// NOTE: Dont pass to interval if the interval max length has been reached (Solved using K-Map)
+		if intervalMaxLength != 0 && interval.Count() >= intervalMaxLength {
+			goto sortAndResetInterval
+		}
+
+		isMasked, err = sorter.mask.AtByIndexB(index / 4)
 		if err != nil {
-			return nil, fmt.Errorf("sorter: failed to perform a lookup to the mask image: %w", err)
+			return fmt.Errorf("sorter: failed to perform a lookup to the mask image: %w", err)
 		}
 
-		// NOTE: isMasked and options dependecy solved using a quick K-Map
-		passThrough := !isMasked || !sorter.options.UseMask
+		// NOTE: Dont pass to interval if the mask is used and the pixel is masked (Solved using K-Map)
+		if sorter.options.UseMask && isMasked {
+			goto sortAndResetInterval
+		}
 
-		if !utils.HasAnyTransparency(currentColor) && sorter.isMeetingIntervalRequirements(currentColor, isMasked, intervalMaxLength, interval) && passThrough {
-			if err := interval.Append(currentColor); err != nil {
-				return nil, fmt.Errorf("sorter: failed to append color to the interval: %w", err)
-			}
+		lowerThreshold = sorter.options.IntervalDeterminantLowerThreshold
+		upperThreshold = sorter.options.IntervalDeterminantUpperThreshold
+
+		// NOTE: Dont pass to interval if the interval determinant requirements are not meet
+		if !sorter.isMeetingIntervalDeterminant(currentColor, lowerThreshold, upperThreshold, isMasked) {
+			goto sortAndResetInterval
+		}
+
+		if err := interval.Append(currentColor); err != nil {
+			return fmt.Errorf("sorter: failed to append the current color to the interval: %w", err)
+		}
+
+		continue
+
+	sortAndResetInterval:
+		if interval.Any() {
+			buffer = buffer[:0]
+
+			interval.SortToBuffer(sorter.options.SortDirection, sorter.options.IntervalPainting, &buffer)
+			intervalMaxLength = sorter.calculateMaxIntervalLength()
+
+			drawBufferIntoImage(dst, append(buffer, currentColor), index, step)
 		} else {
-			if interval.Any() {
-				sortedIntervalItems := interval.Sort(sorter.options.SortDirection)
-				sortedImageStrip = append(sortedImageStrip, sortedIntervalItems...)
-
-				interval = sorter.CreateInterval()
-				intervalMaxLength = sorter.calculateMaxIntervalLength()
-			}
-
-			sortedImageStrip = append(sortedImageStrip, currentColor)
+			dst.Pix[index+0] = currentColor.R
+			dst.Pix[index+1] = currentColor.G
+			dst.Pix[index+2] = currentColor.B
+			dst.Pix[index+3] = currentColor.A
 		}
 	}
 
+	// TODO: Incorporate this statement into the sortAndresetInterval label procedure
 	if interval.Any() {
-		sortedIntervalItems := interval.Sort(sorter.options.SortDirection)
-		sortedImageStrip = append(sortedImageStrip, sortedIntervalItems...)
+		buffer = buffer[:0]
+
+		interval.SortToBuffer(sorter.options.SortDirection, sorter.options.IntervalPainting, &buffer)
+
+		drawBufferIntoImage(dst, buffer, start+step*(count-1), step)
 	}
 
-	return sortedImageStrip, nil
+	return nil
 }
 
-func (sorter *defaultSorter) isMeetingIntervalRequirements(color color.RGBA, isMasked bool, maxLength int, interval Interval) bool {
-	// NOTE: interval length and options dependecy solved using a quick K-Map
-	if !(maxLength == 0) && (maxLength <= interval.Count()) {
-		return false
-	}
-
+// Function used to check if the the given color is meeting the current interval determinant requirements taking the thresholds under account
+func (sorter *defaultSorter) isMeetingIntervalDeterminant(c color.RGBA, lowerThreshold, upperThreshold float64, isMasked bool) bool {
 	switch sorter.options.IntervalDeterminant {
 	case SplitByBrightness:
 		{
 			lThreshold := sorter.options.IntervalDeterminantLowerThreshold
 			uThreshold := sorter.options.IntervalDeterminantUpperThreshold
 
-			brightness := utils.CalculatePerceivedBrightness(color)
+			brightness := utils.CalculatePerceivedBrightness(c)
 			return brightness >= lThreshold && brightness <= uThreshold
 		}
 	case SplitByHue:
@@ -360,7 +382,7 @@ func (sorter *defaultSorter) isMeetingIntervalRequirements(color color.RGBA, isM
 			lThreshold := sorter.options.IntervalDeterminantLowerThreshold
 			uThreshold := sorter.options.IntervalDeterminantUpperThreshold
 
-			h, _, _, _ := utils.ColorToHsla(color)
+			h, _, _, _ := utils.RgbaToHsla(c)
 			hNorm := float64(h) / 360.0
 
 			return hNorm >= lThreshold && hNorm <= uThreshold
@@ -370,7 +392,7 @@ func (sorter *defaultSorter) isMeetingIntervalRequirements(color color.RGBA, isM
 			lThreshold := sorter.options.IntervalDeterminantLowerThreshold
 			uThreshold := sorter.options.IntervalDeterminantUpperThreshold
 
-			_, s, _, _ := utils.ColorToHsla(color)
+			_, s, _, _ := utils.RgbaToHsla(c)
 			return s >= lThreshold && s <= uThreshold
 		}
 	case SplitByMask, SplitByEdgeDetection:
@@ -382,7 +404,7 @@ func (sorter *defaultSorter) isMeetingIntervalRequirements(color color.RGBA, isM
 			lThreshold := sorter.options.IntervalDeterminantLowerThreshold
 			uThreshold := sorter.options.IntervalDeterminantUpperThreshold
 
-			abs := float64(int(color.R)*int(color.G)*int(color.B)) / 16581375.0
+			abs := float64(int(c.R)*int(c.G)*int(c.B)) / 16581375.0
 
 			return abs >= lThreshold && abs < uThreshold
 		}
@@ -391,14 +413,13 @@ func (sorter *defaultSorter) isMeetingIntervalRequirements(color color.RGBA, isM
 	}
 }
 
-// This function determines the max interval length taking into account the randomness factor
+// Function used to calculate the max interval length by taking the options and randomness factor under account
 func (sorter *defaultSorter) calculateMaxIntervalLength() int {
 	if sorter.options.IntervalLength == 0 || sorter.options.IntervalLengthRandomFactor == 0 {
 		return sorter.options.IntervalLength
 	}
 
-	random := rand.New(rand.NewSource(time.Now().UnixNano()))
-	factor := random.Intn(2*sorter.options.IntervalLengthRandomFactor) - sorter.options.IntervalLengthRandomFactor
+	factor := utils.CIntn(2*sorter.options.IntervalLengthRandomFactor) - sorter.options.IntervalLengthRandomFactor
 
 	length := sorter.options.IntervalLength + factor
 	if length < 1 {
@@ -408,30 +429,18 @@ func (sorter *defaultSorter) calculateMaxIntervalLength() int {
 	}
 }
 
-func (sorter *defaultSorter) CreateInterval() Interval {
-	switch sorter.options.SortDeterminant {
-	case SortByBrightness:
-		{
-			return CreateNormalizedWeightInterval(func(c color.RGBA) (float64, error) {
-				brightness := utils.CalculatePerceivedBrightness(c)
-				return brightness, nil
-			})
-		}
-	case SortByHue:
-		{
-			return CreateValueWeightInterval(func(c color.RGBA) (int, error) {
-				h, _, _, _ := utils.ColorToHsla(c)
-				return h, nil
-			})
-		}
-	case SortBySaturation:
-		{
-			return CreateNormalizedWeightInterval(func(c color.RGBA) (float64, error) {
-				_, s, _, _ := utils.ColorToHsla(c)
-				return s, nil
-			})
-		}
-	default:
-		panic("sorter: invalid sorter state due to a corrupted sorter weight determinant function value")
+// Function used to draw a color buffer to the destination image. The target position is determined by the iteration index and step value.
+func drawBufferIntoImage(dst *image.RGBA, buffer []color.RGBA, index, step int) {
+	var (
+		color color.RGBA
+	)
+
+	for dstIndex, bufferIndex := index, len(buffer)-1; bufferIndex >= 0; dstIndex, bufferIndex = dstIndex-step, bufferIndex-1 {
+		color = buffer[bufferIndex]
+
+		dst.Pix[dstIndex+0] = color.R
+		dst.Pix[dstIndex+1] = color.G
+		dst.Pix[dstIndex+2] = color.B
+		dst.Pix[dstIndex+3] = color.A
 	}
 }
