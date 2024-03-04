@@ -63,17 +63,6 @@ func CreateSorter(image image.Image, mask image.Image, logger SorterLogger, opti
 		sorter.options = GetDefaultSorterOptions()
 	}
 
-	if sorter.options.Scale != 1.0 {
-		scalingExecTime := time.Now()
-
-		var err error = nil
-		if sorter.image, err = utils.ScaleImageNrgba(sorter.image, sorter.options.Scale); err != nil {
-			return nil, fmt.Errorf("sorter: failed to scale the target image: %w", err)
-		}
-
-		sorter.logger.Debugf("Image scaling took: %s", time.Since(scalingExecTime))
-	}
-
 	return sorter, nil
 }
 
@@ -107,15 +96,31 @@ func (sorter *defaultSorter) Sort() (image.Image, error) {
 	sorter.cancel = cancel
 	sorter.cancelMutex.Unlock()
 
-	if sorter.options.Angle != 0 {
-		srcImageNrgba, revertRotation = utils.RotateImageWithRevertNrgba(sorter.image, sorter.options.Angle)
+	if sorter.options.Scale != 1.0 {
+		scalingExecTime := time.Now()
+
+		if srcImageNrgba, err = utils.ScaleImageNrgba(sorter.image, sorter.options.Scale); err != nil {
+			return nil, fmt.Errorf("sorter: failed to scale the target image: %w", err)
+		}
 
 		if sorter.maskImage != nil {
-			maskImage = utils.RotateImageNrgba(sorter.maskImage, sorter.options.Angle)
+			if maskImage, err = utils.ScaleImageNrgba(sorter.maskImage, sorter.options.Scale); err != nil {
+				return nil, fmt.Errorf("sorter: failed to scale the target image mask: %w", err)
+			}
 		}
+
+		sorter.logger.Debugf("Input images scaling took: %s", time.Since(scalingExecTime))
 	} else {
 		srcImageNrgba = sorter.image
 		maskImage = sorter.maskImage
+	}
+
+	if sorter.options.Angle != 0 {
+		srcImageNrgba, revertRotation = utils.RotateImageWithRevertNrgba(srcImageNrgba, sorter.options.Angle)
+
+		if maskImage != nil {
+			maskImage = utils.RotateImageNrgba(maskImage, sorter.options.Angle)
+		}
 	}
 
 	if sorter.options.IntervalDeterminant == SplitByEdgeDetection {
