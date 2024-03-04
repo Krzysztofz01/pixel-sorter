@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"image"
 	"image/color"
-	"math/rand"
 	"sync"
 	"time"
 
@@ -64,17 +63,6 @@ func CreateSorter(image image.Image, mask image.Image, logger SorterLogger, opti
 		sorter.options = GetDefaultSorterOptions()
 	}
 
-	if sorter.options.Scale != 1.0 {
-		scalingExecTime := time.Now()
-
-		var err error = nil
-		if sorter.image, err = utils.ScaleImageNrgba(sorter.image, sorter.options.Scale); err != nil {
-			return nil, fmt.Errorf("sorter: failed to scale the target image: %w", err)
-		}
-
-		sorter.logger.Debugf("Image scaling took: %s", time.Since(scalingExecTime))
-	}
-
 	return sorter, nil
 }
 
@@ -108,15 +96,31 @@ func (sorter *defaultSorter) Sort() (image.Image, error) {
 	sorter.cancel = cancel
 	sorter.cancelMutex.Unlock()
 
-	if sorter.options.Angle != 0 {
-		srcImageNrgba, revertRotation = utils.RotateImageWithRevertNrgba(sorter.image, sorter.options.Angle)
+	if sorter.options.Scale != 1.0 {
+		scalingExecTime := time.Now()
+
+		if srcImageNrgba, err = utils.ScaleImageNrgba(sorter.image, sorter.options.Scale); err != nil {
+			return nil, fmt.Errorf("sorter: failed to scale the target image: %w", err)
+		}
 
 		if sorter.maskImage != nil {
-			maskImage = utils.RotateImageNrgba(sorter.maskImage, sorter.options.Angle)
+			if maskImage, err = utils.ScaleImageNrgba(sorter.maskImage, sorter.options.Scale); err != nil {
+				return nil, fmt.Errorf("sorter: failed to scale the target image mask: %w", err)
+			}
 		}
+
+		sorter.logger.Debugf("Input images scaling took: %s", time.Since(scalingExecTime))
 	} else {
 		srcImageNrgba = sorter.image
 		maskImage = sorter.maskImage
+	}
+
+	if sorter.options.Angle != 0 {
+		srcImageNrgba, revertRotation = utils.RotateImageWithRevertNrgba(srcImageNrgba, sorter.options.Angle)
+
+		if maskImage != nil {
+			maskImage = utils.RotateImageNrgba(maskImage, sorter.options.Angle)
+		}
 	}
 
 	if sorter.options.IntervalDeterminant == SplitByEdgeDetection {
@@ -420,8 +424,7 @@ func (sorter *defaultSorter) calculateMaxIntervalLength() int {
 		return sorter.options.IntervalLength
 	}
 
-	random := rand.New(rand.NewSource(time.Now().UnixNano()))
-	factor := random.Intn(2*sorter.options.IntervalLengthRandomFactor) - sorter.options.IntervalLengthRandomFactor
+	factor := utils.CIntn(2*sorter.options.IntervalLengthRandomFactor) - sorter.options.IntervalLengthRandomFactor
 
 	length := sorter.options.IntervalLength + factor
 	if length < 1 {
@@ -432,8 +435,6 @@ func (sorter *defaultSorter) calculateMaxIntervalLength() int {
 }
 
 // Function used to draw a color buffer to the destination image. The target position is determined by the iteration index and step value.
-//
-//lint:ignore U1000 Ignore unused false-positive caused by function call in label block
 func drawBufferIntoImage(dst *image.RGBA, buffer []color.RGBA, index, step int) {
 	var (
 		color color.RGBA
