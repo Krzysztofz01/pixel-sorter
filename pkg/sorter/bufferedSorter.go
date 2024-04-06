@@ -265,7 +265,7 @@ func (state *bufferedSorterState) GetBufferedRotatedImage(options *SorterOptions
 		return nil, nil, false
 	}
 
-	return state.prevScaledImages.StateFirst, state.prevScaledImages.StateSecond, true
+	return state.prevRotatedImages.StateFirst, state.prevRotatedImages.StateSecond, true
 }
 
 func (state *bufferedSorterState) SetBufferedRotatedImage(options *SorterOptions, srcImage, srcMaskImage *image.NRGBA) {
