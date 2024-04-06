@@ -11,8 +11,6 @@ import (
 	"github.com/Krzysztofz01/pixel-sorter/pkg/utils"
 )
 
-// TODO: Add unit tests
-
 type bufferedSorter struct {
 	image       *image.NRGBA
 	maskImage   *image.NRGBA
