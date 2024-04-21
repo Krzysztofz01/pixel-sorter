@@ -4,6 +4,7 @@ import (
 	"image"
 	"image/color"
 	"image/draw"
+	"math"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -447,6 +448,14 @@ func TestBlendImagesNrgbaShouldNotBlendImagesWithDifferentHeight(t *testing.T) {
 
 	assert.NotNil(t, err)
 	assert.Nil(t, resultImage)
+}
+
+func TestRotationAngelNormalizationFormulaShouldStayInRange(t *testing.T) {
+	for i := -3 * 360; i < 3*360; i += 1 {
+		angle := float64(i) + math.Ceil(-float64(i)/360.0)*360.0
+
+		assert.False(t, angle < 0 || angle > 359)
+	}
 }
 
 func TestGrayscaleShouldTurnImageIntoGrayscale(t *testing.T) {
