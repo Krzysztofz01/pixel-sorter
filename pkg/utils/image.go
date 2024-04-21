@@ -234,3 +234,11 @@ func RgbaToNrgbaImage(i *image.RGBA) *image.NRGBA {
 	draw.Draw(img, img.Bounds(), i, i.Bounds().Min, draw.Src)
 	return img
 }
+
+// Create a grayscale version of the provided NRGBA color-space image.
+func GrayscaleNrgba(i *image.NRGBA) *image.NRGBA {
+	return pimit.ParallelNrgbaReadWriteNew(i, func(x, y int, r, g, b, a uint8) (uint8, uint8, uint8, uint8) {
+		gray := uint8((float64(r) * 0.299) + (float64(g) * 0.587) + (float64(b) * 0.114))
+		return gray, gray, gray, a
+	})
+}

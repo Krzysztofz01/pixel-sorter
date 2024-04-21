@@ -449,6 +449,29 @@ func TestBlendImagesNrgbaShouldNotBlendImagesWithDifferentHeight(t *testing.T) {
 	assert.Nil(t, resultImage)
 }
 
+func TestGrayscaleShouldTurnImageIntoGrayscale(t *testing.T) {
+	p1 := image.Point{0, 0}
+	p2 := image.Point{mock_image_width, mock_image_height}
+	image := image.NewNRGBA(image.Rectangle{p1, p2})
+
+	for yIndex := 0; yIndex < mock_image_height; yIndex += 1 {
+		for xIndex := 0; xIndex < mock_image_width; xIndex += 1 {
+			image.SetNRGBA(xIndex, yIndex, color.NRGBA{0x2f, 0x0f, 0xe2, 0xff})
+		}
+	}
+
+	grayscale := GrayscaleNrgba(image)
+	for yIndex := 0; yIndex < grayscale.Rect.Dy(); yIndex += 1 {
+		for xIndex := 0; xIndex < grayscale.Rect.Dx(); xIndex += 1 {
+			r, g, b, _ := grayscale.At(xIndex, yIndex).RGBA()
+
+			assert.True(t, r == g)
+			assert.True(t, b == g)
+			assert.True(t, r == b)
+		}
+	}
+}
+
 const (
 	mock_image_width  = 25
 	mock_image_height = 25

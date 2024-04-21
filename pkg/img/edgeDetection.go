@@ -49,8 +49,8 @@ type gradientPoint struct {
 }
 
 // Generate a edge detection image based on the given input image using the Canny edge detection algorithm
-func PerformEdgeDetection(i image.Image, performNonMaxSupression, invertColors bool) (*image.NRGBA, error) {
-	imgGrayscale := imaging.Grayscale(i)
+func PerformEdgeDetection(i *image.NRGBA, performNonMaxSupression, invertColors bool) (*image.NRGBA, error) {
+	imgGrayscale := utils.GrayscaleNrgba(i)
 
 	imgSmoothed := imaging.Blur(imgGrayscale, blurSigmaParam)
 
