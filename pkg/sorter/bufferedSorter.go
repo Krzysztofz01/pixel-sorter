@@ -65,13 +65,14 @@ func (sorter *bufferedSorter) CancelSort() bool {
 
 func (sorter *bufferedSorter) Sort(options *SorterOptions) (image.Image, error) {
 	var (
-		srcImageNrgba     *image.NRGBA
-		srcMaskImageNrgba *image.NRGBA
-		srcImageRgba      *image.RGBA
-		mask              Mask
-		revertRotation    func(*image.NRGBA) *image.NRGBA
-		sortingExecTime   time.Time = time.Now()
-		err               error     = nil
+		srcImageNrgba       *image.NRGBA
+		srcImageScaledNrgba *image.NRGBA
+		srcMaskImageNrgba   *image.NRGBA
+		srcImageRgba        *image.RGBA
+		mask                Mask
+		revertRotation      func(*image.NRGBA) *image.NRGBA
+		sortingExecTime     time.Time = time.Now()
+		err                 error     = nil
 	)
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -89,6 +90,7 @@ func (sorter *bufferedSorter) Sort(options *SorterOptions) (image.Image, error) 
 
 		if bufferedSrcImg, bufferedSrcMaskImg, ok := sorter.state.GetScaledImages(); ok {
 			srcImageNrgba = bufferedSrcImg
+			srcImageScaledNrgba = bufferedSrcImg
 			srcMaskImageNrgba = bufferedSrcMaskImg
 		} else {
 			if srcImageNrgba, err = utils.ScaleImageNrgba(sorter.image, options.Scale); err != nil {
@@ -103,6 +105,7 @@ func (sorter *bufferedSorter) Sort(options *SorterOptions) (image.Image, error) 
 				srcMaskImageNrgba = nil
 			}
 
+			srcImageScaledNrgba = srcImageNrgba
 			sorter.state.SetScaledImages(srcImageNrgba, srcMaskImageNrgba)
 		}
 
@@ -217,13 +220,13 @@ func (sorter *bufferedSorter) Sort(options *SorterOptions) (image.Image, error) 
 	switch options.Blending {
 	case BlendingLighten:
 		{
-			if dstImageNrgba, err = utils.BlendImagesNrgba(sorter.image, dstImageNrgba, utils.LightenOnly); err != nil {
+			if dstImageNrgba, err = utils.BlendImagesNrgba(srcImageScaledNrgba, dstImageNrgba, utils.LightenOnly); err != nil {
 				return nil, fmt.Errorf("sorter: failed to perform the image lighten blending: %w", err)
 			}
 		}
 	case BlendingDarken:
 		{
-			if dstImageNrgba, err = utils.BlendImagesNrgba(sorter.image, dstImageNrgba, utils.DarkenOnly); err != nil {
+			if dstImageNrgba, err = utils.BlendImagesNrgba(srcImageScaledNrgba, dstImageNrgba, utils.DarkenOnly); err != nil {
 				return nil, fmt.Errorf("sorter: failed to perform the image darken blending: %w", err)
 			}
 		}
