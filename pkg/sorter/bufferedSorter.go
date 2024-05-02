@@ -17,7 +17,7 @@ type bufferedSorter struct {
 	logger      SorterLogger
 	cancel      func()
 	cancelMutex sync.Mutex
-	state       *bufferedSorterState
+	state       BufferedSorterState
 }
 
 // Create a new buffered image sorter instance by providing the image to be sorted and optional parameters such as mask image
@@ -30,7 +30,7 @@ func CreateBufferedSorter(image image.Image, mask image.Image, logger SorterLogg
 	sorter := new(bufferedSorter)
 	sorter.cancel = nil
 	sorter.cancelMutex = sync.Mutex{}
-	sorter.state = createEmptyBufferedSorterState()
+	sorter.state = CreateBufferedSorterState()
 	sorter.image = utils.ImageToNrgbaImage(image)
 
 	if mask != nil {
@@ -81,10 +81,13 @@ func (sorter *bufferedSorter) Sort(options *SorterOptions) (image.Image, error) 
 	sorter.cancel = cancel
 	sorter.cancelMutex.Unlock()
 
+	sorter.state.Apply(options)
+	defer sorter.state.Rollback()
+
 	if options.Scale != 1.0 {
 		scalingExecTime := time.Now()
 
-		if bufferedSrcImg, bufferedSrcMaskImg, ok := sorter.state.GetBufferedScaledImages(options); ok {
+		if bufferedSrcImg, bufferedSrcMaskImg, ok := sorter.state.GetScaledImages(); ok {
 			srcImageNrgba = bufferedSrcImg
 			srcMaskImageNrgba = bufferedSrcMaskImg
 		} else {
@@ -100,7 +103,7 @@ func (sorter *bufferedSorter) Sort(options *SorterOptions) (image.Image, error) 
 				srcMaskImageNrgba = nil
 			}
 
-			sorter.state.SetBufferedScaledImages(options, srcImageNrgba, srcMaskImageNrgba)
+			sorter.state.SetScaledImages(srcImageNrgba, srcMaskImageNrgba)
 		}
 
 		sorter.logger.Debugf("Input images scaling took: %s", time.Since(scalingExecTime))
@@ -110,12 +113,14 @@ func (sorter *bufferedSorter) Sort(options *SorterOptions) (image.Image, error) 
 	}
 
 	if options.Angle != 0 {
-		if bufferedSrcImg, bufferedSrcMaskImg, ok := sorter.state.GetBufferedRotatedImage(options); ok {
+		if bufferedSrcImg, bufferedSrcMaskImg, ok := sorter.state.GetRotatedImages(); ok {
+			revertRotationRectangle := srcImageNrgba.Rect
 			srcImageNrgba = bufferedSrcImg
 			srcMaskImageNrgba = bufferedSrcMaskImg
 
 			revertRotation = func(n *image.NRGBA) *image.NRGBA {
-				return utils.RotateImageNrgba(n, -options.Angle)
+				revertedNrgba := utils.RotateImageNrgba(n, -options.Angle)
+				return utils.TrimImageTransparentWorkspaceNrgba(revertedNrgba, revertRotationRectangle)
 			}
 		} else {
 			srcImageNrgba, revertRotation = utils.RotateImageWithRevertNrgba(srcImageNrgba, options.Angle)
@@ -124,14 +129,14 @@ func (sorter *bufferedSorter) Sort(options *SorterOptions) (image.Image, error) 
 				srcMaskImageNrgba = utils.RotateImageNrgba(srcImageNrgba, options.Angle)
 			}
 
-			sorter.state.SetBufferedRotatedImage(options, srcImageNrgba, srcMaskImageNrgba)
+			sorter.state.SetRotatedImages(srcImageNrgba, srcMaskImageNrgba)
 		}
 	}
 
 	if options.IntervalDeterminant == SplitByEdgeDetection {
 		edgeDetectionExecTime := time.Now()
 
-		if bufferedImage, ok := sorter.state.GetBufferedEdgeDetectionImage(options); ok {
+		if bufferedImage, ok := sorter.state.GetEdgeDetectionImage(); ok {
 			srcMaskImageNrgba = bufferedImage
 		} else {
 			srcMaskImageNrgba, err := img.PerformEdgeDetection(srcImageNrgba, false, true)
@@ -139,7 +144,7 @@ func (sorter *bufferedSorter) Sort(options *SorterOptions) (image.Image, error) 
 				return nil, fmt.Errorf("sorter: failed to perform the edge detection on the provided image: %w", err)
 			}
 
-			sorter.state.SetBufferedEdgeDetectionImage(options, srcMaskImageNrgba)
+			sorter.state.SetEdgeDetectionImage(srcMaskImageNrgba)
 		}
 
 		sorter.logger.Debugf("Edge detection took: %s.", time.Since(edgeDetectionExecTime))
@@ -228,82 +233,8 @@ func (sorter *bufferedSorter) Sort(options *SorterOptions) (image.Image, error) 
 		panic("sorter: invalid blending mode specified")
 	}
 
+	sorter.state.Commit()
+
 	sorter.logger.Debugf("Pixel sorting took: %s.", time.Since(sortingExecTime))
 	return dstImageNrgba, nil
-}
-
-type bufferedSorterState struct {
-	prevScaledImages  *bufferedSorterStatePairEntry[float64, *image.NRGBA]
-	prevRotatedImages *bufferedSorterStatePairEntry[int, *image.NRGBA]
-	prevEdgeDetection *bufferedSorterStateEntry[IntervalDeterminant, *image.NRGBA]
-}
-
-func createEmptyBufferedSorterState() *bufferedSorterState {
-	return &bufferedSorterState{
-		prevScaledImages:  nil,
-		prevRotatedImages: nil,
-		prevEdgeDetection: nil,
-	}
-}
-
-func (state *bufferedSorterState) GetBufferedScaledImages(options *SorterOptions) (*image.NRGBA, *image.NRGBA, bool) {
-	if state.prevScaledImages == nil || state.prevScaledImages.Option != options.Scale {
-		return nil, nil, false
-	}
-
-	return state.prevScaledImages.StateFirst, state.prevScaledImages.StateSecond, true
-}
-
-func (state *bufferedSorterState) SetBufferedScaledImages(options *SorterOptions, srcImage, srcMaskImage *image.NRGBA) {
-	state.prevScaledImages = createBufferedSorterStatePairEntry(options.Scale, srcImage, srcMaskImage)
-}
-
-func (state *bufferedSorterState) GetBufferedRotatedImage(options *SorterOptions) (*image.NRGBA, *image.NRGBA, bool) {
-	if state.prevRotatedImages == nil || state.prevRotatedImages.Option != options.Angle {
-		return nil, nil, false
-	}
-
-	return state.prevRotatedImages.StateFirst, state.prevRotatedImages.StateSecond, true
-}
-
-func (state *bufferedSorterState) SetBufferedRotatedImage(options *SorterOptions, srcImage, srcMaskImage *image.NRGBA) {
-	state.prevRotatedImages = createBufferedSorterStatePairEntry(options.Angle, srcImage, srcMaskImage)
-}
-
-func (state *bufferedSorterState) GetBufferedEdgeDetectionImage(options *SorterOptions) (*image.NRGBA, bool) {
-	if state.prevEdgeDetection == nil || state.prevEdgeDetection.Option != options.IntervalDeterminant {
-		return nil, false
-	}
-
-	return state.prevEdgeDetection.State, true
-}
-
-func (state *bufferedSorterState) SetBufferedEdgeDetectionImage(options *SorterOptions, edgeDetectionImage *image.NRGBA) {
-	state.prevEdgeDetection = createBufferedSorterStateEntry(options.IntervalDeterminant, edgeDetectionImage)
-}
-
-type bufferedSorterStateEntry[TOption, TState any] struct {
-	Option TOption
-	State  TState
-}
-
-func createBufferedSorterStateEntry[TOption, TState any](option TOption, state TState) *bufferedSorterStateEntry[TOption, TState] {
-	return &bufferedSorterStateEntry[TOption, TState]{
-		Option: option,
-		State:  state,
-	}
-}
-
-type bufferedSorterStatePairEntry[TOption, TState any] struct {
-	Option      TOption
-	StateFirst  TState
-	StateSecond TState
-}
-
-func createBufferedSorterStatePairEntry[TOption, TState any](option TOption, stateFirst, stateSecond TState) *bufferedSorterStatePairEntry[TOption, TState] {
-	return &bufferedSorterStatePairEntry[TOption, TState]{
-		Option:      option,
-		StateFirst:  stateFirst,
-		StateSecond: stateSecond,
-	}
 }
