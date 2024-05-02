@@ -3,6 +3,7 @@ module github.com/Krzysztofz01/pixel-sorter
 go 1.19
 
 require (
+	github.com/AlexEidt/Vidio v1.5.1
 	github.com/Krzysztofz01/pimit v0.2.0
 	github.com/antonfisher/nested-logrus-formatter v1.3.1
 	github.com/disintegration/imaging v1.6.2
