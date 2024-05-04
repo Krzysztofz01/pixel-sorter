@@ -115,6 +115,19 @@ func CreateInterval(sort SortDeterminant) Interval {
 				return int(c.B)
 			})
 		}
+	case SortByBrightnessFast:
+		{
+			return CreateNormalizedWeightInterval(func(c color.RGBA) float64 {
+				return utils.ApproximatePerceivedBrightness(c)
+			})
+		}
+	case SortByLightness:
+		{
+			return CreateNormalizedWeightInterval(func(c color.RGBA) float64 {
+				_, _, l, _ := utils.RgbaToHsla(c)
+				return l
+			})
+		}
 	default:
 		panic("sorter: invalid sorter state due to a corrupted sorter weight determinant function value")
 	}

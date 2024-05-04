@@ -4,6 +4,13 @@ import (
 	"image/color"
 )
 
+// Approximate the perceived brightness of the color given in the RGBA color space.
+// This method is not as precise as CalculatePerceivedBrightness beacuse it uses non-linear RGB values
+// and uses only the luminance as the brightness indicator but the calculations cost less.
+func ApproximatePerceivedBrightness(c color.RGBA) float64 {
+	return (0.299*float64(c.R) + 0.587*float64(c.G) + 0.114*float64(c.B)) / 255.0
+}
+
 // Calculate the perceived brightness of the color given in the RGBA color space.
 // https://stackoverflow.com/questions/596216/formula-to-determine-perceived-brightness-of-rgb-color
 func CalculatePerceivedBrightness(c color.RGBA) float64 {

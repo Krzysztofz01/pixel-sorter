@@ -413,6 +413,22 @@ func (sorter *defaultSorter) isMeetingIntervalDeterminant(c color.RGBA, lowerThr
 
 			return abs >= lThreshold && abs < uThreshold
 		}
+	case SplitByBrightnessFast:
+		{
+			lThreshold := sorter.options.IntervalDeterminantLowerThreshold
+			uThreshold := sorter.options.IntervalDeterminantUpperThreshold
+
+			brightness := utils.ApproximatePerceivedBrightness(c)
+			return brightness >= lThreshold && brightness <= uThreshold
+		}
+	case SplitByLightness:
+		{
+			lThreshold := sorter.options.IntervalDeterminantLowerThreshold
+			uThreshold := sorter.options.IntervalDeterminantUpperThreshold
+
+			_, _, l, _ := utils.RgbaToHsla(c)
+			return l >= lThreshold && l <= uThreshold
+		}
 	default:
 		panic("sorter: invalid sorter state due to a corrupted interval determinant value")
 	}

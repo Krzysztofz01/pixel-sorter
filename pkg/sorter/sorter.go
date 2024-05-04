@@ -16,6 +16,8 @@ const (
 	SortByRedChannel
 	SortByGreenChannel
 	SortByBlueChannel
+	SortByLightness
+	SortByBrightnessFast
 )
 
 // Flag representing the order in which should be the image sorted
@@ -48,6 +50,8 @@ const (
 	SplitByMask
 	SplitByAbsoluteColor
 	SplitByEdgeDetection
+	SplitByLightness
+	SplitByBrightnessFast
 )
 
 type ResultImageBlending int
