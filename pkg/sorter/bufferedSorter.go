@@ -112,6 +112,7 @@ func (sorter *bufferedSorter) Sort(options *SorterOptions) (image.Image, error) 
 		sorter.logger.Debugf("Input images scaling took: %s", time.Since(scalingExecTime))
 	} else {
 		srcImageNrgba = sorter.image
+		srcImageScaledNrgba = sorter.image
 		srcMaskImageNrgba = sorter.maskImage
 	}
 
