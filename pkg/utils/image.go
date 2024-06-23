@@ -141,6 +141,11 @@ func RotateImageWithRevertNrgba(i *image.NRGBA, angle int) (*image.NRGBA, func(*
 	return rotated, revertFunc
 }
 
+// TODO: Add missing docs and unit tests
+func TrimImageTransparentWorkspaceNrgba(withWorkspace *image.NRGBA, original image.Rectangle) *image.NRGBA {
+	return trimImageTransparentWorkspaceNrgba(withWorkspace, original)
+}
+
 func trimImageTransparentWorkspaceNrgba(withWorkspace *image.NRGBA, original image.Rectangle) *image.NRGBA {
 	var (
 		originalWidth   int = original.Dx()
