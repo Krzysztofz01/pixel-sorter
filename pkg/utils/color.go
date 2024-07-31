@@ -16,8 +16,9 @@ const (
 // Convert the color.NRGBA color to the Y grayscale component represented as a integer in range from 0 to 255.
 // Note that the alpha channel is not taken under account and the result is non-alpha-premultiplied.
 func NrgbaToGrayscaleComponent(c color.NRGBA) int {
-	y := (float64(c.R) * 0.299) + (float64(c.G) * 0.587) + (float64(c.B) * 0.114)
-	return int(math.Max(0, math.Min(255, y)))
+	y := int((float64(c.R) * 0.299) + (float64(c.G) * 0.587) + (float64(c.B) * 0.114))
+
+	return ClampInt(0, y, 255)
 }
 
 // Convert the color.RGBA struct tu individual RGB components represented as floating point numbers in range from 0.0 to 1.0
@@ -36,8 +37,8 @@ func RgbaToHsla(c color.RGBA) (int, float64, float64, float64) {
 
 	alpha := float64(c.A) / 255.0
 
-	min := math.Min(rNorm, math.Min(gNorm, bNorm))
-	max := math.Max(rNorm, math.Max(gNorm, bNorm))
+	min := Min3Float64(rNorm, gNorm, bNorm)
+	max := Max3Float64(rNorm, gNorm, bNorm)
 	delta := max - min
 
 	lightness := (max + min) / 2.0
@@ -80,17 +81,17 @@ func BlendNrgba(a, b color.NRGBA, mode BlendingMode) color.NRGBA {
 	switch mode {
 	case LightenOnly:
 		{
-			r := uint8(math.Max(float64(a.R), float64(b.R)))
-			g := uint8(math.Max(float64(a.G), float64(b.G)))
-			b := uint8(math.Max(float64(a.B), float64(b.B)))
+			r := Max2Uint8(a.R, b.R)
+			g := Max2Uint8(a.G, b.G)
+			b := Max2Uint8(a.B, b.B)
 
 			return color.NRGBA{r, g, b, 0xff}
 		}
 	case DarkenOnly:
 		{
-			r := uint8(math.Min(float64(a.R), float64(b.R)))
-			g := uint8(math.Min(float64(a.G), float64(b.G)))
-			b := uint8(math.Min(float64(a.B), float64(b.B)))
+			r := Min2Uint8(a.R, b.R)
+			g := Min2Uint8(a.G, b.G)
+			b := Min2Uint8(a.B, b.B)
 
 			return color.NRGBA{r, g, b, 0xff}
 		}

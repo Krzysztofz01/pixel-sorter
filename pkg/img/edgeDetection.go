@@ -49,8 +49,8 @@ type gradientPoint struct {
 }
 
 // Generate a edge detection image based on the given input image using the Canny edge detection algorithm
-func PerformEdgeDetection(i image.Image, performNonMaxSupression, invertColors bool) (*image.NRGBA, error) {
-	imgGrayscale := imaging.Grayscale(i)
+func PerformEdgeDetection(i *image.NRGBA, performNonMaxSupression, invertColors bool) (*image.NRGBA, error) {
+	imgGrayscale := utils.GrayscaleNrgba(i)
 
 	imgSmoothed := imaging.Blur(imgGrayscale, blurSigmaParam)
 
@@ -133,7 +133,7 @@ func createGradientMapImage(i *image.NRGBA, g [][]gradientPoint) (*image.NRGBA, 
 	outputImage := newWhiteNRGBA(image.Rect(0, 0, width, height))
 	pimit.ParallelReadWrite(outputImage, func(xIndex, yIndex int, _ color.Color) color.Color {
 		magnitude := g[xIndex][yIndex].magnitude
-		colorValue := uint8(math.Max(0, math.Min(255, magnitude)))
+		colorValue := uint8(utils.ClampFloat64(0, magnitude, 255))
 
 		return color.Gray{Y: colorValue}
 	})
@@ -153,7 +153,7 @@ func performNonMaxSuppresion(i *image.NRGBA, g [][]gradientPoint) (*image.NRGBA,
 	outputImage := newWhiteNRGBA(image.Rect(0, 0, width, height))
 	pimit.ParallelReadWrite(outputImage, func(xIndex, yIndex int, _ color.Color) color.Color {
 		magnitude := g[xIndex][yIndex].magnitude
-		colorValue := uint8(math.Max(0, math.Min(255, magnitude)))
+		colorValue := uint8(utils.ClampFloat64(0, magnitude, 255))
 
 		if xIndex == 0 || xIndex == width-1 || yIndex == 0 || yIndex == height-1 {
 			return color.Gray{Y: colorValue}
