@@ -7,8 +7,8 @@ import (
 	"image/draw"
 	"math"
 
+	"github.com/Krzysztofz01/imaging"
 	"github.com/Krzysztofz01/pimit"
-	"github.com/disintegration/imaging"
 )
 
 // Convert a image represented by image.Image to a NRGBA image. If the underlying type is already NRGBA a reference to the
