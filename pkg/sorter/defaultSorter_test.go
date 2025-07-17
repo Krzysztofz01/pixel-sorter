@@ -637,7 +637,7 @@ func mockTestBlackAndWhiteStripesImage() image.Image {
 }
 
 func mockHugeTestBlackAndWhiteStripesImage() image.Image {
-	return createMockTestBlackAndWhiteStripesImage(6000, 6000)
+	return createMockTestBlackAndWhiteStripesImage(10000, 10000)
 }
 
 func createMockTestBlackAndWhiteStripesImage(width, height int) image.Image {
