@@ -8,9 +8,9 @@ import (
 	"math"
 	"sync"
 
+	"github.com/Krzysztofz01/imaging"
 	"github.com/Krzysztofz01/pimit"
 	"github.com/Krzysztofz01/pixel-sorter/pkg/utils"
-	"github.com/disintegration/imaging"
 )
 
 // TODO: Fine tune const values in order to make the edge detection more versatile
