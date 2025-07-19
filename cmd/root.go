@@ -59,10 +59,14 @@ func init() {
 	rootCmd.PersistentFlags().BoolVarP(&FlagVerboseLogging, "verbose", "v", false, "Enable verbose logging mode.")
 
 	rootCmd.PersistentFlags().StringVar(&FlagInputMediaFilePath, "input-media-path", "", "The path of the input media file to be processed.")
-	rootCmd.MarkPersistentFlagRequired("input-media-path")
+	if err := rootCmd.MarkPersistentFlagRequired("input-media-path"); err != nil {
+		panic(fmt.Errorf("cmd: failed to mark the input-medoa-path as required: %w", err))
+	}
 
 	rootCmd.PersistentFlags().StringVar(&FlagOutputMediaFilePath, "output-media-path", "", "The path of the output media file to be saved. The path should end with one of the supported extensions. [jpg, png]")
-	rootCmd.MarkPersistentFlagRequired("output-media-path")
+	if err := rootCmd.MarkPersistentFlagRequired("output-media-path"); err != nil {
+		panic(fmt.Errorf("cmd: failed to mark the output-media-path as required: %w", err))
+	}
 
 	rootCmd.PersistentFlags().StringVar(&FlagMaskImageFilePath, "mask-image-path", "", "The path of the mask image file used to process the input media.")
 
@@ -255,31 +259,6 @@ func Execute(args []string) {
 		LocalLogger.Fatalf("Pixel sorting fatal failure: %s", err)
 		os.Exit(1)
 	}
-}
-
-// TODO: Currently there is no support for setting the "image" command as the default one
-func setDefaultCommand(args []string, defaultCommand string) []string {
-	if len(args) > 1 {
-		commands := make([]string, 5)
-		for _, command := range rootCmd.Commands() {
-			commands = append(commands, append(command.Aliases, command.Name())...)
-		}
-
-		commandSpecified := false
-		currentCommand := args[0]
-		for _, command := range commands {
-			if command == currentCommand {
-				commandSpecified = true
-				break
-			}
-		}
-
-		if !commandSpecified {
-			args = append([]string{defaultCommand}, args...)
-		}
-	}
-
-	return args
 }
 
 // Create a new instance of the logger
